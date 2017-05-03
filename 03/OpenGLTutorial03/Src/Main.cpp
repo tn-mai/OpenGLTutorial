@@ -2,6 +2,7 @@
 * @file main.cpp
 */
 #include "GLFWEW.h"
+#include "glm/gtc/matrix_transform.hpp"
 #include <iostream>
 #include <vector>
 
@@ -31,12 +32,12 @@ const Vertex vertices[] = {
   { { 0.3f, -0.3f, 0.5f}, {0.0f, 1.0f, 0.0f, 1.0f} },
   { {-0.5f, -0.3f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f} },
 
-  { {-0.3f,  0.3f, 0.6f}, {1.0f, 0.0f, 0.0f, 1.0f} },
-  { { 0.5f,  0.3f, 0.6f}, {1.0f, 1.0f, 0.0f, 1.0f} },
-  { { 0.5f, -0.5f, 0.6f}, {1.0f, 0.0f, 0.0f, 1.0f} },
-  { { 0.5f, -0.5f, 0.6f}, {0.0f, 0.0f, 1.0f, 1.0f} },
-  { {-0.3f, -0.5f, 0.6f}, {0.0f, 1.0f, 1.0f, 1.0f} },
-  { {-0.3f,  0.3f, 0.6f}, {0.0f, 0.0f, 1.0f, 1.0f} },
+  { {-0.3f,  0.3f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f} },
+  { { 0.5f,  0.3f, 0.1f}, {1.0f, 1.0f, 0.0f, 1.0f} },
+  { { 0.5f, -0.5f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f} },
+  { { 0.5f, -0.5f, 0.1f}, {0.0f, 0.0f, 1.0f, 1.0f} },
+  { {-0.3f, -0.5f, 0.1f}, {0.0f, 1.0f, 1.0f, 1.0f} },
+  { {-0.3f,  0.3f, 0.1f}, {0.0f, 0.0f, 1.0f, 1.0f} },
 };
 
 /// インデックスデータ.
@@ -51,9 +52,10 @@ static const char* vsCode =
   "layout(location=0) in vec3 vPosition;"
   "layout(location=1) in vec4 vColor;"
   "layout(location=0) out vec4 outColor;"
+  "uniform mat4x4 matMVP;"
   "void main() {"
   "  outColor = vColor;"
-  "  gl_Position = vec4(vPosition, 1.0);"
+  "  gl_Position = matMVP * vec4(vPosition, 1.0);"
   "}";
 
 /// フラグメントシェーダ.
@@ -225,13 +227,25 @@ int main()
 	  return 1;
   }
 
-//  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
 
   while (!window.ShouldClose()) {
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    static float degree = 0.0f;
+    degree += 0.1f;
+    if (degree >= 360.0f) { degree -= 360.0f; }
+    const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(2, 3, 3, 1);
+
     glUseProgram(shaderProgram);
+    const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    const glm::mat4x4 matMVP = matProj * matView;
+    const GLuint matMVPId = glGetUniformLocation(shaderProgram, "matMVP");
+    glUniformMatrix4fv(matMVPId, 1, GL_FALSE, &matMVP[0][0]);
+
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(indices[0]), GL_UNSIGNED_INT, reinterpret_cast<const GLvoid*>(0));
 
