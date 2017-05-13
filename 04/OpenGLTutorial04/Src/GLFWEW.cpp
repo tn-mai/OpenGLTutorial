@@ -94,6 +94,13 @@ bool Window::Init(int w, int h, const char* title)
   std::cout << "Renderer: " << renderer << std::endl;
   const GLubyte* version = glGetString(GL_VERSION);
   std::cout << "Version: " << version << std::endl;
+  const GLubyte* extensions = glGetString(GL_EXTENSIONS);
+  std::cout << "Extensions: " << extensions << std::endl;
+
+  GLint param;
+  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, &param);
+  std::cout << "Color Encoding: " << (param == GL_SRGB ? "GL_SRGB" : "GL_LINEAR") << std::endl;
+
   isInitialized = true;
   return true;
 }

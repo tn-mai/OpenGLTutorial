@@ -2,42 +2,32 @@
 * @file main.cpp
 */
 #include "GLFWEW.h"
+#include "Texture.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include <iostream>
 #include <vector>
 
-/// 3Dベクター型.
-struct Vector3
-{
-  float x, y, z;
-};
-
-/// RGBAカラー型.
-struct Color
-{
-  float r, g, b, a;
-};
-
 /// 頂点データ型.
 struct Vertex
 {
-  Vector3 position; ///< 座標
-  Color color; ///< 色
+  glm::vec3 position; ///< 座標
+  glm::vec4 color; ///< 色
+  glm::vec2 texCoord; ///< テクスチャ座標.
 };
 
 /// 頂点データ.
 const Vertex vertices[] = {
-  { {-0.5f,  0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f} },
-  { { 0.3f,  0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f} },
-  { { 0.3f, -0.3f, 0.5f}, {0.0f, 1.0f, 0.0f, 1.0f} },
-  { {-0.5f, -0.3f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f} },
+  { {-0.5f, -0.3f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f} },
+  { { 0.3f, -0.3f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 0.0f} },
+  { { 0.3f,  0.5f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 1.0f} },
+  { {-0.5f,  0.5f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 1.0f} },
 
-  { {-0.3f,  0.3f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f} },
-  { { 0.5f,  0.3f, 0.1f}, {1.0f, 1.0f, 0.0f, 1.0f} },
-  { { 0.5f, -0.5f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f} },
-  { { 0.5f, -0.5f, 0.1f}, {0.0f, 0.0f, 1.0f, 1.0f} },
-  { {-0.3f, -0.5f, 0.1f}, {0.0f, 1.0f, 1.0f, 1.0f} },
-  { {-0.3f,  0.3f, 0.1f}, {0.0f, 0.0f, 1.0f, 1.0f} },
+  { {-0.3f,  0.3f, 0.1f}, {0.0f, 0.0f, 1.0f, 1.0f}, { 0.0f, 1.0f} },
+  { {-0.3f, -0.5f, 0.1f}, {0.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f} },
+  { { 0.5f, -0.5f, 0.1f}, {0.0f, 0.0f, 1.0f, 1.0f}, { 1.0f, 0.0f} },
+  { { 0.5f, -0.5f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f}, { 1.0f, 0.0f} },
+  { { 0.5f,  0.3f, 0.1f}, {1.0f, 1.0f, 0.0f, 1.0f}, { 1.0f, 1.0f} },
+  { {-0.3f,  0.3f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, 1.0f} },
 };
 
 /// インデックスデータ.
@@ -48,23 +38,28 @@ const GLuint indices[] = {
 
 /// 頂点シェーダ.
 static const char* vsCode =
-  "#version 400\n"
+  "#version 410\n"
   "layout(location=0) in vec3 vPosition;"
   "layout(location=1) in vec4 vColor;"
+  "layout(location=2) in vec2 vTexCoord;"
   "layout(location=0) out vec4 outColor;"
+  "layout(location=1) out vec2 outTexCoord;"
   "uniform mat4x4 matMVP;"
   "void main() {"
   "  outColor = vColor;"
+  "  outTexCoord = vTexCoord;"
   "  gl_Position = matMVP * vec4(vPosition, 1.0);"
   "}";
 
 /// フラグメントシェーダ.
-static const char* fsCode =
-  "#version 400\n"
+  static const char* fsCode =
+  "#version 410\n"
   "layout(location=0) in vec4 inColor;"
+  "layout(location=1) in vec2 inTexCoord;"
+  "uniform sampler2D colorSampler;"
   "out vec4 fragColor;"
   "void main() {"
-  "  fragColor = inColor;"
+  "  fragColor = inColor * texture(colorSampler, inTexCoord);"
   "}";
 
 /**
@@ -134,6 +129,7 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   SetVertexAttribPointer(0, Vertex, position);
   SetVertexAttribPointer(1, Vertex, color);
+  SetVertexAttribPointer(2, Vertex, texCoord);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
   glBindVertexArray(0);
   return vao;
@@ -162,7 +158,7 @@ GLuint CompileShader(GLenum type, const GLchar* string)
       buf.resize(infoLen);
       if (static_cast<int>(buf.size()) >= infoLen) {
         glGetShaderInfoLog(shader, infoLen, NULL, buf.data());
-        std::cerr <<  "ERROR: シェーダのコンパイルに失敗\n" << buf.data() << std::endl;
+        std::cerr <<  "ERROR: シェーダのコンパイルに失敗" << buf.data() << std::endl;
       }
       glDeleteShader(shader);
     }
@@ -184,7 +180,7 @@ GLuint CreateShaderProgram(const GLchar* vsCode, const GLchar* fsCode)
   GLuint vs = CompileShader(GL_VERTEX_SHADER, vsCode);
   GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fsCode);
   if (!vs || !fs) {
-	  return 0;
+    return 0;
   }
   GLuint program = glCreateProgram();
   glAttachShader(program, fs);
@@ -202,7 +198,7 @@ GLuint CreateShaderProgram(const GLchar* vsCode, const GLchar* fsCode)
       buf.resize(infoLen);
       if (static_cast<int>(buf.size()) >= infoLen) {
         glGetProgramInfoLog(program, infoLen, NULL, buf.data());
-        std::cerr << "ERROR: シェーダのリンクに失敗\n"<< buf.data() << std::endl;
+        std::cerr << "ERROR: シェーダのリンクに失敗"<< buf.data() << std::endl;
       }
     }
     glDeleteProgram(program);
@@ -227,24 +223,46 @@ int main()
 	  return 1;
   }
 
+  static const uint32_t textureData[] = {
+    0xffffffff, 0xffcccccc, 0xffffffff, 0xffcccccc, 0xffffffff,
+    0xff888888, 0xffffffff, 0xff888888, 0xffffffff, 0xff888888,
+    0xffffffff, 0xff444444, 0xffffffff, 0xff444444, 0xffffffff,
+    0xff000000, 0xffffffff, 0xff000000, 0xffffffff, 0xff000000,
+    0xffffffff, 0xff000000, 0xffffffff, 0xff000000, 0xffffffff,
+  };
+//  TexturePtr tex = Texture::Create(5, 5, GL_RGBA8, GL_RGBA, textureData);
+  TexturePtr tex = Texture::LoadFromFile("Res/Sample.bmp");
+  if (!tex) {
+    return 1;
+  }
+
   glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
+//  glEnable(GL_CULL_FACE);
 
   while (!window.ShouldClose()) {
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     static float degree = 0.0f;
-    degree += 0.1f;
+//    degree += 0.1f;
     if (degree >= 360.0f) { degree -= 360.0f; }
     const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(2, 3, 3, 1);
 
     glUseProgram(shaderProgram);
-    const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-    const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-    const glm::mat4x4 matMVP = matProj * matView;
-    const GLuint matMVPId = glGetUniformLocation(shaderProgram, "matMVP");
-    glUniformMatrix4fv(matMVPId, 1, GL_FALSE, &matMVP[0][0]);
+    const GLint matMVPId = glGetUniformLocation(shaderProgram, "matMVP");
+    if (matMVPId >= 0) {
+      const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+      const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+      const glm::mat4x4 matMVP = matProj * matView;
+      glUniformMatrix4fv(matMVPId, 1, GL_FALSE, &matMVP[0][0]);
+    }
+
+    const GLint colorSamplerLoc = glGetUniformLocation(shaderProgram, "colorSampler");
+    if (colorSamplerLoc >= 0) {
+      glUniform1i(colorSamplerLoc, 0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, tex->Id());
+    }
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(indices[0]), GL_UNSIGNED_INT, reinterpret_cast<const GLvoid*>(0));
