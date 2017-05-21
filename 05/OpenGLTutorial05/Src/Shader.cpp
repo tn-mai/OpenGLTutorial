@@ -97,12 +97,6 @@ bool ReadFile(const char* filename, std::vector<char>& buf)
 	if (stat(filename, &st)) {
 		return false;
 	}
-	const size_t bmpFileHeaderSize = 14;
-	const size_t windowsV1HeaderSize = 40;
-	if (st.st_size <= bmpFileHeaderSize + windowsV1HeaderSize) {
-		return false;
-	}
-
 	FILE* fp = fopen(filename, "rb");
 	if (!fp) {
 		return false;
