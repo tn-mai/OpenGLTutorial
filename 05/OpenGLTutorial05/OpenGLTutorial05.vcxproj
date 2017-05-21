@@ -154,14 +154,21 @@
   <ItemGroup>
     <ClCompile Include="Src\GLFWEW.cpp" />
     <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\Shader.cpp" />
     <ClCompile Include="Src\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\GLFWEW.h" />
+    <ClInclude Include="Src\Shader.h" />
     <ClInclude Include="Src\Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <ClInclude Include="Res\Tutorial.fp">
+      <FileType>Text</FileType>
+      <DeploymentContent>false</DeploymentContent>
+    </ClInclude>
+    <None Include="Res\Tutorial.vp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\Sample.bmp" />
