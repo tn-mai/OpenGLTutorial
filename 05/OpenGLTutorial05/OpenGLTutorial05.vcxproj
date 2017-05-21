@@ -164,11 +164,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <ClInclude Include="Res\Tutorial.fp">
+    <ClInclude Include="Res\Tutorial.frag">
       <FileType>Text</FileType>
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
-    <None Include="Res\Tutorial.vp" />
+    <None Include="Res\Tutorial.vert" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\Sample.bmp" />

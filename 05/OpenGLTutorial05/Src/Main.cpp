@@ -121,7 +121,7 @@ int main()
   const GLuint vbo = CreateVBO(sizeof(vertices), vertices);
   const GLuint ibo = CreateIBO(sizeof(indices), indices);
   const GLuint vao = CreateVAO(vbo, ibo);
-  const GLuint shaderProgram = Shader::CreateProgramFromFile("Res/Tutorial.vp", "Res/Tutorial.fp");
+  const GLuint shaderProgram = Shader::CreateProgramFromFile("Res/Tutorial.vert", "Res/Tutorial.frag");
   if (!vbo || !ibo || !vao || !shaderProgram) {
 	  return 1;
   }

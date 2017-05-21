@@ -38,13 +38,13 @@
     <ClInclude Include="Src\Shader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Res\Tutorial.fp">
+    <ClInclude Include="Res\Tutorial.frag">
       <Filter>リソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Res\Tutorial.vp">
+    <None Include="Res\Tutorial.vert">
       <Filter>リソース ファイル</Filter>
     </None>
   </ItemGroup>
