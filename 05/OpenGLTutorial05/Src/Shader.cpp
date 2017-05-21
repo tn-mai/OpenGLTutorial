@@ -101,12 +101,13 @@ bool ReadFile(const char* filename, std::vector<char>& buf)
 	if (!fp) {
 		return false;
 	}
-	buf.resize(st.st_size);
+	buf.resize(st.st_size + 1);
 	const size_t readSize = fread(buf.data(), 1, st.st_size, fp);
 	fclose(fp);
 	if (readSize != st.st_size) {
 		return false;
 	}
+	buf.back() = '\0';
 	return true;
 }
 
