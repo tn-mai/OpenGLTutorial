@@ -27,6 +27,9 @@
     <ClCompile Include="Src\Shader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Src\OffscreenBuffer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\GLFWEW.h">
@@ -38,12 +41,15 @@
     <ClInclude Include="Src\Shader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Res\Tutorial.frag">
-      <Filter>リソース ファイル</Filter>
+    <ClInclude Include="Src\OffscreenBuffer.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Res\Tutorial.frag">
+      <Filter>リソース ファイル</Filter>
+    </None>
     <None Include="Res\Tutorial.vert">
       <Filter>リソース ファイル</Filter>
     </None>
