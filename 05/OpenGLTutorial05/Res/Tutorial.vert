@@ -25,6 +25,7 @@ layout(std140) uniform TransformationData
 	mat4 matTex;
 	vec4 lightPosition;
 	vec4 lightColor;
+	vec4 ambientColor;
 } transformationData;
 
 void main() {
@@ -32,10 +33,9 @@ void main() {
   float lightPower = 1 / dot(lightVec, lightVec);
   float cosTheta = clamp(dot(vec3(0, 0, 1), normalize(lightVec)), 0, 1);
   outColor = vColor;
-  outColor.rgb *= cosTheta * lightPower * transformationData.lightColor.rgb;
+  outColor.rgb *= cosTheta * lightPower * transformationData.lightColor.rgb + transformationData.ambientColor.rgb;
 
   outNormal = mat3(transformationData.matMV) * vec3(0, 0, 1);
-//  outColor = vColor;
   outTexCoord = (transformationData.matTex * vec4(vTexCoord, 0, 1)).xy;
   outPosition = (transformationData.matMV * vec4(vPosition, 1.0)).xyz;
   gl_Position = transformationData.matMVP * vec4(vPosition, 1.0);

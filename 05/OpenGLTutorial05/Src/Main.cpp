@@ -30,12 +30,47 @@ const Vertex vertices[] = {
   { { 0.5f, -0.5f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f}, { 1.0f, 0.0f} },
   { { 0.5f,  0.3f, 0.1f}, {1.0f, 1.0f, 0.0f, 1.0f}, { 1.0f, 1.0f} },
   { {-0.3f,  0.3f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, 1.0f} },
+
+  { {-1.0f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 0.0f} },
+  { { 1.0f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f} },
+  { { 1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 1.0f} },
+  { {-1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 1.0f} },
 };
 
 /// インデックスデータ.
 const GLuint indices[] = {
   0, 1, 2, 2, 3, 0,
   4, 5, 6, 7, 8, 9,
+  10, 11, 12, 12, 13, 10,
+};
+
+/**
+* インデックス描画範囲.
+*/
+struct RenderingData
+{
+  GLsizei size; ///< 描画するインデックス数.
+  GLvoid* offset; ///< 描画開始インデックスのバイトオフセット.
+};
+
+/**
+* RenderingDataを作成する.
+*
+* @param size 描画するインデックス数.
+* @param offset 描画開始インデックスのオフセット(インデックス単位).
+*
+* @return インデックス描画範囲オブジェクト.
+*/
+constexpr RenderingData MakeRenderingData(GLsizei size, GLsizei offset) {
+  return { size, reinterpret_cast<GLvoid*>(offset * sizeof(GLuint)) };
+}
+
+/**
+* 描画範囲リスト.
+*/
+static const RenderingData renderingData[] = {
+  MakeRenderingData( 3 * 4, 0),
+  MakeRenderingData( 3 * 2, 12),
 };
 
 /**
@@ -123,6 +158,7 @@ struct TransformationData
   glm::mat4 matMVP;
   glm::mat4 matTex;
   PointLight light;
+  glm::vec4 ambientColor;
 };
 
 struct LightingData
@@ -205,7 +241,7 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     static float degree = 0.0f;
-//    degree += 0.05f;
+    degree += 0.05f;
     if (degree >= 360.0f) { degree -= 360.0f; }
     const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(2, 3, 3, 1);
 
@@ -227,8 +263,9 @@ int main()
       matTex = glm::translate(matTex, glm::vec3(-0.5f, -0.5f, 0));
       transData.matTex = matTex;
 
-      transData.light.color = glm::vec4(0.75f, 0.75f, 1, 1) * 5.0f;
+      transData.light.color = glm::vec4(2, 2, 2, 1);
       transData.light.position = glm::vec4(1, 1, 1, 1);
+      transData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
 
       lightData[bufferIndex].ambientColor = glm::vec4(0.05f, 0.15f, 0.25f, 1) * 0.5f;
       for (auto& e : lightData[bufferIndex].light) {
@@ -253,7 +290,7 @@ int main()
     }
 
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(indices[0]), GL_UNSIGNED_INT, reinterpret_cast<const GLvoid*>(0));
+    glDrawElements(GL_TRIANGLES, renderingData[0].size, GL_UNSIGNED_INT, renderingData[0].offset);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.5f, 0.3f, 0.1f, 1.0f);
@@ -261,7 +298,14 @@ int main()
     if (colorSamplerLoc >= 0) {
       glBindTexture(GL_TEXTURE_2D, offscreen->GetTexutre());
     }
-    glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(indices[0]), GL_UNSIGNED_INT, reinterpret_cast<const GLvoid*>(0));
+
+    TransformationData transData;
+    transData = {};
+    transData.ambientColor = glm::vec4(1, 1, 1, 1);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboTrans);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(TransformationData), &transData);
+
+    glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
 
     bufferIndex = !bufferIndex;
     window.SwapBuffers();
