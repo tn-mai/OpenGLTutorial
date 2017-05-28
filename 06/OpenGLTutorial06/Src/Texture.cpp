@@ -58,13 +58,19 @@ Texture::~Texture()
 */
 TexturePtr Texture::Create(int width, int height, GLenum iformat, GLenum format, const void* data)
 {
+  GLenum type;
+  switch (iformat) {
+  case GL_RGB10_A2: type = GL_UNSIGNED_INT_2_10_10_10_REV; break;
+  case GL_RGBA16F: type = GL_HALF_FLOAT; break;
+  default: type = GL_UNSIGNED_BYTE;
+  }
   struct impl : Texture {};
   TexturePtr p = std::make_shared<impl>();
   p->width = width;
   p->height = height;
   glGenTextures(1, &p->texId);
   glBindTexture(GL_TEXTURE_2D, p->texId);
-  glTexImage2D(GL_TEXTURE_2D, 0, iformat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, iformat, width, height, 0, format, type, data);
   const GLenum result = glGetError();
   if (result != GL_NO_ERROR) {
     std::cerr << "ERROR in Texture::Create(0x" << std::hex << result << ")" << std::endl;
@@ -91,16 +97,19 @@ TexturePtr Texture::LoadFromFile(const char* filename)
 {
   struct stat st;
   if (stat(filename, &st)) {
+    std::cerr << "WARNING: " << filename << "が開けません." << std::endl;
     return {};
   }
   const size_t bmpFileHeaderSize = 14;
   const size_t windowsV1HeaderSize = 40;
   if (st.st_size <= bmpFileHeaderSize + windowsV1HeaderSize) {
+    std::cerr << "WARNING: " << filename << "はBMPファイルではありません." << std::endl;
     return {};
   }
 
   FILE* fp = fopen(filename, "rb");
   if (!fp) {
+    std::cerr << "WARNING: " << filename << "が開けません." << std::endl;
     return {};
   }
   std::vector<uint8_t> buf;
@@ -108,11 +117,13 @@ TexturePtr Texture::LoadFromFile(const char* filename)
   const size_t readSize = fread(buf.data(), 1, st.st_size, fp);
   fclose(fp);
   if (readSize != st.st_size) {
+    std::cerr << "WARNING: " << filename << "の読み込みに失敗." << std::endl;
     return {};
   }
 
   const uint8_t* pHeader = buf.data();
   if (pHeader[0] != 'B' || pHeader[1] != 'M') {
+    std::cerr << "WARNING: " << filename << "はBMPファイルではありません." << std::endl;
     return {};
   }
 
@@ -122,13 +133,21 @@ TexturePtr Texture::LoadFromFile(const char* filename)
   const uint32_t height = Get(pHeader, 22, 4);
   const uint32_t bitCount = Get(pHeader, 28, 2);
   const uint32_t compression = Get(pHeader, 30, 4);
+  if (infoSize != windowsV1HeaderSize || bitCount != 24 || compression) {
+    std::cerr << "WARNING: " << filename << "は24bit無圧縮BMPファイルではありません." << std::endl;
+    return {};
+  }
   const size_t pixelBytes = bitCount / 8;
-  if (infoSize != windowsV1HeaderSize || bitCount != 24 || compression || (width * pixelBytes) % 4) {
-    return {};
-  }
-  const size_t imageSize = width * height * pixelBytes;
+  const size_t actualHBytes = ((width * pixelBytes + 3) / 4) * 4;
+  const size_t imageSize = actualHBytes * height;
   if (buf.size() < offsetBytes + imageSize) {
+    std::cerr << "WARNING: " << filename << "のデータが壊れています." << std::endl;
     return {};
   }
-  return Create(width, height, GL_RGB8, GL_BGR, buf.data() + offsetBytes);
+  GLint alignment;
+  glGetIntegerv(GL_UNPACK_ALIGNMENT, &alignment);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+  TexturePtr p = Create(width, height, GL_RGB8, GL_BGR, buf.data() + offsetBytes);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
+  return p;
 }

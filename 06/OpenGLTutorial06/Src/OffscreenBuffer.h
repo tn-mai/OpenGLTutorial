@@ -16,9 +16,11 @@ typedef std::shared_ptr<OffscreenBuffer> OffscreenBufferPtr;
 class OffscreenBuffer
 {
 public:
-  static OffscreenBufferPtr Create(int w, int h);
+  static OffscreenBufferPtr Create(int w, int h, GLenum = GL_RGBA8);
   GLuint GetFramebuffer() const { return framebuffer; }
   GLuint GetTexutre() const { return tex->Id(); }
+  GLsizei Width() const { return tex->Width(); }
+  GLsizei Height() const { return tex->Height(); }
 
 private:
   OffscreenBuffer() = default;

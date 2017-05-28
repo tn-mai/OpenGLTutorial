@@ -11,12 +11,15 @@
 *
 * @return 作成したオフスクリーンバッファへのポインタ.
 */
-OffscreenBufferPtr OffscreenBuffer::Create(int w, int h)
+OffscreenBufferPtr OffscreenBuffer::Create(int w, int h, GLenum iformat)
 {
   struct Impl : OffscreenBuffer {};
   OffscreenBufferPtr offscreen = std::make_shared<Impl>();
 
-  offscreen->tex = Texture::Create(w, h, GL_RGBA8, GL_RGBA, nullptr);
+  offscreen->tex = Texture::Create(w, h, iformat, GL_RGBA, nullptr);
+  if (!offscreen->tex) {
+    return {};
+  }
 
   glGenRenderbuffers(1, &offscreen->depthbuffer);
   glBindRenderbuffer(GL_RENDERBUFFER, offscreen->depthbuffer);

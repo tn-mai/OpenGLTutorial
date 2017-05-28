@@ -157,15 +157,27 @@
     <ClCompile Include="Src\OffscreenBuffer.cpp" />
     <ClCompile Include="Src\Shader.cpp" />
     <ClCompile Include="Src\Texture.cpp" />
+    <ClCompile Include="Src\UniformBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\GLFWEW.h" />
     <ClInclude Include="Src\OffscreenBuffer.h" />
     <ClInclude Include="Src\Shader.h" />
     <ClInclude Include="Src\Texture.h" />
+    <ClInclude Include="Src\UniformBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Res\AnamorphicLensFlare.frag" />
+    <None Include="Res\AnamorphicLensFlare.vert" />
+    <None Include="Res\Bloom1st.frag" />
+    <None Include="Res\Bloom1st.vert" />
+    <None Include="Res\FinalComposition.frag" />
+    <None Include="Res\FinalComposition.vert" />
+    <None Include="Res\PostEffect.frag" />
+    <None Include="Res\PostEffect.vert" />
+    <None Include="Res\Simple.frag" />
+    <None Include="Res\Simple.vert" />
     <None Include="Res\Tutorial.frag">
       <FileType>Document</FileType>
       <DeploymentContent>false</DeploymentContent>

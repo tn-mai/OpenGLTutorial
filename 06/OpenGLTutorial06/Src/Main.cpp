@@ -5,6 +5,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "OffscreenBuffer.h"
+#include "UniformBuffer.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
@@ -31,10 +32,20 @@ const Vertex vertices[] = {
   { { 0.5f,  0.3f, 0.1f}, {1.0f, 1.0f, 0.0f, 1.0f}, { 1.0f, 1.0f} },
   { {-0.3f,  0.3f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, 1.0f} },
 
-  { {-1.0f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 0.0f} },
-  { { 1.0f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f} },
-  { { 1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 1.0f} },
-  { {-1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 1.0f} },
+  { {-1.0f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f} },
+  { { 1.0f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 0.0f} },
+  { { 1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 1.0f} },
+  { {-1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 1.0f} },
+
+  { {-1.25f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f} },
+  { { 0.75f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 0.0f} },
+  { { 0.75f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 1.0f} },
+  { {-1.25f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 1.0f} },
+
+  { {-0.75f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f} },
+  { { 1.25f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 0.0f} },
+  { { 1.25f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 1.0f, 1.0f} },
+  { {-0.75f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, { 0.0f, 1.0f} },
 };
 
 /// インデックスデータ.
@@ -42,6 +53,8 @@ const GLuint indices[] = {
   0, 1, 2, 2, 3, 0,
   4, 5, 6, 7, 8, 9,
   10, 11, 12, 12, 13, 10,
+  14, 15, 16, 16, 17, 14,
+  18, 19, 20, 20, 21, 18,
 };
 
 /**
@@ -71,6 +84,56 @@ constexpr RenderingData MakeRenderingData(GLsizei size, GLsizei offset) {
 static const RenderingData renderingData[] = {
   MakeRenderingData( 3 * 4, 0),
   MakeRenderingData( 3 * 2, 12),
+  MakeRenderingData( 3 * 2, 18),
+  MakeRenderingData( 3 * 2, 24),
+};
+
+/**
+* Uniform Bufferのバインディング・ポイント.
+*/
+enum BindingPoint {
+  BindingPoint_Vertex,
+  BindingPoint_Light,
+
+  countof_BindingPoint, ///< 定義したバインディング・ポイントの数.
+};
+
+/**
+* 座標変換データ.
+*/
+struct TransformationData
+{
+  glm::mat4 matMV;
+  glm::mat4 matMVP;
+  glm::mat4 matTex;
+};
+
+/**
+* ライトデータ(点光源).
+*/
+struct PointLight
+{
+  glm::vec4 position; ///< 座標(ワールド座標系).
+  glm::vec4 color; ///< 明るさ.
+};
+
+const int maxLightCount = 8; ///< ライトの数.
+
+/**
+* ライティングパラメータ.
+*/
+struct LightingData
+{
+  glm::vec4 ambientColor; ///< 環境光.
+  PointLight light[maxLightCount]; ///< ライトのリスト.
+};
+
+/**
+* ポストエフェクトパラメータ.
+*/
+struct PostEffectData
+{
+  glm::mat4x4 matColor; ///< 色変換行列.
 };
 
 /**
@@ -143,46 +206,9 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   SetVertexAttribPointer(2, Vertex, texCoord);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
   glBindVertexArray(0);
+  glDeleteBuffers(1, &ibo);
+  glDeleteBuffers(1, &vbo);
   return vao;
-}
-
-struct PointLight
-{
-  glm::vec4 position;
-  glm::vec4 color;
-};
-
-struct TransformationData
-{
-  glm::mat4 matMV;
-  glm::mat4 matMVP;
-  glm::mat4 matTex;
-  PointLight light;
-  glm::vec4 ambientColor;
-};
-
-struct LightingData
-{
-  glm::vec4 ambientColor;
-  PointLight light[4];
-};
-
-/**
-* Uniform Block Objectを作成する.
-*
-* @param size Uniform Blockのサイズ.
-* @param data Uniform Blockに転送するデータへのポインタ.
-*
-* @return 作成したUBO.
-*/
-GLuint CreateUBO(GLsizeiptr size, const GLvoid* data = nullptr)
-{
-  GLuint ubo;
-  glGenBuffers(1, &ubo);
-  glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-  glBufferData(GL_UNIFORM_BUFFER, size, data, GL_DYNAMIC_DRAW);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
-  return ubo;
 }
 
 /// エントリーポイント.
@@ -196,11 +222,21 @@ int main()
   const GLuint vbo = CreateVBO(sizeof(vertices), vertices);
   const GLuint ibo = CreateIBO(sizeof(indices), indices);
   const GLuint vao = CreateVAO(vbo, ibo);
-  const GLuint uboTrans = CreateUBO(sizeof(TransformationData));
-  const GLuint shaderProgram = Shader::CreateProgramFromFile("Res/Tutorial.vert", "Res/Tutorial.frag");
-  if (!vbo || !ibo || !vao || !uboTrans || !shaderProgram) {
-	  return 1;
+  const UniformBufferPtr uboTrans = UniformBuffer::Create(sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
+  const UniformBufferPtr uboLight = UniformBuffer::Create(sizeof(LightingData), BindingPoint_Light, "LightingData");
+  const UniformBufferPtr uboPostEffect = UniformBuffer::Create(sizeof(PostEffectData), 2, "PostEffectData");
+  const Shader::ProgramPtr shaderProgram = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
+  const Shader::ProgramPtr progPostEffect = Shader::Program::Create("Res/PostEffect.vert", "Res/PostEffect.frag");
+  const Shader::ProgramPtr progBloom1st = Shader::Program::Create("Res/Bloom1st.vert", "Res/Bloom1st.frag");
+  const Shader::ProgramPtr progComposition = Shader::Program::Create("Res/FinalComposition.vert", "Res/FinalComposition.frag");
+  const Shader::ProgramPtr progSimple = Shader::Program::Create("Res/Simple.vert", "Res/Simple.frag");
+  const Shader::ProgramPtr progLensFlare = Shader::Program::Create("Res/AnamorphicLensFlare.vert", "Res/AnamorphicLensFlare.frag");
+  if (!vbo || !ibo || !vao || !uboTrans || !uboLight || !shaderProgram || !progPostEffect || !progBloom1st || !progComposition || !progLensFlare) {
+    return 1;
   }
+  shaderProgram->UniformBlockBinding("TransformationData", BindingPoint_Vertex);
+  shaderProgram->UniformBlockBinding("LightingData", BindingPoint_Light);
+  progComposition->UniformBlockBinding("PostEffectData", 2);
 
   static const uint32_t textureData[] = {
     0xffffffff, 0xffcccccc, 0xffffffff, 0xffcccccc, 0xffffffff,
@@ -215,29 +251,27 @@ int main()
     return 1;
   }
 
-  glEnable(GL_DEPTH_TEST);
 //  glEnable(GL_CULL_FACE);
 
-  const GLuint ubiTrans = glGetUniformBlockIndex(shaderProgram, "TransformationData");
-  const GLuint ubiLight = glGetUniformBlockIndex(shaderProgram, "LightingData");
-  if (ubiTrans == GL_INVALID_INDEX || ubiLight == GL_INVALID_INDEX) {
-    std::cerr << "ERROR: Uniformブロックが見つかりません" << std::endl;
-    return 1;
+  const OffscreenBufferPtr offscreen = OffscreenBuffer::Create(800, 600,  GL_RGBA16F);
+  const int bloomBufferCount = 6;
+  OffscreenBufferPtr offBloom[bloomBufferCount];
+  for (int i = 0, scale = 4; i < bloomBufferCount; ++i, scale *= 2) {
+    const int w = (800 + scale - 1) / scale;
+    const int h = (600 + scale - 1) / scale;
+    offBloom[i] = OffscreenBuffer::Create(w, h, GL_RGBA8);
   }
-  glUniformBlockBinding(shaderProgram, ubiTrans, 0);
-  glUniformBlockBinding(shaderProgram, ubiLight, 1);
-
-  const GLuint uboLight = CreateUBO(sizeof(LightingData));
-
-  int bufferIndex = 0;
-  LightingData lightData[2];
-
-  const OffscreenBufferPtr offscreen = OffscreenBuffer::Create(800, 600);
+  OffscreenBufferPtr offAnamorphic[2];
+  offAnamorphic[0] = OffscreenBuffer::Create(800 / 16, 600 / 2, GL_RGBA8);
+  offAnamorphic[1] = OffscreenBuffer::Create(800 / 64, 600 / 2, GL_RGBA8);
 
   while (!window.ShouldClose()) {
     glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
-
+    glEnable(GL_DEPTH_TEST);
+    glViewport(0, 0, 800, 600);
+    glScissor(0, 0, 800, 600);
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
+    glClearDepth(1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     static float degree = 0.0f;
@@ -245,7 +279,7 @@ int main()
     if (degree >= 360.0f) { degree -= 360.0f; }
     const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(2, 3, 3, 1);
 
-    glUseProgram(shaderProgram);
+    shaderProgram->UseProgram();
 
     {
       static float texRot = 0;
@@ -262,56 +296,117 @@ int main()
       matTex = glm::rotate(matTex, glm::radians(texRot), glm::vec3(0, 0, 1));
       matTex = glm::translate(matTex, glm::vec3(-0.5f, -0.5f, 0));
       transData.matTex = matTex;
+      uboTrans->BufferSubData(&transData);
 
-      transData.light.color = glm::vec4(2, 2, 2, 1);
-      transData.light.position = glm::vec4(1, 1, 1, 1);
-      transData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
-
-      lightData[bufferIndex].ambientColor = glm::vec4(0.05f, 0.15f, 0.25f, 1) * 0.5f;
-      for (auto& e : lightData[bufferIndex].light) {
-        e.color = glm::vec4(0, 0, 0, 0);
-        e.position = glm::vec4(0, 0, 0, 0);
-      }
-      lightData[bufferIndex].light[0].color = glm::vec4(1, 1, 0.75f, 1) * 0.5f;
-      lightData[bufferIndex].light[0].position = transData.matMV * glm::vec4(0, 0, 0, 1);
-      lightData[bufferIndex].light[1].color = glm::vec4(0.75f, 0.75f, 1, 1) * 2.0f;
-      lightData[bufferIndex].light[1].position = transData.matMV * glm::vec4(-0.5f, 1, 0, 1);
-      glBindBufferBase(GL_UNIFORM_BUFFER, 0, uboTrans);
-      glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(TransformationData), &transData);
-      glBindBufferBase(GL_UNIFORM_BUFFER, 1, uboLight);
-      glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightingData), lightData + bufferIndex);
+      LightingData lightData;
+      lightData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
+      lightData.light[0].color = glm::vec4(2, 2, 2, 1);
+      lightData.light[0].position = glm::vec4(1, 1, 1, 1);
+      lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
+      lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
+      uboLight->BufferSubData(&lightData);
     }
 
-    const GLint colorSamplerLoc = glGetUniformLocation(shaderProgram, "colorSampler");
-    if (colorSamplerLoc >= 0) {
-      glUniform1i(colorSamplerLoc, 0);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, tex->Id());
-    }
+    shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, renderingData[0].size, GL_UNSIGNED_INT, renderingData[0].offset);
 
+#if 0
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.5f, 0.3f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if (colorSamplerLoc >= 0) {
-      glBindTexture(GL_TEXTURE_2D, offscreen->GetTexutre());
-    }
+
+    shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
 
     TransformationData transData;
-    transData = {};
-    transData.ambientColor = glm::vec4(1, 1, 1, 1);
-    glBindBuffer(GL_UNIFORM_BUFFER, uboTrans);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(TransformationData), &transData);
+    uboTrans->BufferSubData(&transData);
 
+    LightingData lightData;
+    lightData.ambientColor = glm::vec4(1);
+    uboLight->BufferSubData(&lightData);
+#endif
+
+    glDisable(GL_DEPTH_TEST);
+
+    progBloom1st->UseProgram();
+    glBindFramebuffer(GL_FRAMEBUFFER, offBloom[0]->GetFramebuffer());
+    glViewport(0, 0, offBloom[0]->Width(), offBloom[0]->Height());
+    progBloom1st->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
     glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
 
-    bufferIndex = !bufferIndex;
+    progPostEffect->UseProgram();
+    for (int i = 1; i < bloomBufferCount; ++i) {
+      glBindFramebuffer(GL_FRAMEBUFFER, offBloom[i]->GetFramebuffer());
+      glViewport(0, 0, offBloom[i]->Width(), offBloom[i]->Height());
+      progPostEffect->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offBloom[i - 1]->GetTexutre());
+      glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
+    }
+
+    progLensFlare->UseProgram();
+    glBindFramebuffer(GL_FRAMEBUFFER, offAnamorphic[0]->GetFramebuffer());
+    glViewport(0, 0, offAnamorphic[0]->Width(), offAnamorphic[0]->Height());
+    progLensFlare->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offBloom[0]->GetTexutre());
+    glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, offAnamorphic[1]->GetFramebuffer());
+    glViewport(0, 0, offAnamorphic[1]->Width(), offAnamorphic[1]->Height());
+    progLensFlare->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offAnamorphic[0]->GetTexutre());
+    glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    progSimple->UseProgram();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, offAnamorphic[0]->GetFramebuffer());
+    glViewport(0, 0, offAnamorphic[0]->Width(), offAnamorphic[0]->Height());
+    progSimple->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offAnamorphic[1]->GetTexutre());
+    glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
+    glDrawElements(GL_TRIANGLES, renderingData[2].size, GL_UNSIGNED_INT, renderingData[2].offset);
+    glDrawElements(GL_TRIANGLES, renderingData[3].size, GL_UNSIGNED_INT, renderingData[3].offset);
+
+    for (int i = bloomBufferCount - 1; i > 0 ; --i) {
+      glBindFramebuffer(GL_FRAMEBUFFER, offBloom[i - 1]->GetFramebuffer());
+      glViewport(0, 0, offBloom[i - 1]->Width(), offBloom[i - 1]->Height());
+      progSimple->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offBloom[i]->GetTexutre());
+      glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
+    }
+
+    glDisable(GL_BLEND);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, 800, 600);
+    progComposition->UseProgram();
+
+    PostEffectData postEffect;
+#if 0
+    postEffect.matColor[0] = glm::vec4(0.393f, 0.349f, 0.272f, 0);
+    postEffect.matColor[1] = glm::vec4(0.769f, 0.686f, 0.534f, 0);
+    postEffect.matColor[2] = glm::vec4(0.189f, 0.168f, 0.131f, 0);
+    postEffect.matColor[3] = glm::vec4(0, 0, 0, 1);
+#else
+    postEffect.matColor[0] = glm::vec4(-1, 0, 0, 0);
+    postEffect.matColor[1] = glm::vec4(0, -1, 0, 0);
+    postEffect.matColor[2] = glm::vec4(0, 0, -1, 0);
+    postEffect.matColor[3] = glm::vec4(1, 1, 1, 1);
+#endif
+    uboPostEffect->BufferSubData(&postEffect);
+
+    progComposition->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
+    progComposition->BindTexture(GL_TEXTURE1, GL_TEXTURE_2D, offBloom[0]->GetTexutre());
+    progComposition->BindTexture(GL_TEXTURE2, GL_TEXTURE_2D, offAnamorphic[0]->GetTexutre());
+    glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
+    
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     window.SwapBuffers();
   }
 
-  glDeleteProgram(shaderProgram);
   glDeleteVertexArrays(1, &vao);
   glDeleteBuffers(1, &vbo);
 
