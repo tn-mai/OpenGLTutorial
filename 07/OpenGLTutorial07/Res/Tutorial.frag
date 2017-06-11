@@ -35,7 +35,7 @@ void main() {
 #if 1
   fragColor.rgb *= lightColor;
 #else
-  const float numShades = 3;
+  const float numShades = 2;
   fragColor.rgb *= ceil(lightColor * numShades) * (1.0 / numShades);
 #endif
 }

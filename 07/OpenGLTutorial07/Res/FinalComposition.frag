@@ -22,7 +22,7 @@ void main() {
 	fragColor.a = 1.0;
 	fragColor *= inColor;
 	const float numShades = 3;
-	fragColor.rgb = ceil(color * numShades) * (1.0 / numShades);
+	//fragColor.rgb = ceil(color * numShades) * (1.0 / numShades);
 	//fragColor.rgb = color * ceil(dot(vec3(0.299, 0.587, 0.114) * numShades, color)) * (1.0 / numShades);
-	//fragColor.rgb = (postEffect.matColor * vec4(fragColor.rgb, 1)).rgb;
+	fragColor.rgb = (postEffect.matColor * vec4(fragColor.rgb, 1)).rgb;
 }
