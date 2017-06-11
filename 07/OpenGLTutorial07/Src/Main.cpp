@@ -255,7 +255,7 @@ int main()
 
   Mesh::BufferPtr meshBuffer = Mesh::Buffer::Create(10 * 1024, 10 * 1024);
   meshBuffer->LoadMeshFromFile("Res/Model/Toroid.fbx");
-  const Mesh::Mesh* sampleMesh = meshBuffer->GetMesh("Toroid");
+  const Mesh::MeshPtr sampleMesh = meshBuffer->GetMesh("Toroid");
 
 //  glEnable(GL_CULL_FACE);
 

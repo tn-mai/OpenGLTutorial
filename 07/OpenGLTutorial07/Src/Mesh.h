@@ -41,6 +41,7 @@ private:
 
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
+typedef std::shared_ptr<Mesh> MeshPtr;
 
 /**
 * メッシュデータバッファ.
@@ -53,13 +54,13 @@ public:
   Buffer& operator=(const Buffer&) = delete;
 
   bool LoadMeshFromFile(const char* filename);
-  const Mesh* GetMesh(const char* name) const;
+  const MeshPtr GetMesh(const char* name) const;
 
   void BindVAO() const {
     glBindVertexArray(vao);
   }
 
-  void Draw(const Mesh*) const;
+  void Draw(const MeshPtr&) const;
 
 private:
   Buffer() = default;
@@ -72,7 +73,7 @@ private:
   GLintptr vboEnd = 0;
   GLintptr iboEnd = 0;
 
-  std::unordered_map<std::string, Mesh> meshList;
+  std::unordered_map<std::string, MeshPtr> meshList;
 };
 
 } // namespace Mesh

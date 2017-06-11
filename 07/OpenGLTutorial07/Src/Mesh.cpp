@@ -293,7 +293,7 @@ bool FbxLoader::LoadMesh(FbxNode* fbxNode)
   fbxMesh->GetUVSetNames(uvSetNameList);
   const int polygonCount = fbxMesh->GetPolygonCount();
   mesh.vertexBuffer.reserve(polygonCount * 3);
-
+  
   const FbxAMatrix matRotation = fbxNode->EvaluateGlobalTransform();
 
   // 色情報を読み取る準備.
@@ -450,20 +450,20 @@ bool Buffer::LoadMeshFromFile(const char* filename)
       iboEnd += indicesBytes;
       indexCount += material.indexBuffer.size();
     }
-    meshList.insert(std::make_pair(e.name, Mesh(e.name, GL_UNSIGNED_INT, indexCount, iboEnd - indexCount * sizeof(uint32_t))));
+    meshList.insert(std::make_pair(e.name, std::make_shared<Mesh>(e.name, GL_UNSIGNED_INT, indexCount, iboEnd - indexCount * sizeof(uint32_t))));
   }
   return true;
 }
 
 /**
 */
-const Mesh* Buffer::GetMesh(const char* name) const
+const MeshPtr Buffer::GetMesh(const char* name) const
 {
   auto itr = meshList.find(name);
   if (itr == meshList.end()) {
     return nullptr;
   }
-  return &itr->second;
+  return itr->second;
 }
 
 /**
@@ -471,7 +471,7 @@ const Mesh* Buffer::GetMesh(const char* name) const
 *
 * @param mesh  描画するメッシュへのポインタ.
 */
-void Buffer::Draw(const Mesh* mesh) const
+void Buffer::Draw(const MeshPtr& mesh) const
 {
   if (!mesh) {
     return;
