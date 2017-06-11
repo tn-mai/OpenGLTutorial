@@ -6,6 +6,7 @@
 #include "Shader.h"
 #include "OffscreenBuffer.h"
 #include "UniformBuffer.h"
+#include "Mesh.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
@@ -247,9 +248,14 @@ int main()
   };
 //  TexturePtr tex = Texture::Create(5, 5, GL_RGBA8, GL_RGBA, textureData);
   TexturePtr tex = Texture::LoadFromFile("Res/Sample.bmp");
-  if (!tex) {
+  TexturePtr texSample = Texture::LoadFromFile("Res/Model/Toroid.bmp");
+  if (!tex || !texSample) {
     return 1;
   }
+
+  Mesh::BufferPtr meshBuffer = Mesh::Buffer::Create(10 * 1024, 10 * 1024);
+  meshBuffer->LoadMeshFromFile("Res/Model/Toroid.fbx");
+  const Mesh::Mesh* sampleMesh = meshBuffer->GetMesh("Toroid");
 
 //  glEnable(GL_CULL_FACE);
 
@@ -287,7 +293,7 @@ int main()
       if (texRot >= 360) { texRot -= 360; }
       const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
       const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-      const glm::mat4x4 matModel = glm::scale(glm::mat4(), glm::vec3(2, 2, 2));
+      const glm::mat4x4 matModel = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
 
       TransformationData transData;
       transData.matMV = matView * matModel;
@@ -300,10 +306,10 @@ int main()
 
       LightingData lightData;
       lightData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
-      lightData.light[0].color = glm::vec4(2, 2, 2, 1);
-      lightData.light[0].position = glm::vec4(1, 1, 1, 1);
-      lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
-      lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
+      lightData.light[0].color = glm::vec4(18, 18, 18, 1);
+      lightData.light[0].position = glm::vec4(2, 2, 2, 1);
+//      lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
+//      lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
       uboLight->BufferSubData(&lightData);
     }
 
@@ -311,6 +317,12 @@ int main()
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, renderingData[0].size, GL_UNSIGNED_INT, renderingData[0].offset);
+
+    shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texSample->Id());
+    meshBuffer->BindVAO();
+    meshBuffer->Draw(sampleMesh);
+
+    glBindVertexArray(vao);
 
 #if 0
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -384,7 +396,7 @@ int main()
     postEffect.matColor[1] = glm::vec4(0.769f, 0.686f, 0.534f, 0);
     postEffect.matColor[2] = glm::vec4(0.189f, 0.168f, 0.131f, 0);
     postEffect.matColor[3] = glm::vec4(0, 0, 0, 1);
-#else
+#elif 0
     postEffect.matColor[0] = glm::vec4(-1, 0, 0, 0);
     postEffect.matColor[1] = glm::vec4(0, -1, 0, 0);
     postEffect.matColor[2] = glm::vec4(0, 0, -1, 0);
