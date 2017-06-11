@@ -294,7 +294,7 @@ bool FbxLoader::LoadMesh(FbxNode* fbxNode)
   const int polygonCount = fbxMesh->GetPolygonCount();
   mesh.vertexBuffer.reserve(polygonCount * 3);
   
-  const FbxAMatrix matRotation = fbxNode->EvaluateGlobalTransform();
+  const FbxAMatrix matTRS = fbxNode->EvaluateGlobalTransform();
 
   // 色情報を読み取る準備.
   // @note 座標/UV/法線以外のパラメータには直接読み取る関数が提供されていないため、
@@ -321,7 +321,7 @@ bool FbxLoader::LoadMesh(FbxNode* fbxNode)
     for (int pos = 0; pos < 3; ++pos) {
       const int cpIndex = fbxMesh->GetPolygonVertex(polygonIndex, pos);
       Vertex v;
-      v.position = ToVec3(matRotation.MultT(fbxControlPoints[cpIndex]));
+      v.position = ToVec3(matTRS.MultT(fbxControlPoints[cpIndex]));
       v.color = glm::vec4(1);
       if (hasColor) {
         switch (colorMappingMode) {
@@ -346,7 +346,7 @@ bool FbxLoader::LoadMesh(FbxNode* fbxNode)
       if (hasNormal) {
         FbxVector4 normal;
         fbxMesh->GetPolygonVertexNormal(polygonIndex, pos, normal);
-        v.normal = ToVec3(matRotation.MultT(normal));
+        v.normal = ToVec3(matTRS.MultT(normal));
       }
       mesh.materialList[materialIndexList ? (*materialIndexList)[polygonIndex] : 0].indexBuffer.push_back(mesh.vertexBuffer.size());
       mesh.vertexBuffer.push_back(v);
