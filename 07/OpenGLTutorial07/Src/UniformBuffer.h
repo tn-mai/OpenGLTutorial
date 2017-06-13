@@ -17,6 +17,10 @@ class UniformBuffer {
 public:
   static UniformBufferPtr Create(GLsizeiptr size, GLuint bindingPoint, const char* name);
   bool BufferSubData(const GLvoid* data, GLintptr offset = 0, GLsizeiptr size = 0);
+  void BindBufferRange(GLintptr offset, GLsizeiptr size) {
+    glBindBufferRange(GL_UNIFORM_BUFFER, bindingPoint, ubo, offset, size);
+  }
+  void Bind() const { glBindBuffer(GL_UNIFORM_BUFFER, ubo); }
 
 private:
   UniformBuffer() = default;

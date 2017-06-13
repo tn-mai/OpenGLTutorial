@@ -28,7 +28,7 @@ void main() {
   for (int i = 0; i < maxLight; ++i) {
     vec3 lightVector = lightingData.light[i].position.xyz - inWorldPosition;
     float lightPower = 1.0 / dot(lightVector, lightVector);
-    float cosTheta = clamp(dot(vec3(0, 0, 1), normalize(lightVector)), 0, 1);
+    float cosTheta = clamp(dot(inNormal, normalize(lightVector)), 0, 1);
     lightColor += lightingData.light[i].color.rgb * cosTheta * lightPower;
   }
   fragColor = inColor * texture(colorSampler, inTexCoord);

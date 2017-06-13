@@ -7,9 +7,12 @@
 #include "OffscreenBuffer.h"
 #include "UniformBuffer.h"
 #include "Mesh.h"
+#include "Entity.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
+#include <random>
+#include <time.h>
 
 /// 頂点データ型.
 struct Vertex
@@ -104,7 +107,7 @@ enum BindingPoint {
 */
 struct TransformationData
 {
-  glm::mat4 matMV;
+  glm::mat4 matM;
   glm::mat4 matMVP;
   glm::mat4 matTex;
 };
@@ -212,6 +215,34 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   return vao;
 }
 
+void UpdateToroid(Entity::Entity& entity, UniformBufferPtr& ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+{
+  float rot = glm::angle(entity.Rotation());
+  rot += glm::radians(10.0f) * static_cast<float>(delta);
+  if (rot > glm::pi<float>() * 2.0f) {
+    rot = 0.0f;
+  }
+  entity.Rotation() = glm::angleAxis(rot, glm::vec3(0, 1, 0));
+  TransformationData data;
+  data.matM = entity.TRSMatrix();
+  data.matMVP = matProj * matView * data.matM;
+  entity.BufferSubData(ubo, &data);
+}
+
+void UpdateSpario(Entity::Entity& entity, UniformBufferPtr& ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+{
+  glm::vec3 pos = entity.Position();
+  pos.z -= 1 * static_cast<float>(delta);
+  if (pos.z < -20.0f) {
+    pos.z = 20.0f;
+  }
+  entity.Position() = pos;
+  TransformationData data;
+  data.matM = entity.TRSMatrix();
+  data.matMVP = matProj * matView * data.matM;
+  entity.BufferSubData(ubo, &data);
+}
+
 /// エントリーポイント.
 int main()
 {
@@ -253,11 +284,22 @@ int main()
     return 1;
   }
 
-  Mesh::BufferPtr meshBuffer = Mesh::Buffer::Create(10 * 1024, 10 * 1024);
+  Mesh::BufferPtr meshBuffer = Mesh::Buffer::Create(10 * 1024, 30 * 1024);
   meshBuffer->LoadMeshFromFile("Res/Model/Toroid.fbx");
-  const Mesh::MeshPtr sampleMesh = meshBuffer->GetMesh("Toroid");
+  Mesh::MeshPtr sampleMesh[2] = { meshBuffer->GetMesh("Toroid"), meshBuffer->GetMesh("Spario") };
 
-//  glEnable(GL_CULL_FACE);
+  Entity::Buffer entityBuffer;
+  entityBuffer.Initialize(1024, sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
+  std::mt19937 rand(time(nullptr));
+  std::uniform_int_distribution<> distributerX(-10, 10);
+  std::uniform_int_distribution<> distributerZ(-10, 10);
+  for (int i = 0; i < 10; ++i) {
+    entityBuffer.AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[0], texSample, shaderProgram, UpdateToroid);
+  }
+  for (int i = 0; i < 10; ++i) {
+    entityBuffer.AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[1], texSample, shaderProgram, UpdateSpario);
+  }
+  //  glEnable(GL_CULL_FACE);
 
   const OffscreenBufferPtr offscreen = OffscreenBuffer::Create(800, 600,  GL_RGBA16F);
   const int bloomBufferCount = 6;
@@ -295,32 +337,36 @@ int main()
       const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
       const glm::mat4x4 matModel = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
 
-      TransformationData transData;
-      transData.matMV = matView * matModel;
-      transData.matMVP = matProj * transData.matMV;
+      TransformationData transData[11];
+      transData[0].matM = matModel;
+      transData[0].matMVP = matProj * matView * matModel;
       glm::mat4 matTex = glm::translate(glm::mat4(), glm::vec3(0.5f, 0.5f, 0));
       matTex = glm::rotate(matTex, glm::radians(texRot), glm::vec3(0, 0, 1));
       matTex = glm::translate(matTex, glm::vec3(-0.5f, -0.5f, 0));
-      transData.matTex = matTex;
+      transData[0].matTex = matTex;
       uboTrans->BufferSubData(&transData);
 
       LightingData lightData;
       lightData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
       lightData.light[0].color = glm::vec4(18, 18, 18, 1);
       lightData.light[0].position = glm::vec4(2, 2, 2, 1);
-//      lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
-//      lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
+      lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
+      lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
       uboLight->BufferSubData(&lightData);
-    }
 
-    shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
+      shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
 
-    glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, renderingData[0].size, GL_UNSIGNED_INT, renderingData[0].offset);
+      glBindVertexArray(vao);
+      uboTrans->BindBufferRange(0, sizeof(TransformationData));
+      glDrawElements(GL_TRIANGLES, renderingData[0].size, GL_UNSIGNED_INT, renderingData[0].offset);
 
-    shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texSample->Id());
-    meshBuffer->BindVAO();
-    meshBuffer->Draw(sampleMesh);
+      shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texSample->Id());
+      meshBuffer->BindVAO();
+      meshBuffer->GetMesh("Toroid")->Draw(meshBuffer);
+
+      entityBuffer.Update(1.0f / 60.0f, matView, matProj);
+      entityBuffer.Draw(meshBuffer);
+     }
 
     glBindVertexArray(vao);
 
