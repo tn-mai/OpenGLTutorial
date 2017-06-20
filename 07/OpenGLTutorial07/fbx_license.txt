@@ -1,6 +1,6 @@
-This software contains AutodeskR FBXR code developed by Autodesk, Inc.
+This software contains Autodesk® FBX® code developed by Autodesk, Inc.
 Copyright 2017 Autodesk, Inc. All rights, reserved. Such code is provided
-�gas is�h and Autodesk, Inc. disclaims any and all warranties, whether express
+“as is” and Autodesk, Inc. disclaims any and all warranties, whether express
 or implied, including without limitation the implied warranties of
 merchantability, fitness for a particular purpose or non-infringement of third
 party rights. In no event shall Autodesk, Inc. be liable for any direct,
