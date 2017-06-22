@@ -215,32 +215,31 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   return vao;
 }
 
-void UpdateToroid(Entity::Entity& entity, UniformBufferPtr& ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+void UpdateToroid(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
 {
   float rot = glm::angle(entity.Rotation());
   rot += glm::radians(10.0f) * static_cast<float>(delta);
   if (rot > glm::pi<float>() * 2.0f) {
     rot = 0.0f;
   }
-  entity.Rotation() = glm::angleAxis(rot, glm::vec3(0, 1, 0));
+  entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
   TransformationData data;
   data.matM = entity.TRSMatrix();
   data.matMVP = matProj * matView * data.matM;
-  entity.BufferSubData(ubo, &data);
+  memcpy(ubo, &data, sizeof(data));
 }
 
-void UpdateSpario(Entity::Entity& entity, UniformBufferPtr& ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+void UpdateSpario(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
 {
   glm::vec3 pos = entity.Position();
-  pos.z -= 1 * static_cast<float>(delta);
   if (pos.z < -20.0f) {
     pos.z = 20.0f;
   }
-  entity.Position() = pos;
+  entity.Position(pos);
   TransformationData data;
   data.matM = entity.TRSMatrix();
   data.matMVP = matProj * matView * data.matM;
-  entity.BufferSubData(ubo, &data);
+  memcpy(ubo, &data, sizeof(data));
 }
 
 /// エントリーポイント.
@@ -288,16 +287,18 @@ int main()
   meshBuffer->LoadMeshFromFile("Res/Model/Toroid.fbx");
   Mesh::MeshPtr sampleMesh[2] = { meshBuffer->GetMesh("Toroid"), meshBuffer->GetMesh("Spario") };
 
-  Entity::Buffer entityBuffer;
-  entityBuffer.Initialize(1024, sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
+  Entity::BufferPtr entityBuffer = Entity::Buffer::Create(1024, sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
   std::mt19937 rand(time(nullptr));
   std::uniform_int_distribution<> distributerX(-10, 10);
   std::uniform_int_distribution<> distributerZ(-10, 10);
   for (int i = 0; i < 10; ++i) {
-    entityBuffer.AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[0], texSample, shaderProgram, UpdateToroid);
+    entityBuffer->AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[0], texSample, shaderProgram, UpdateToroid);
   }
   for (int i = 0; i < 10; ++i) {
-    entityBuffer.AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[1], texSample, shaderProgram, UpdateSpario);
+    Entity::Entity* p = entityBuffer->AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[1], texSample, shaderProgram, UpdateSpario);
+    if (p) {
+      p->Velocity(glm::vec3(0, 0, -1));
+    }
   }
   //  glEnable(GL_CULL_FACE);
 
@@ -325,7 +326,7 @@ int main()
     static float degree = 0.0f;
     degree += 0.05f;
     if (degree >= 360.0f) { degree -= 360.0f; }
-    const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(2, 3, 3, 1);
+    const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(20, 30, 30, 1);
 
     shaderProgram->UseProgram();
 
@@ -364,8 +365,8 @@ int main()
       meshBuffer->BindVAO();
       meshBuffer->GetMesh("Toroid")->Draw(meshBuffer);
 
-      entityBuffer.Update(1.0f / 60.0f, matView, matProj);
-      entityBuffer.Draw(meshBuffer);
+      entityBuffer->Update(1.0f / 60.0f, matView, matProj);
+      entityBuffer->Draw(meshBuffer);
      }
 
     glBindVertexArray(vao);

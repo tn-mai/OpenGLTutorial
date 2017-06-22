@@ -3,33 +3,42 @@
 */
 #ifndef OPENGLTUTORIAL_SRC_ENTITY_H_INCLUDED
 #define OPENGLTUTORIAL_SRC_ENTITY_H_INCLUDED
+#include <GL/glew.h>
 #include "Mesh.h"
 #include "Texture.h"
 #include "Shader.h"
 #include "UniformBuffer.h"
-#include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <vector>
+#include <memory>
 #include <functional>
 
 namespace Entity {
 
+class Entity;
 class Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
 
 /**
 * エンティティ用リンクリスト.
 */
-struct Link {
-  Link() : prev(this), next(this) {}
+struct Link
+{
+  /**
+  * eを所属しているリンクリストから切り離し、自分の手前に追加する.
+  */
   void Insert(Link* e) {
-    e->next->prev = e->prev;
-    e->prev->next = e->next;
+    e->Remove();
     e->prev = prev;
     e->next = this;
     prev->next = e;
     prev = e;
   }
+
+  /**
+  * 自分自身をリンクリストから切り離す.
+  * 自分はどこにも接続されていない状態になる.
+  */
   void Remove() {
     next->prev = prev;
     prev->next = next;
@@ -37,8 +46,8 @@ struct Link {
     next = this;
   }
 
-  Link* prev;
-  Link* next;
+  Link* prev = this;
+  Link* next = this;
 };
 
 /**
@@ -49,37 +58,40 @@ class Entity : public Link
   friend class Buffer;
 
 public:
-  typedef std::function<void(Entity&, UniformBufferPtr&, double, const glm::mat4&, const glm::mat4&)> UpdateFunc;
+  typedef std::function<void(Entity&, void*, double, const glm::mat4&, const glm::mat4&)> UpdateFuncType;
 
-  Entity() = default;
-  Entity(const Entity&) = default;
-  Entity& operator=(const Entity&) = default;
-
-  glm::vec3& Position() { return position; }
+  void Position(const glm::vec3& pos) { position = pos; }
   const glm::vec3& Position() const { return position; }
-  glm::quat& Rotation() { return rotation; }
+  void Rotation(const glm::quat& rot) { rotation = rot; }
   const glm::quat& Rotation() const { return rotation; }
-  glm::vec3& Scale() { return scale; }
+  void Scale(const glm::vec3& s) { scale = s; }
   const glm::vec3& Scale() const { return scale; }
+  void Velocity(const glm::vec3& v) { velocity = v; }
+  const glm::vec3& Velocity() const { return velocity; }
+  void UpdateFunc(const UpdateFuncType& func) { updateFunc = func; }
+  const UpdateFuncType& UpdateFunc() const { return updateFunc; }
 
   const Mesh::MeshPtr& Mesh() const { return mesh; }
   glm::mat4 TRSMatrix() const;
 
-  void BufferSubData(UniformBufferPtr& ubo, const GLvoid* data) {
-    ubo->BufferSubData(data, uboOffset, uboSize);
-  }
+private:
+  Entity() = default;
+  ~Entity() = default;
+  Entity(const Entity&) = default;
+  Entity& operator=(const Entity&) = default;
 
 private:
-  glm::vec3 position;
-  glm::vec3 scale = glm::vec3(1, 1, 1);
-  glm::quat rotation;
-  Mesh::MeshPtr mesh;
-  TexturePtr texture;
-  Shader::ProgramPtr program;
-  GLintptr uboOffset;
-  GLsizeiptr uboSize;
-  Buffer* parent;
-  UpdateFunc updateFunc;
+  glm::vec3 position; ///< 座標.
+  glm::quat rotation; ///< 回転.
+  glm::vec3 scale = glm::vec3(1, 1, 1); ///< 大きさ.
+  glm::vec3 velocity; ///< 速度.
+  Mesh::MeshPtr mesh; ///< エンティティを描画するときに使われるメッシュデータ.
+  TexturePtr texture; ///< エンティティを描画するときに使われるテクスチャ.
+  Shader::ProgramPtr program; ///< エンティティを描画するときに使われるシェーダ.
+  GLintptr uboOffset; ///< UBOのエンティティ用領域へのバイトオフセット.
+  Buffer* parent; ///< 作成元へのポインタ.
+  UpdateFuncType updateFunc; ///< 状態更新関数.
+  bool isActive = false;
 };
 
 /**
@@ -120,26 +132,37 @@ public:
   typedef IteratorBase<Link> Iterator; ///< イテレータ.
   typedef IteratorBase<const Link> ConstIterator; ///< 定数イテレータ.
 
-  Buffer() = default;
-  ~Buffer() = default;
-  Buffer(const Buffer&) = default;
-  Buffer& operator=(const Buffer&) = default;
+  static BufferPtr Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int bindingPoint, const char* ubName);
 
-  bool Initialize(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int bindingPoint, const char* name);
-  bool AddEntity(const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t, const Shader::ProgramPtr& p, Entity::UpdateFunc func);
+  Entity* AddEntity(const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t, const Shader::ProgramPtr& p, Entity::UpdateFuncType func);
   void RemoveEntity(Entity* entity);
   void Update(double delta, const glm::mat4& matView, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
+  Entity* BeginEntity() { return static_cast<Entity*>(activeList.next); }
+  Entity* EndEntity() { return static_cast<Entity*>(&activeList); }
+  const Entity* BeginEntity() const { return static_cast<const Entity*>(activeList.next); }
+  const Entity* EndEntity() const { return static_cast<const Entity*>(&activeList); }
   Iterator Begin() { return Iterator(activeList.next); }
   Iterator End() { return Iterator(&activeList); }
   ConstIterator Begin() const { return ConstIterator(activeList.next); }
   ConstIterator End() const { return ConstIterator(&activeList); }
 
 private:
-  std::vector<Entity> buffer;
+  Buffer() = default;
+  ~Buffer() = default;
+  Buffer(const Buffer&) = default;
+  Buffer& operator=(const Buffer&) = default;
+
+private:
+  struct EntityArrayDeleter { void operator()(Entity* p) { delete[] p; } };
+
+  std::unique_ptr<Entity[], EntityArrayDeleter> buffer;
+  size_t bufferSize;
+  GLsizeiptr ubSizePerEntity;
   Link freeList;
   Link activeList;
   UniformBufferPtr ubo;
+  Link* itrUpdate = nullptr;
 };
 
 inline Buffer::Iterator begin(Buffer& buffer) { return buffer.Begin(); }
