@@ -40,7 +40,10 @@ public:
   const UpdateFuncType& UpdateFunc() const { return updateFunc; }
 
   const Mesh::MeshPtr& Mesh() const { return mesh; }
+  const TexturePtr& Texture() const { return texture; }
+  const Shader::ProgramPtr& ShaderProgram() const { return program; }
   glm::mat4 TRSMatrix() const;
+  Buffer* Parent() { return parent; }
 
 private:
   Entity() = default;
