@@ -24,27 +24,8 @@ typedef std::shared_ptr<Buffer> BufferPtr;
 */
 struct Link
 {
-  /**
-  * eを所属しているリンクリストから切り離し、自分の手前に追加する.
-  */
-  void Insert(Link* e) {
-    e->Remove();
-    e->prev = prev;
-    e->next = this;
-    prev->next = e;
-    prev = e;
-  }
-
-  /**
-  * 自分自身をリンクリストから切り離す.
-  * 自分はどこにも接続されていない状態になる.
-  */
-  void Remove() {
-    next->prev = prev;
-    prev->next = next;
-    prev = this;
-    next = this;
-  }
+  void Insert(Link* e);
+  void Remove();
 
   Link* prev = this;
   Link* next = this;

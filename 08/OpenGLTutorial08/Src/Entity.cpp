@@ -8,6 +8,30 @@
 namespace Entity {
 
 /**
+* eを所属しているリンクリストから切り離し、自分の手前に追加する.
+*/
+void Link::Insert(Link* p)
+{
+  p->Remove();
+  p->prev = prev;
+  p->next = this;
+  prev->next = p;
+  prev = p;
+}
+
+/**
+* 自分自身をリンクリストから切り離す.
+* 自分はどこにも接続されていない状態になる.
+*/
+void Link::Remove()
+{
+  next->prev = prev;
+  prev->next = next;
+  prev = this;
+  next = this;
+}
+
+/**
 * 拡縮・回転・移動行列を取得する.
 *
 * @return TRS行列.
