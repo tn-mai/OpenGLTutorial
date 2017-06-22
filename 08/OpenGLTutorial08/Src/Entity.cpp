@@ -10,7 +10,7 @@ namespace Entity {
 /**
 * eを所属しているリンクリストから切り離し、自分の手前に追加する.
 */
-void Link::Insert(Link* p)
+void Buffer::Link::Insert(Link* p)
 {
   p->Remove();
   p->prev = prev;
@@ -23,7 +23,7 @@ void Link::Insert(Link* p)
 * 自分自身をリンクリストから切り離す.
 * 自分はどこにも接続されていない状態になる.
 */
-void Link::Remove()
+void Buffer::Link::Remove()
 {
   next->prev = prev;
   prev->next = next;
@@ -63,12 +63,12 @@ BufferPtr Buffer::Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int 
   struct Impl : Buffer { Impl() {} ~Impl() {} };
   BufferPtr p = std::make_shared<Impl>();
   p->ubo = UniformBuffer::Create(maxEntityCount * ubSizePerEntity, bindingPoint, ubName);
-  p->buffer.reset(new Entity[maxEntityCount]);
+  p->buffer.reset(new LinkEntity[maxEntityCount]);
   p->bufferSize = maxEntityCount;
   p->ubSizePerEntity = ubSizePerEntity;
   GLintptr offset = 0;
-  const Entity* const end = &p->buffer[maxEntityCount];
-  for (Entity* itr = &p->buffer[0]; itr != end; ++itr) {
+  const LinkEntity* const end = &p->buffer[maxEntityCount];
+  for (LinkEntity* itr = &p->buffer[0]; itr != end; ++itr) {
     itr->uboOffset = offset;
     itr->parent = p.get();
     p->freeList.Insert(itr);
@@ -96,7 +96,7 @@ Entity* Buffer::AddEntity(const glm::vec3& position, const Mesh::MeshPtr& mesh, 
   if (freeList.prev == freeList.next) {
     return nullptr;
   }
-  Entity* entity = static_cast<Entity*>(freeList.prev);
+  LinkEntity* entity = static_cast<LinkEntity*>(freeList.prev);
   activeList.Insert(entity);
   entity->position = position;
   entity->mesh = mesh;
@@ -114,17 +114,21 @@ Entity* Buffer::AddEntity(const glm::vec3& position, const Mesh::MeshPtr& mesh, 
 */
 void Buffer::RemoveEntity(Entity* entity)
 {
-  if (!entity || !entity->isActive || entity < &buffer[0] || entity >= &buffer[bufferSize]) {
+  if (!entity || !entity->isActive) {
     return;
   }
-  if (entity == itrUpdate) {
-    itrUpdate = entity->prev;
+  LinkEntity* p = static_cast<LinkEntity*>(entity);
+  if (p < &buffer[0] || p >= &buffer[bufferSize]) {
+    return;
   }
-  freeList.Insert(entity);
-  entity->mesh.reset();
-  entity->texture.reset();
-  entity->program.reset();
-  entity->isActive = false;
+  if (p == itrUpdate) {
+    itrUpdate = p->prev;
+  }
+  freeList.Insert(p);
+  p->mesh.reset();
+  p->texture.reset();
+  p->program.reset();
+  p->isActive = false;
 }
 
 /**
@@ -138,7 +142,7 @@ void Buffer::Update(double delta, const glm::mat4& matView, const glm::mat4& mat
 {
   uint8_t* p = static_cast<uint8_t*>(ubo->MapBuffer());
   for (itrUpdate = activeList.next; itrUpdate != &activeList; itrUpdate = itrUpdate->next) {
-    Entity& e = *static_cast<Entity*>(itrUpdate);
+    LinkEntity& e = *static_cast<LinkEntity*>(itrUpdate);
     e.position += e.velocity * static_cast<float>(delta);
     if (e.updateFunc) {
       e.updateFunc(e, p + e.uboOffset, delta, matView, matProj);
@@ -157,7 +161,7 @@ void Buffer::Draw(const Mesh::BufferPtr& meshBuffer) const
 {
   meshBuffer->BindVAO();
   for (const Link* itr = activeList.next; itr != &activeList; itr = itr->next) {
-    const Entity& e = *static_cast<const Entity*>(itr);
+    const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
     if (e.mesh && e.texture && e.program) {
       e.program->UseProgram();
       e.program->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, e.texture->Id());

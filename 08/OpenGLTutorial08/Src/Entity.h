@@ -15,26 +15,13 @@
 
 namespace Entity {
 
-class Entity;
 class Buffer;
-typedef std::shared_ptr<Buffer> BufferPtr;
-
-/**
-* エンティティ用リンクリスト.
-*/
-struct Link
-{
-  void Insert(Link* e);
-  void Remove();
-
-  Link* prev = this;
-  Link* next = this;
-};
+typedef std::shared_ptr<Buffer> BufferPtr; ///< エンティティバッファポインタ型.
 
 /**
 * エンティティ.
 */
-class Entity : public Link
+class Entity
 {
   friend class Buffer;
 
@@ -80,6 +67,16 @@ private:
 */
 class Buffer
 {
+  /// エンティティ用リンクリスト.
+  struct Link {
+    void Insert(Link* e);
+    void Remove();
+    Link* prev = this;
+    Link* next = this;
+  };
+  /// リンクつきエンティティ.
+  struct LinkEntity : public Link, public Entity {};
+
 public:
   /// イテレータ・定数イテレータ共通のクラステンプレート.
   template<typename T>
@@ -103,10 +100,10 @@ public:
     IteratorBase operator++(int) { IteratorBase tmp = *this;  link = link->next; return tmp; }
     IteratorBase& operator--() { link = link->prev; return *this; }
     IteratorBase operator--(int) { IteratorBase tmp = *this;  link = link->prev; return tmp; }
-    Entity* operator->() { return static_cast<Entity*>(link); }
-    const Entity* operator->() const { return static_cast<Entity*>(link); }
-    Entity& operator*() { return *static_cast<Entity*>(link); }
-    const Entity& operator*() const { return *static_cast<Entity*>(link); }
+    Entity* operator->() { return static_cast<LinkEntity*>(link); }
+    const Entity* operator->() const { return static_cast<LinkEntity*>(link); }
+    Entity& operator*() { return *static_cast<LinkEntity*>(link); }
+    const Entity& operator*() const { return *static_cast<LinkEntity*>(link); }
   private:
     T* link;
   };
@@ -119,10 +116,6 @@ public:
   void RemoveEntity(Entity* entity);
   void Update(double delta, const glm::mat4& matView, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
-  Entity* BeginEntity() { return static_cast<Entity*>(activeList.next); }
-  Entity* EndEntity() { return static_cast<Entity*>(&activeList); }
-  const Entity* BeginEntity() const { return static_cast<const Entity*>(activeList.next); }
-  const Entity* EndEntity() const { return static_cast<const Entity*>(&activeList); }
   Iterator Begin() { return Iterator(activeList.next); }
   Iterator End() { return Iterator(&activeList); }
   ConstIterator Begin() const { return ConstIterator(activeList.next); }
@@ -135,9 +128,9 @@ private:
   Buffer& operator=(const Buffer&) = default;
 
 private:
-  struct EntityArrayDeleter { void operator()(Entity* p) { delete[] p; } };
+  struct EntityArrayDeleter { void operator()(LinkEntity* p) { delete[] p; } };
 
-  std::unique_ptr<Entity[], EntityArrayDeleter> buffer;
+  std::unique_ptr<LinkEntity[], EntityArrayDeleter> buffer;
   size_t bufferSize;
   GLsizeiptr ubSizePerEntity;
   Link freeList;
