@@ -215,32 +215,75 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   return vao;
 }
 
-void UpdateToroid(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+/**
+* 敵弾の更新.
+*/
+void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
 {
-  float rot = glm::angle(entity.Rotation());
-  rot += glm::radians(10.0f) * static_cast<float>(delta);
-  if (rot > glm::pi<float>() * 2.0f) {
-    rot = 0.0f;
+  const glm::vec3 pos = entity.Position();
+  if (pos.x < -40.0f || pos.x > 40.0f || pos.z < -2.0f || pos.z > 40.0f) {
+    entity.Parent()->RemoveEntity(&entity);
+    return;
   }
-  entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
   TransformationData data;
   data.matM = entity.TRSMatrix();
   data.matMVP = matProj * matView * data.matM;
   memcpy(ubo, &data, sizeof(data));
 }
 
-void UpdateSpario(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
-{
-  glm::vec3 pos = entity.Position();
-  if (pos.z < -20.0f) {
-    pos.z = 20.0f;
+/**
+* 敵の更新.
+*/
+struct UpdateToroid {
+  UpdateToroid(const Entity::BufferPtr& p, float offset, const Mesh::MeshPtr& mesh, std::mt19937& r) :
+    entityBuffer(p), reversePoint(20.0f + offset), shotMesh(mesh), rand(r)
+  {
   }
-  entity.Position(pos);
-  TransformationData data;
-  data.matM = entity.TRSMatrix();
-  data.matMVP = matProj * matView * data.matM;
-  memcpy(ubo, &data, sizeof(data));
-}
+
+  void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+  {
+    glm::vec3 pos = entity.Position();
+    if (pos.z < -2.0f || pos.x < -40.0f || pos.x > 40.0f) {
+      entityBuffer->RemoveEntity(&entity);
+      return;
+    } else if (pos.z < reversePoint) {
+      glm::vec3 v = entity.Velocity();
+      if (accelX) {
+        v.x += accelX;
+        entity.Velocity(v);
+      } else {
+        accelX = v.x * -0.05f;
+        if (Entity::Entity* p = entityBuffer->AddEntity(pos, shotMesh, entity.Texture(), entity.ShaderProgram(), UpdateEnemyShot)) {
+          glm::vec3 target = entity.Position();
+          target.x += std::uniform_real_distribution<float>(-2, 2)(rand);
+          target.y += std::uniform_real_distribution<float>(-2, 2)(rand);
+          glm::vec3 vec = glm::normalize(glm::vec3() - target) * 2.0f;
+          p->Velocity(vec);
+        }
+      }
+      entity.Velocity(v);
+      glm::quat q = glm::rotate(glm::quat(), -accelX * 4.0f, glm::vec3(0, 0, 1));
+      entity.Rotation(q * entity.Rotation());
+    } else {
+      float rot = glm::angle(entity.Rotation());
+      rot += glm::radians(10.0f) * static_cast<float>(delta);
+      if (rot > glm::pi<float>() * 2.0f) {
+        rot = 0.0f;
+      }
+      entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
+    }
+    TransformationData data;
+    data.matM = entity.TRSMatrix();
+    data.matMVP = matProj * matView * data.matM;
+    memcpy(ubo, &data, sizeof(data));
+  }
+
+  std::mt19937& rand;
+  Entity::BufferPtr entityBuffer;
+  float reversePoint;
+  float accelX = 0;
+  Mesh::MeshPtr shotMesh;
+};
 
 /// エントリーポイント.
 int main()
@@ -289,17 +332,16 @@ int main()
 
   Entity::BufferPtr entityBuffer = Entity::Buffer::Create(1024, sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
   std::mt19937 rand(time(nullptr));
-  std::uniform_int_distribution<> distributerX(-10, 10);
-  std::uniform_int_distribution<> distributerZ(-10, 10);
+  std::uniform_int_distribution<> distributerX(-15, 15);
+  std::uniform_int_distribution<> distributerZ(40, 44);
+  /*
   for (int i = 0; i < 10; ++i) {
-    entityBuffer->AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[0], texSample, shaderProgram, UpdateToroid);
-  }
-  for (int i = 0; i < 10; ++i) {
-    Entity::Entity* p = entityBuffer->AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[1], texSample, shaderProgram, UpdateSpario);
+    Entity::Entity* p = entityBuffer->AddEntity(glm::vec3(distributerX(rand), 0, distributerZ(rand)), sampleMesh[0], texSample, shaderProgram, UpdateToroid(entityBuffer));
     if (p) {
       p->Velocity(glm::vec3(0, 0, -1));
     }
   }
+*/
   //  glEnable(GL_CULL_FACE);
 
   const OffscreenBufferPtr offscreen = OffscreenBuffer::Create(800, 600,  GL_RGBA16F);
@@ -314,7 +356,24 @@ int main()
   offAnamorphic[0] = OffscreenBuffer::Create(800 / 16, 600 / 2, GL_RGBA8);
   offAnamorphic[1] = OffscreenBuffer::Create(800 / 64, 600 / 2, GL_RGBA8);
 
+  double poppingTimer = 0.0f;
+
   while (!window.ShouldClose()) {
+    const double delta = 1.0 / 60.0;
+    poppingTimer -= delta;
+    if (poppingTimer <= 0) {
+      const std::uniform_real_distribution<float> rndOffset(-5.0f, 2.0f);
+      const std::uniform_real_distribution<> rndPoppingTime(8.0, 16.0);
+      const std::uniform_int_distribution<> rndPoppingCount(1, 5);
+      for (int i = rndPoppingCount(rand); i > 0; --i) {
+        const glm::vec3 pos(distributerX(rand), 0, distributerZ(rand));
+        if (Entity::Entity* p = entityBuffer->AddEntity(pos, sampleMesh[0], texSample, shaderProgram, UpdateToroid(entityBuffer, rndOffset(rand), sampleMesh[1], rand))) {
+          p->Velocity(glm::vec3(pos.x < 0 ? 0.1f : -0.1f, 0, -1));
+        }
+      }
+      poppingTimer = rndPoppingTime(rand);
+    }
+    
     glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, 800, 600);
@@ -324,9 +383,11 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     static float degree = 0.0f;
-    degree += 0.05f;
+    //degree += 0.05f;
     if (degree >= 360.0f) { degree -= 360.0f; }
-    const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(20, 30, 30, 1);
+    static float posZ = -8.28f;
+    static float lookAtZ = 20.0f - 8.28f;
+    const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(0, 20, posZ, 1);
 
     shaderProgram->UseProgram();
 
@@ -335,7 +396,7 @@ int main()
       //texRot += 0.05f;
       if (texRot >= 360) { texRot -= 360; }
       const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-      const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+      const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, lookAtZ), glm::vec3(0, 0, 1));
       const glm::mat4x4 matModel = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
 
       TransformationData transData[11];
@@ -353,6 +414,10 @@ int main()
       lightData.light[0].position = glm::vec4(2, 2, 2, 1);
       lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
       lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
+      lightData.light[2].position = glm::vec4(15, 50, 10, 1);
+      float lightDistance = glm::length(glm::vec3(lightData.light[2].position));
+      lightDistance *= lightDistance;
+      lightData.light[2].color = glm::vec4(lightDistance, lightDistance, lightDistance, 1);
       uboLight->BufferSubData(&lightData);
 
       shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
