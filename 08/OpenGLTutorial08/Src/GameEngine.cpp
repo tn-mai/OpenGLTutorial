@@ -224,17 +224,17 @@ bool Game::InitImpl()
   uboTrans = UniformBuffer::Create(sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
   uboLight = UniformBuffer::Create(sizeof(LightingData), BindingPoint_Light, "LightingData");
   uboPostEffect = UniformBuffer::Create(sizeof(PostEffectData), 2, "PostEffectData");
-  shaderProgram = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
+  progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
   progPostEffect = Shader::Program::Create("Res/PostEffect.vert", "Res/PostEffect.frag");
   progBloom1st = Shader::Program::Create("Res/Bloom1st.vert", "Res/Bloom1st.frag");
   progComposition = Shader::Program::Create("Res/FinalComposition.vert", "Res/FinalComposition.frag");
   progSimple = Shader::Program::Create("Res/Simple.vert", "Res/Simple.frag");
   progLensFlare = Shader::Program::Create("Res/AnamorphicLensFlare.vert", "Res/AnamorphicLensFlare.frag");
-  if (!vbo || !ibo || !vao || !uboTrans || !uboLight || !shaderProgram || !progPostEffect || !progBloom1st || !progComposition || !progLensFlare) {
+  if (!vbo || !ibo || !vao || !uboTrans || !uboLight || !progTutorial || !progPostEffect || !progBloom1st || !progComposition || !progLensFlare) {
     return false;
   }
-  shaderProgram->UniformBlockBinding("TransformationData", BindingPoint_Vertex);
-  shaderProgram->UniformBlockBinding("LightingData", BindingPoint_Light);
+  progTutorial->UniformBlockBinding("TransformationData", BindingPoint_Vertex);
+  progTutorial->UniformBlockBinding("LightingData", BindingPoint_Light);
   progComposition->UniformBlockBinding("PostEffectData", 2);
 
   tex = Texture::LoadFromFile("Res/Sample.bmp");
@@ -314,7 +314,7 @@ void Game::Render() const
   glClearDepth(1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  shaderProgram->UseProgram();
+  progTutorial->UseProgram();
 
   {
     static float texRot = 0;
@@ -335,13 +335,13 @@ void Game::Render() const
 
     uboLight->BufferSubData(&lightData);
 
-    shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
+    progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
 
     glBindVertexArray(vao);
     uboTrans->BindBufferRange(0, sizeof(TransformationData));
     glDrawElements(GL_TRIANGLES, renderingData[0].size, GL_UNSIGNED_INT, renderingData[0].offset);
 
-    shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texSample->Id());
+    progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texSample->Id());
     meshBuffer->BindVAO();
     meshBuffer->GetMesh("Toroid")->Draw(meshBuffer);
 
@@ -356,7 +356,7 @@ void Game::Render() const
   glClearColor(0.5f, 0.3f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
+  progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
 
   TransformationData transData;
   uboTrans->BufferSubData(&transData);

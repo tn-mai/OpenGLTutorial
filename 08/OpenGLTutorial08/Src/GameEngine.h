@@ -79,7 +79,7 @@ private:
   UniformBufferPtr uboPostEffect;
 
 public:
-  Shader::ProgramPtr shaderProgram;
+  Shader::ProgramPtr progTutorial;
   Shader::ProgramPtr progPostEffect;
   Shader::ProgramPtr progBloom1st;
   Shader::ProgramPtr progComposition;

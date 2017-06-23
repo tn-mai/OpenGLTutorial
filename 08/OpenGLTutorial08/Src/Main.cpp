@@ -112,7 +112,7 @@ void Update(double delta)
     for (int i = rndPoppingCount(game.rand); i > 0; --i) {
       const glm::vec3 pos(distributerX(game.rand), 0, distributerZ(game.rand));
       if (Entity::Entity* p = game.entityBuffer->AddEntity(
-        pos, game.sampleMesh[0], game.texSample, game.shaderProgram, UpdateToroid())
+        pos, game.sampleMesh[0], game.texSample, game.progTutorial, UpdateToroid())
       ) {
         p->Velocity(glm::vec3(pos.x < 0 ? 0.1f : -0.1f, 0, -1));
       }
