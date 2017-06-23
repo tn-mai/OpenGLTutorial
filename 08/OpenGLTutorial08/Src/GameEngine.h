@@ -47,13 +47,13 @@ struct LightingData
 /**
 *
 */
-class Game
+class GameEngine
 {
 public:
   typedef std::function<void(double)> UpdateFunc;
 
-  static Game& Instance() {
-    static Game instance;
+  static GameEngine& Instance() {
+    static GameEngine instance;
     return instance;
   }
 
@@ -63,10 +63,10 @@ public:
   void Render() const;
 
 private:
-  Game() = default;
-  ~Game();
-  Game(const Game&) = delete;
-  Game& operator=(const Game&) = delete;
+  GameEngine() = default;
+  ~GameEngine();
+  GameEngine(const GameEngine&) = delete;
+  GameEngine& operator=(const GameEngine&) = delete;
   bool InitImpl();
 
 private:

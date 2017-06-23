@@ -180,7 +180,7 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
 /**
 *
 */
-Game::~Game()
+GameEngine::~GameEngine()
 {
   if (vao) {
     glDeleteVertexArrays(1, &vao);
@@ -190,12 +190,12 @@ Game::~Game()
 /**
 *
 */
-bool Game::Init()
+bool GameEngine::Init()
 {
   if (!isInitialized) {
     if (!InitImpl()) {
-      this->~Game();
-      new (this) Game;
+      this->~GameEngine();
+      new (this) GameEngine;
       return false;
     }
     isInitialized = true;
@@ -206,7 +206,7 @@ bool Game::Init()
 /**
 *
 */
-Game::UpdateFunc Game::SetUpdateFunc(const UpdateFunc& func)
+GameEngine::UpdateFunc GameEngine::SetUpdateFunc(const UpdateFunc& func)
 {
   UpdateFunc old = updateFunc;
   updateFunc = func;
@@ -216,7 +216,7 @@ Game::UpdateFunc Game::SetUpdateFunc(const UpdateFunc& func)
 /**
 *
 */
-bool Game::InitImpl()
+bool GameEngine::InitImpl()
 {
   vbo = CreateVBO(sizeof(vertices), vertices);
   ibo = CreateIBO(sizeof(indices), indices);
@@ -292,7 +292,7 @@ bool Game::InitImpl()
 /**
 *
 */
-void Game::Update(double delta)
+void GameEngine::Update(double delta)
 {
   if (updateFunc) {
     updateFunc(delta);
@@ -302,7 +302,7 @@ void Game::Update(double delta)
 /**
 *
 */
-void Game::Render() const
+void GameEngine::Render() const
 {
   //  glEnable(GL_CULL_FACE);
 

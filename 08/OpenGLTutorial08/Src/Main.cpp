@@ -29,13 +29,13 @@ struct UpdateToroid {
   UpdateToroid()
   {
     static const std::uniform_real_distribution<float> rndOffset(-5.0f, 2.0f);
-    Game& game = Game::Instance();
+    GameEngine& game = GameEngine::Instance();
     reversePoint = 20.0f + rndOffset(game.rand);
   }
 
   void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
   {
-    Game& game = Game::Instance();
+    GameEngine& game = GameEngine::Instance();
     glm::vec3 pos = entity.Position();
     if (pos.z < -2.0f || pos.x < -40.0f || pos.x > 40.0f) {
       game.entityBuffer->RemoveEntity(&entity);
@@ -81,7 +81,7 @@ struct UpdateToroid {
 */
 void Update(double delta)
 {
-  Game& game = Game::Instance();
+  GameEngine& game = GameEngine::Instance();
 
   const float posZ = -8.28f;
   const float lookAtZ = 20.0f - 8.28f;
@@ -128,7 +128,7 @@ int main()
   if (!window.Init(800, 600, "OpenGL Tutorial")) {
     return 1;
   }
-  Game& game = Game::Instance();
+  GameEngine& game = GameEngine::Instance();
   if (!game.Init()) {
     return 1;
   }
