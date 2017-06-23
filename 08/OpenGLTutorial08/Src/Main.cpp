@@ -328,6 +328,8 @@ public:
   Shader::ProgramPtr progSimple;
   Shader::ProgramPtr progLensFlare;
 
+  LightingData lightData;
+
   TexturePtr tex;
   TexturePtr texSample;
   Mesh::BufferPtr meshBuffer;
@@ -504,16 +506,6 @@ void Game::Render() const
     transData[0].matTex = matTex;
     uboTrans->BufferSubData(&transData);
 
-    LightingData lightData;
-    lightData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
-    lightData.light[0].color = glm::vec4(18, 18, 18, 1);
-    lightData.light[0].position = glm::vec4(2, 2, 2, 1);
-    lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
-    lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
-    lightData.light[2].position = glm::vec4(15, 50, 10, 1);
-    float lightDistance = glm::length(glm::vec3(lightData.light[2].position));
-    lightDistance *= lightDistance;
-    lightData.light[2].color = glm::vec4(lightDistance, lightDistance, lightDistance, 1);
     uboLight->BufferSubData(&lightData);
 
     shaderProgram->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
@@ -641,6 +633,16 @@ void Update(double delta)
   game.viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(0, 20, posZ, 1);
   game.viewTarget = glm::vec3(0, 0, lookAtZ);
   game.viewUp = glm::vec3(0, 0, 1);
+
+  game.lightData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
+  game.lightData.light[0].color = glm::vec4(18, 18, 18, 1);
+  game.lightData.light[0].position = glm::vec4(2, 2, 2, 1);
+  game.lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
+  game.lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
+  game.lightData.light[2].position = glm::vec4(15, 50, 10, 1);
+  float lightDistance = glm::length(glm::vec3(game.lightData.light[2].position));
+  lightDistance *= lightDistance;
+  game.lightData.light[2].color = glm::vec4(lightDistance, lightDistance, lightDistance, 1);
 
   std::uniform_int_distribution<> distributerX(-15, 15);
   std::uniform_int_distribution<> distributerZ(40, 44);
