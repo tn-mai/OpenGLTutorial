@@ -217,76 +217,6 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
 }
 
 /**
-* ìGíeÇÃçXêV.
-*/
-void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
-{
-  const glm::vec3 pos = entity.Position();
-  if (pos.x < -40.0f || pos.x > 40.0f || pos.z < -2.0f || pos.z > 40.0f) {
-    entity.Parent()->RemoveEntity(&entity);
-    return;
-  }
-  TransformationData data;
-  data.matM = entity.TRSMatrix();
-  data.matMVP = matProj * matView * data.matM;
-  memcpy(ubo, &data, sizeof(data));
-}
-
-/**
-* ìGÇÃçXêV.
-*/
-struct UpdateToroid {
-  UpdateToroid(const Entity::BufferPtr& p, float offset, const Mesh::MeshPtr& mesh, std::mt19937& r) :
-    entityBuffer(p), reversePoint(20.0f + offset), shotMesh(mesh), rand(r)
-  {
-  }
-
-  void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
-  {
-    glm::vec3 pos = entity.Position();
-    if (pos.z < -2.0f || pos.x < -40.0f || pos.x > 40.0f) {
-      entityBuffer->RemoveEntity(&entity);
-      return;
-    } else if (pos.z < reversePoint) {
-      glm::vec3 v = entity.Velocity();
-      if (accelX) {
-        v.x += accelX;
-        entity.Velocity(v);
-      } else {
-        accelX = v.x * -0.05f;
-        if (Entity::Entity* p = entityBuffer->AddEntity(pos, shotMesh, entity.Texture(), entity.ShaderProgram(), UpdateEnemyShot)) {
-          glm::vec3 target = entity.Position();
-          target.x += std::uniform_real_distribution<float>(-2, 2)(rand);
-          target.y += std::uniform_real_distribution<float>(-2, 2)(rand);
-          glm::vec3 vec = glm::normalize(glm::vec3() - target) * 2.0f;
-          p->Velocity(vec);
-        }
-      }
-      entity.Velocity(v);
-      glm::quat q = glm::rotate(glm::quat(), -accelX * 4.0f, glm::vec3(0, 0, 1));
-      entity.Rotation(q * entity.Rotation());
-    } else {
-      float rot = glm::angle(entity.Rotation());
-      rot += glm::radians(10.0f) * static_cast<float>(delta);
-      if (rot > glm::pi<float>() * 2.0f) {
-        rot = 0.0f;
-      }
-      entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
-    }
-    TransformationData data;
-    data.matM = entity.TRSMatrix();
-    data.matMVP = matProj * matView * data.matM;
-    memcpy(ubo, &data, sizeof(data));
-  }
-
-  std::mt19937& rand;
-  Entity::BufferPtr entityBuffer;
-  float reversePoint;
-  float accelX = 0;
-  Mesh::MeshPtr shotMesh;
-};
-
-/**
 *
 */
 class Game
@@ -618,6 +548,76 @@ void Game::Render() const
 }
 
 /**
+* ìGíeÇÃçXêV.
+*/
+void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+{
+  const glm::vec3 pos = entity.Position();
+  if (pos.x < -40.0f || pos.x > 40.0f || pos.z < -2.0f || pos.z > 40.0f) {
+    entity.Parent()->RemoveEntity(&entity);
+    return;
+  }
+  TransformationData data;
+  data.matM = entity.TRSMatrix();
+  data.matMVP = matProj * matView * data.matM;
+  memcpy(ubo, &data, sizeof(data));
+}
+
+/**
+* ìGÇÃçXêV.
+*/
+struct UpdateToroid {
+  UpdateToroid()
+  {
+    static const std::uniform_real_distribution<float> rndOffset(-5.0f, 2.0f);
+    Game& game = Game::Instance();
+    reversePoint = 20.0f + rndOffset(game.rand);
+  }
+
+  void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+  {
+    Game& game = Game::Instance();
+    glm::vec3 pos = entity.Position();
+    if (pos.z < -2.0f || pos.x < -40.0f || pos.x > 40.0f) {
+      game.entityBuffer->RemoveEntity(&entity);
+      return;
+    } else if (pos.z < reversePoint) {
+      glm::vec3 v = entity.Velocity();
+      if (accelX) {
+        v.x += accelX;
+        entity.Velocity(v);
+      } else {
+        accelX = v.x * -0.05f;
+        if (Entity::Entity* p = game.entityBuffer->AddEntity(pos, game.sampleMesh[1], entity.Texture(), entity.ShaderProgram(), UpdateEnemyShot)) {
+          glm::vec3 target = entity.Position();
+          target.x += std::uniform_real_distribution<float>(-2, 2)(game.rand);
+          target.y += std::uniform_real_distribution<float>(-2, 2)(game.rand);
+          glm::vec3 vec = glm::normalize(glm::vec3() - target) * 2.0f;
+          p->Velocity(vec);
+        }
+      }
+      entity.Velocity(v);
+      glm::quat q = glm::rotate(glm::quat(), -accelX * 4.0f, glm::vec3(0, 0, 1));
+      entity.Rotation(q * entity.Rotation());
+    } else {
+      float rot = glm::angle(entity.Rotation());
+      rot += glm::radians(10.0f) * static_cast<float>(delta);
+      if (rot > glm::pi<float>() * 2.0f) {
+        rot = 0.0f;
+      }
+      entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
+    }
+    TransformationData data;
+    data.matM = entity.TRSMatrix();
+    data.matMVP = matProj * matView * data.matM;
+    memcpy(ubo, &data, sizeof(data));
+  }
+
+  float reversePoint;
+  float accelX = 0;
+};
+
+/**
 *
 */
 void Update(double delta)
@@ -648,13 +648,12 @@ void Update(double delta)
   std::uniform_int_distribution<> distributerZ(40, 44);
   poppingTimer -= delta;
   if (poppingTimer <= 0) {
-    const std::uniform_real_distribution<float> rndOffset(-5.0f, 2.0f);
     const std::uniform_real_distribution<> rndPoppingTime(8.0, 16.0);
     const std::uniform_int_distribution<> rndPoppingCount(1, 5);
     for (int i = rndPoppingCount(game.rand); i > 0; --i) {
       const glm::vec3 pos(distributerX(game.rand), 0, distributerZ(game.rand));
       if (Entity::Entity* p = game.entityBuffer->AddEntity(
-        pos, game.sampleMesh[0], game.texSample, game.shaderProgram, UpdateToroid(game.entityBuffer, rndOffset(game.rand), game.sampleMesh[1], game.rand))
+        pos, game.sampleMesh[0], game.texSample, game.shaderProgram, UpdateToroid())
       ) {
         p->Velocity(glm::vec3(pos.x < 0 ? 0.1f : -0.1f, 0, -1));
       }
