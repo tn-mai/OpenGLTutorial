@@ -298,21 +298,24 @@ public:
     static Game instance;
     return instance;
   }
-  ~Game();
-  Game(const Game&) = delete;
-  Game& operator=(const Game&) = delete;
 
-  bool Init(const UpdateFunc& func);
+  bool Init();
+  UpdateFunc SetUpdateFunc(const UpdateFunc& func);
   void Update(double delta);
   void Render() const;
 
 private:
   Game() = default;
+  ~Game();
+  Game(const Game&) = delete;
+  Game& operator=(const Game&) = delete;
+  bool InitImpl();
 
 private:
-  GLuint vbo;
-  GLuint ibo;
-  GLuint vao;
+  bool isInitialized = false;
+  GLuint vbo = 0;
+  GLuint ibo = 0;
+  GLuint vao = 0;
   UniformBufferPtr uboTrans;
   UniformBufferPtr uboLight;
   UniformBufferPtr uboPostEffect;
@@ -350,13 +353,41 @@ public:
 */
 Game::~Game()
 {
-  glDeleteVertexArrays(1, &vao);
+  if (vao) {
+    glDeleteVertexArrays(1, &vao);
+  }
 }
 
 /**
 *
 */
-bool Game::Init(const UpdateFunc& func)
+bool Game::Init()
+{
+  if (!isInitialized) {
+    if (!InitImpl()) {
+      this->~Game();
+      new (this) Game;
+      return false;
+    }
+    isInitialized = true;
+  }
+  return true;
+}
+
+/**
+*
+*/
+Game::UpdateFunc Game::SetUpdateFunc(const UpdateFunc& func)
+{
+  UpdateFunc old = updateFunc;
+  updateFunc = func;
+  return old;
+}
+
+/**
+*
+*/
+bool Game::InitImpl()
 {
   vbo = CreateVBO(sizeof(vertices), vertices);
   ibo = CreateIBO(sizeof(indices), indices);
@@ -426,7 +457,6 @@ bool Game::Init(const UpdateFunc& func)
   if (!offscreen || !offAnamorphic[0] || !offAnamorphic[1]) {
     return false;
   }
-  updateFunc = func;
   return true;
 }
 
@@ -629,7 +659,6 @@ void Update(double delta)
     }
     poppingTimer = rndPoppingTime(game.rand);
   }
-
 }
 
 /// エントリーポイント.
@@ -640,9 +669,11 @@ int main()
     return 1;
   }
   Game& game = Game::Instance();
-  if (!game.Init(&Update)) {
+  if (!game.Init()) {
     return 1;
   }
+  game.SetUpdateFunc(&Update);
+
   const double delta = 1.0 / 60.0;
   while (!window.ShouldClose()) {
     game.Update(delta);
