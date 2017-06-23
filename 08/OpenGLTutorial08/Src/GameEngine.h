@@ -15,41 +15,41 @@
 #include <random>
 
 /**
-* 座標変換データ.
-*/
-struct TransformationData
-{
-  glm::mat4 matM;
-  glm::mat4 matMVP;
-  glm::mat4 matTex;
-};
-
-/**
-* ライトデータ(点光源).
-*/
-struct PointLight
-{
-  glm::vec4 position; ///< 座標(ワールド座標系).
-  glm::vec4 color; ///< 明るさ.
-};
-
-const int maxLightCount = 8; ///< ライトの数.
-
-/**
-* ライティングパラメータ.
-*/
-struct LightingData
-{
-  glm::vec4 ambientColor; ///< 環境光.
-  PointLight light[maxLightCount]; ///< ライトのリスト.
-};
-
-/**
 * ゲームエンジンクラス.
 */
 class GameEngine
 {
 public:
+  /**
+  * 座標変換データ.
+  */
+  struct TransformationData
+  {
+    glm::mat4 matM;
+    glm::mat4 matMVP;
+    glm::mat4 matTex;
+  };
+
+  /**
+  * ライトデータ(点光源).
+  */
+  struct PointLight
+  {
+    glm::vec4 position; ///< 座標(ワールド座標系).
+    glm::vec4 color; ///< 明るさ.
+  };
+
+  static const int maxLightCount = 8; ///< ライトの数.
+
+  /**
+  * ライティングパラメータ.
+  */
+  struct LightingData
+  {
+    glm::vec4 ambientColor; ///< 環境光.
+    PointLight light[maxLightCount]; ///< ライトのリスト.
+  };
+
   /// ゲーム状態を更新する関数の型.
   typedef std::function<void(double)> UpdateFunc;
 

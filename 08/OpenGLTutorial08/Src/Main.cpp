@@ -16,7 +16,7 @@ void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm:
     entity.Parent()->RemoveEntity(&entity);
     return;
   }
-  TransformationData data;
+  GameEngine::TransformationData data;
   data.matM = entity.TRSMatrix();
   data.matMVP = matProj * matView * data.matM;
   memcpy(ubo, &data, sizeof(data));
@@ -66,7 +66,7 @@ struct UpdateToroid {
       }
       entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
     }
-    TransformationData data;
+    GameEngine::TransformationData data;
     data.matM = entity.TRSMatrix();
     data.matMVP = matProj * matView * data.matM;
     memcpy(ubo, &data, sizeof(data));
