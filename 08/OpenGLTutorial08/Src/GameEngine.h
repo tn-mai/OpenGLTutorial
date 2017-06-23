@@ -45,18 +45,15 @@ struct LightingData
 };
 
 /**
-*
+* ゲームエンジンクラス.
 */
 class GameEngine
 {
 public:
+  /// ゲーム状態を更新する関数の型.
   typedef std::function<void(double)> UpdateFunc;
 
-  static GameEngine& Instance() {
-    static GameEngine instance;
-    return instance;
-  }
-
+  static GameEngine& Instance();
   bool Init();
   UpdateFunc SetUpdateFunc(const UpdateFunc& func);
   void Update(double delta);
@@ -68,15 +65,6 @@ private:
   GameEngine(const GameEngine&) = delete;
   GameEngine& operator=(const GameEngine&) = delete;
   bool InitImpl();
-
-private:
-  bool isInitialized = false;
-  GLuint vbo = 0;
-  GLuint ibo = 0;
-  GLuint vao = 0;
-  UniformBufferPtr uboTrans;
-  UniformBufferPtr uboLight;
-  UniformBufferPtr uboPostEffect;
 
 public:
   Shader::ProgramPtr progTutorial;
@@ -106,6 +94,16 @@ public:
   glm::vec3 viewPos;
   glm::vec3 viewTarget;
   glm::vec3 viewUp;
+
+private:
+  bool isInitialized = false;
+  GLuint vbo = 0;
+  GLuint ibo = 0;
+  GLuint vao = 0;
+  UniformBufferPtr uboTrans;
+  UniformBufferPtr uboLight;
+  UniformBufferPtr uboPostEffect;
+
 };
 
 #endif // GAMEENGINE_H_INCLUDED

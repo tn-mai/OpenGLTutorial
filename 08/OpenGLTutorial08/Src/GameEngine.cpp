@@ -178,7 +178,17 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
 }
 
 /**
+* ゲームエンジンのインスタンスを取得する.
 *
+* @return ゲームエンジンのインスタンス.
+*/
+GameEngine& GameEngine::Instance() {
+  static GameEngine instance;
+  return instance;
+}
+
+/**
+* デストラクタ.
 */
 GameEngine::~GameEngine()
 {
@@ -188,7 +198,13 @@ GameEngine::~GameEngine()
 }
 
 /**
+* ゲームエンジンを初期化する.
 *
+* @retval true  初期化成功.
+* @retval false 初期化失敗.
+*
+* Update, Render関数などを呼び出す前に、一度だけ呼び出しておく必要がある.
+* 一度初期化に成功すると、以後の呼び出しではなにもせずにtrueを返す.
 */
 bool GameEngine::Init()
 {
@@ -204,7 +220,11 @@ bool GameEngine::Init()
 }
 
 /**
+* 状態更新関数を設定する.
 *
+* @param func 設定する更新関数.
+*
+* @return 以前に設定されていた更新関数.
 */
 GameEngine::UpdateFunc GameEngine::SetUpdateFunc(const UpdateFunc& func)
 {
@@ -214,7 +234,10 @@ GameEngine::UpdateFunc GameEngine::SetUpdateFunc(const UpdateFunc& func)
 }
 
 /**
+* ゲームエンジンを初期化する.
 *
+* @retval true  初期化成功.
+* @retval false 初期化失敗.
 */
 bool GameEngine::InitImpl()
 {
@@ -290,7 +313,9 @@ bool GameEngine::InitImpl()
 }
 
 /**
+* ゲームの状態を更新する.
 *
+* @param delta 前回の更新からの経過時間(秒).
 */
 void GameEngine::Update(double delta)
 {
@@ -300,7 +325,7 @@ void GameEngine::Update(double delta)
 }
 
 /**
-*
+* ゲームの状態を描画する.
 */
 void GameEngine::Render() const
 {
