@@ -15,15 +15,16 @@ layout(location=3) out vec3 outNormal;
 */
 layout(std140) uniform TransformationData
 {
-	mat4 matM;
 	mat4 matMVP;
+	mat4 matModel;
+	mat3x4 matNormal;
 	mat4 matTex;
 } transformationData;
 
 void main() {
   outColor = vColor;
   outTexCoord = (transformationData.matTex * vec4(vTexCoord, 0, 1)).xy;
-  outWorldPosition = (transformationData.matM * vec4(vPosition, 1.0)).xyz;
-  outNormal = mat3(transformationData.matM) * vNormal;
+  outWorldPosition = (transformationData.matModel * vec4(vPosition, 1.0)).xyz;
+  outNormal = transformationData.matNormal * vNormal;
   gl_Position = transformationData.matMVP * vec4(vPosition, 1.0);
 }
