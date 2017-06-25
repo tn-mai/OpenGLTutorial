@@ -25,8 +25,9 @@ public:
   */
   struct TransformationData
   {
-    glm::mat4 matM;
     glm::mat4 matMVP;
+    glm::mat4 matModel;
+    glm::mat3x4 matNormal;
     glm::mat4 matTex;
   };
 
@@ -78,9 +79,8 @@ public:
 
   TexturePtr tex;
   TexturePtr texSample;
+  TexturePtr texPlayer;
   Mesh::BufferPtr meshBuffer;
-  Mesh::MeshPtr sampleMesh[2];
-
   Entity::BufferPtr entityBuffer;
   std::mt19937 rand;
 
@@ -103,7 +103,8 @@ private:
   UniformBufferPtr uboTrans;
   UniformBufferPtr uboLight;
   UniformBufferPtr uboPostEffect;
-
 };
+
+void DefaultUpdateVertexData(Entity::Entity& e, void* ubo, double, const glm::mat4& matView, const glm::mat4& matProj);
 
 #endif // GAMEENGINE_H_INCLUDED

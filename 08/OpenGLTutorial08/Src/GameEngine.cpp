@@ -262,21 +262,14 @@ bool GameEngine::InitImpl()
 
   tex = Texture::LoadFromFile("Res/Sample.bmp");
   texSample = Texture::LoadFromFile("Res/Model/Toroid.bmp");
-  if (!tex || !texSample) {
+  texPlayer = Texture::LoadFromFile("Res/Model/Player.bmp");
+  if (!tex || !texSample || !texPlayer) {
     return false;
   }
 
   meshBuffer = Mesh::Buffer::Create(10 * 1024, 30 * 1024);
   if (!meshBuffer) {
     return false;
-  }
-  meshBuffer->LoadMeshFromFile("Res/Model/Toroid.fbx");
-  sampleMesh[0] = meshBuffer->GetMesh("Toroid");
-  sampleMesh[1] = meshBuffer->GetMesh("Spario");
-  for (size_t i = 0; i < _countof(sampleMesh); ++i) {
-    if (!sampleMesh[i]) {
-      return false;
-    }
   }
 
   entityBuffer = Entity::Buffer::Create(1024, sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
@@ -350,7 +343,8 @@ void GameEngine::Render() const
     const glm::mat4x4 matModel = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
 
     TransformationData transData[11];
-    transData[0].matM = matModel;
+    transData[0].matModel = matModel;
+    transData[0].matNormal = matModel;
     transData[0].matMVP = matProj * matView * matModel;
     glm::mat4 matTex = glm::translate(glm::mat4(), glm::vec3(0.5f, 0.5f, 0));
     matTex = glm::rotate(matTex, glm::radians(texRot), glm::vec3(0, 0, 1));
@@ -363,7 +357,7 @@ void GameEngine::Render() const
     progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
 
     glBindVertexArray(vao);
-    uboTrans->BindBufferRange(0, sizeof(TransformationData));
+    uboTrans->BindBufferRange(0, sizeof(TransformationData)); 
     glDrawElements(GL_TRIANGLES, renderingData[0].size, GL_UNSIGNED_INT, renderingData[0].offset);
 
     progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texSample->Id());
@@ -467,4 +461,16 @@ void GameEngine::Render() const
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+/**
+* デフォルトのVertexData更新関数.
+*/
+void DefaultUpdateVertexData(Entity::Entity& e, void* ubo, double, const glm::mat4& matView, const glm::mat4& matProj)
+{
+  GameEngine::TransformationData data;
+  data.matModel = e.TRSMatrix();
+  data.matNormal = glm::mat4_cast(e.Rotation());
+  data.matMVP = matProj * matView * data.matModel;
+  memcpy(ubo, &data, sizeof(data));
 }

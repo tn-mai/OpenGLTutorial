@@ -13,12 +13,14 @@ void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm:
 {
   const glm::vec3 pos = entity.Position();
   if (pos.x < -40.0f || pos.x > 40.0f || pos.z < -2.0f || pos.z > 40.0f) {
-    entity.Parent()->RemoveEntity(&entity);
+    GameEngine& game = GameEngine::Instance();
+    game.entityBuffer->RemoveEntity(&entity);
     return;
   }
   GameEngine::TransformationData data;
-  data.matM = entity.TRSMatrix();
-  data.matMVP = matProj * matView * data.matM;
+  data.matModel = entity.TRSMatrix();
+  data.matNormal = glm::mat4_cast(entity.Rotation());
+  data.matMVP = matProj * matView * data.matModel;
   memcpy(ubo, &data, sizeof(data));
 }
 
@@ -47,7 +49,7 @@ struct UpdateToroid {
         entity.Velocity(v);
       } else {
         accelX = v.x * -0.05f;
-        if (Entity::Entity* p = game.entityBuffer->AddEntity(pos, game.sampleMesh[1], entity.Texture(), entity.ShaderProgram(), UpdateEnemyShot)) {
+        if (Entity::Entity* p = game.entityBuffer->AddEntity(pos, game.meshBuffer->GetMesh("Spario"), game.texSample, game.progTutorial, UpdateEnemyShot)) {
           glm::vec3 target = entity.Position();
           target.x += std::uniform_real_distribution<float>(-2, 2)(game.rand);
           target.y += std::uniform_real_distribution<float>(-2, 2)(game.rand);
@@ -60,15 +62,16 @@ struct UpdateToroid {
       entity.Rotation(q * entity.Rotation());
     } else {
       float rot = glm::angle(entity.Rotation());
-      rot += glm::radians(10.0f) * static_cast<float>(delta);
+      rot += glm::radians(35.0f) * static_cast<float>(delta);
       if (rot > glm::pi<float>() * 2.0f) {
-        rot = 0.0f;
+        rot -= glm::pi<float>() * 2.0f;
       }
       entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
     }
     GameEngine::TransformationData data;
-    data.matM = entity.TRSMatrix();
-    data.matMVP = matProj * matView * data.matM;
+    data.matModel = entity.TRSMatrix();
+    data.matNormal = glm::mat4_cast(entity.Rotation());
+    data.matMVP = matProj * matView * data.matModel;
     memcpy(ubo, &data, sizeof(data));
   }
 
@@ -112,7 +115,7 @@ void Update(double delta)
     for (int i = rndPoppingCount(game.rand); i > 0; --i) {
       const glm::vec3 pos(distributerX(game.rand), 0, distributerZ(game.rand));
       if (Entity::Entity* p = game.entityBuffer->AddEntity(
-        pos, game.sampleMesh[0], game.texSample, game.progTutorial, UpdateToroid())
+        pos, game.meshBuffer->GetMesh("Toroid"), game.texSample, game.progTutorial, UpdateToroid())
       ) {
         p->Velocity(glm::vec3(pos.x < 0 ? 0.1f : -0.1f, 0, -1));
       }
@@ -133,6 +136,13 @@ int main()
     return 1;
   }
   game.SetUpdateFunc(&Update);
+
+  game.meshBuffer->LoadMeshFromFile("Res/Model/Toroid.fbx");
+  game.meshBuffer->LoadMeshFromFile("Res/Model/Player.fbx");
+
+  Entity::Entity* p = game.entityBuffer->AddEntity(glm::vec3(0, 0, 2), game.meshBuffer->GetMesh("Aircraft"), game.texPlayer, game.progTutorial, DefaultUpdateVertexData);
+  p->Rotation(glm::rotate(glm::quat(), glm::radians(180.0f), glm::vec3(0, 1, 0)));
+  p->Scale(glm::vec3(0.25f));
 
   const double delta = 1.0 / 60.0;
   while (!window.ShouldClose()) {

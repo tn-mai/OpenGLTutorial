@@ -38,12 +38,7 @@ public:
   const glm::vec3& Velocity() const { return velocity; }
   void UpdateFunc(const UpdateFuncType& func) { updateFunc = func; }
   const UpdateFuncType& UpdateFunc() const { return updateFunc; }
-
-  const Mesh::MeshPtr& Mesh() const { return mesh; }
-  const TexturePtr& Texture() const { return texture; }
-  const Shader::ProgramPtr& ShaderProgram() const { return program; }
   glm::mat4 TRSMatrix() const;
-  Buffer* Parent() { return parent; }
 
 private:
   Entity() = default;
@@ -60,7 +55,6 @@ private:
   TexturePtr texture; ///< エンティティを描画するときに使われるテクスチャ.
   Shader::ProgramPtr program; ///< エンティティを描画するときに使われるシェーダ.
   GLintptr uboOffset; ///< UBOのエンティティ用領域へのバイトオフセット.
-  Buffer* parent; ///< 作成元へのポインタ.
   UpdateFuncType updateFunc; ///< 状態更新関数.
   bool isActive = false;
 };
@@ -70,16 +64,8 @@ private:
 */
 class Buffer
 {
-  /// エンティティ用リンクリスト.
-  struct Link {
-    void Insert(Link* e);
-    void Remove();
-    Link* prev = this;
-    Link* next = this;
-  };
-  /// リンクつきエンティティ.
-  struct LinkEntity : public Link, public Entity {};
-
+  struct Link;
+  struct LinkEntity;
 public:
   /// イテレータ・定数イテレータ共通のクラステンプレート.
   template<typename T>
@@ -103,6 +89,7 @@ public:
     IteratorBase operator++(int) { IteratorBase tmp = *this;  link = link->next; return tmp; }
     IteratorBase& operator--() { link = link->prev; return *this; }
     IteratorBase operator--(int) { IteratorBase tmp = *this;  link = link->prev; return tmp; }
+
     Entity* operator->() { return static_cast<LinkEntity*>(link); }
     const Entity* operator->() const { return static_cast<LinkEntity*>(link); }
     Entity& operator*() { return *static_cast<LinkEntity*>(link); }
@@ -127,10 +114,20 @@ public:
 private:
   Buffer() = default;
   ~Buffer() = default;
-  Buffer(const Buffer&) = default;
-  Buffer& operator=(const Buffer&) = default;
+  Buffer(const Buffer&) = delete;
+  Buffer& operator=(const Buffer&) = delete;
 
 private:
+  /// エンティティ用リンクリスト.
+  struct Link {
+    void Insert(Link* e);
+    void Remove();
+    Link* prev = this;
+    Link* next = this;
+  };
+  /// リンクつきエンティティ.
+  struct LinkEntity : public Link, public Entity {};
+  /// リンク付きエンティティ配列の削除関数.
   struct EntityArrayDeleter { void operator()(LinkEntity* p) { delete[] p; } };
 
   std::unique_ptr<LinkEntity[], EntityArrayDeleter> buffer;

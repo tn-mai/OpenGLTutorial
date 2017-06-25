@@ -8,7 +8,11 @@
 namespace Entity {
 
 /**
-* eを所属しているリンクリストから切り離し、自分の手前に追加する.
+* リンクオブジェクトを自分の手前に追加する.
+*
+* @param p　追加するリンクオブジェクトへのポインタ.
+*
+* pを所属元のリンクリストから切り離し、自分の手前に追加する.
 */
 void Buffer::Link::Insert(Link* p)
 {
@@ -21,6 +25,7 @@ void Buffer::Link::Insert(Link* p)
 
 /**
 * 自分自身をリンクリストから切り離す.
+*
 * 自分はどこにも接続されていない状態になる.
 */
 void Buffer::Link::Remove()
@@ -62,15 +67,22 @@ BufferPtr Buffer::Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int 
 {
   struct Impl : Buffer { Impl() {} ~Impl() {} };
   BufferPtr p = std::make_shared<Impl>();
+  if (!p) {
+    std::cerr << "WARNING in Entity::Buffer::Create: バッファの作成に失敗." << std::endl;
+    return {};
+  }
   p->ubo = UniformBuffer::Create(maxEntityCount * ubSizePerEntity, bindingPoint, ubName);
   p->buffer.reset(new LinkEntity[maxEntityCount]);
+  if (!p->ubo || !p->buffer) {
+    std::cerr << "WARNING in Entity::Buffer::Create: バッファの作成に失敗." << std::endl;
+    return {};
+  }
   p->bufferSize = maxEntityCount;
   p->ubSizePerEntity = ubSizePerEntity;
   GLintptr offset = 0;
   const LinkEntity* const end = &p->buffer[maxEntityCount];
   for (LinkEntity* itr = &p->buffer[0]; itr != end; ++itr) {
     itr->uboOffset = offset;
-    itr->parent = p.get();
     p->freeList.Insert(itr);
     offset += ubSizePerEntity;
   }
@@ -94,6 +106,7 @@ BufferPtr Buffer::Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int 
 Entity* Buffer::AddEntity(const glm::vec3& position, const Mesh::MeshPtr& mesh, const TexturePtr& texture, const Shader::ProgramPtr& program, Entity::UpdateFuncType func)
 {
   if (freeList.prev == freeList.next) {
+    std::cerr << "WARNING in Entity::Buffer::AddEntity: 空きエンティティがありません." << std::endl;
     return nullptr;
   }
   LinkEntity* entity = static_cast<LinkEntity*>(freeList.prev);
@@ -118,10 +131,12 @@ Entity* Buffer::AddEntity(const glm::vec3& position, const Mesh::MeshPtr& mesh, 
 void Buffer::RemoveEntity(Entity* entity)
 {
   if (!entity || !entity->isActive) {
+    std::cerr << "WARNING in Entity::Buffer::RemoveEntity: 非アクティブなエンティティを削除しようとしました." << std::endl;
     return;
   }
   LinkEntity* p = static_cast<LinkEntity*>(entity);
   if (p < &buffer[0] || p >= &buffer[bufferSize]) {
+    std::cerr << "WARNING in Entity::Buffer::RemoveEntity: 異なるバッファから取得したエンティティを削除しようとしました." << std::endl;
     return;
   }
   if (p == itrUpdate) {
@@ -131,6 +146,7 @@ void Buffer::RemoveEntity(Entity* entity)
   p->mesh.reset();
   p->texture.reset();
   p->program.reset();
+  p->updateFunc = nullptr;
   p->isActive = false;
 }
 
