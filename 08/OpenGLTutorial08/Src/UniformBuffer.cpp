@@ -92,7 +92,7 @@ void UniformBuffer::BindBufferRange(GLintptr offset, GLsizeiptr size) const
 */
 void* UniformBuffer::MapBuffer() const
 {
-  Bind();
+  glBindBuffer(GL_UNIFORM_BUFFER, ubo);
   return glMapBufferRange(GL_UNIFORM_BUFFER, 0, size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 }
 
