@@ -36,9 +36,13 @@ public:
   const glm::vec3& Scale() const { return scale; }
   void Velocity(const glm::vec3& v) { velocity = v; }
   const glm::vec3& Velocity() const { return velocity; }
+  void Color(const glm::vec4& c) { color = c; }
+  const glm::vec4& Color() const { return color; }
   void UpdateFunc(const UpdateFuncType& func) { updateFunc = func; }
   const UpdateFuncType& UpdateFunc() const { return updateFunc; }
   glm::mat4 TRSMatrix() const;
+  void Id(int n) { id = n; }
+  int Id() const { return id; }
 
 private:
   Entity() = default;
@@ -47,10 +51,12 @@ private:
   Entity& operator=(const Entity&) = default;
 
 private:
+  int id = -1;
   glm::vec3 position; ///< 座標.
   glm::quat rotation; ///< 回転.
   glm::vec3 scale = glm::vec3(1, 1, 1); ///< 大きさ.
   glm::vec3 velocity; ///< 速度.
+  glm::vec4 color = glm::vec4(1, 1, 1, 1); ///< 色.
   Mesh::MeshPtr mesh; ///< エンティティを描画するときに使われるメッシュデータ.
   TexturePtr texture; ///< エンティティを描画するときに使われるテクスチャ.
   Shader::ProgramPtr program; ///< エンティティを描画するときに使われるシェーダ.

@@ -115,6 +115,8 @@ Entity* Buffer::AddEntity(const glm::vec3& position, const Mesh::MeshPtr& mesh, 
   entity->rotation = glm::quat();
   entity->scale = glm::vec3(1, 1, 1);
   entity->velocity = glm::vec3();
+  entity->id = -1;
+  entity->color = glm::vec4(1, 1, 1, 1);
   entity->mesh = mesh;
   entity->texture = texture;
   entity->program = program;
