@@ -173,6 +173,7 @@
   <ItemGroup>
     <ClInclude Include="Src\Entity.h" />
     <ClInclude Include="Src\GameEngine.h" />
+    <ClInclude Include="Src\GamePad.h" />
     <ClInclude Include="Src\GLFWEW.h" />
     <ClInclude Include="Src\Mesh.h" />
     <ClInclude Include="Src\OffscreenBuffer.h" />
