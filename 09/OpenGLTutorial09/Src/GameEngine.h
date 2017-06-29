@@ -60,6 +60,23 @@ public:
   void Update(double delta);
   void Render() const;
 
+  bool LoadMeshFromFile(const char* filename);
+  const Mesh::MeshPtr& GetMesh(const char* name);
+  bool LoadTextureFromFile(const char* filename);
+  const TexturePtr& GetTexture(const char* filename) const;
+  Entity::Entity* AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func);
+  void RemoveEntity(Entity::Entity*);
+  std::mt19937& Rand() { return rand; }
+  void Light(int index, const PointLight& light) { lightData.light[index] = light; }
+  const PointLight& Light(int index) const { return lightData.light[index]; }
+  void AmbientLight(const glm::vec4& color) { lightData.ambientColor = color; }
+  const glm::vec4& AmbientLight() const { return lightData.ambientColor; }
+  void SetView(const glm::vec3& pos, const glm::vec3& at, const glm::vec3& up) {
+    viewPos = pos;
+    viewTarget = at;
+    viewUp = up;
+  }
+
 private:
   GameEngine() = default;
   ~GameEngine();
@@ -67,7 +84,7 @@ private:
   GameEngine& operator=(const GameEngine&) = delete;
   bool InitImpl();
 
-public:
+private:
   Shader::ProgramPtr progTutorial;
   Shader::ProgramPtr progPostEffect;
   Shader::ProgramPtr progBloom1st;
@@ -77,9 +94,7 @@ public:
 
   LightingData lightData;
 
-  TexturePtr tex;
-  TexturePtr texSample;
-  TexturePtr texPlayer;
+  std::unordered_map<std::string, TexturePtr> textureBuffer;
   Mesh::BufferPtr meshBuffer;
   Entity::BufferPtr entityBuffer;
   std::mt19937 rand;

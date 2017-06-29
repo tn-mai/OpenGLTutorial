@@ -260,13 +260,6 @@ bool GameEngine::InitImpl()
   progTutorial->UniformBlockBinding("LightingData", BindingPoint_Light);
   progComposition->UniformBlockBinding("PostEffectData", 2);
 
-  tex = Texture::LoadFromFile("Res/Sample.bmp");
-  texSample = Texture::LoadFromFile("Res/Model/Toroid.bmp");
-  texPlayer = Texture::LoadFromFile("Res/Model/Player.bmp");
-  if (!tex || !texSample || !texPlayer) {
-    return false;
-  }
-
   meshBuffer = Mesh::Buffer::Create(10 * 1024, 30 * 1024);
   if (!meshBuffer) {
     return false;
@@ -322,51 +315,22 @@ void GameEngine::Update(double delta)
 */
 void GameEngine::Render() const
 {
-  //  glEnable(GL_CULL_FACE);
-
   glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
   glViewport(0, 0, 800, 600);
   glScissor(0, 0, 800, 600);
   glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
   glClearDepth(1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  progTutorial->UseProgram();
+  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+  const glm::mat4x4 matView = glm::lookAt(viewPos, viewTarget, viewUp);
 
-  {
-    static float texRot = 0;
-    //texRot += 0.05f;
-    if (texRot >= 360) { texRot -= 360; }
-    const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-    const glm::mat4x4 matView = glm::lookAt(viewPos, viewTarget, viewUp);
-    const glm::mat4x4 matModel = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
+  uboLight->BufferSubData(&lightData);
 
-    TransformationData transData[11];
-    transData[0].matModel = matModel;
-    transData[0].matNormal = matModel;
-    transData[0].matMVP = matProj * matView * matModel;
-    glm::mat4 matTex = glm::translate(glm::mat4(), glm::vec3(0.5f, 0.5f, 0));
-    matTex = glm::rotate(matTex, glm::radians(texRot), glm::vec3(0, 0, 1));
-    matTex = glm::translate(matTex, glm::vec3(-0.5f, -0.5f, 0));
-    transData[0].matTex = matTex;
-    uboTrans->BufferSubData(&transData);
-
-    uboLight->BufferSubData(&lightData);
-
-    progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
-
-    glBindVertexArray(vao);
-    uboTrans->BindBufferRange(0, sizeof(TransformationData)); 
-    glDrawElements(GL_TRIANGLES, renderingData[0].size, GL_UNSIGNED_INT, renderingData[0].offset);
-
-    progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texSample->Id());
-    meshBuffer->BindVAO();
-    meshBuffer->GetMesh("Toroid")->Draw(meshBuffer);
-
-    entityBuffer->Update(1.0f / 60.0f, matView, matProj);
-    entityBuffer->Draw(meshBuffer);
-  }
+  entityBuffer->Update(1.0f / 60.0f, matView, matProj);
+  entityBuffer->Draw(meshBuffer);
 
   glBindVertexArray(vao);
 
@@ -423,7 +387,7 @@ void GameEngine::Render() const
   glDrawElements(GL_TRIANGLES, renderingData[2].size, GL_UNSIGNED_INT, renderingData[2].offset);
   glDrawElements(GL_TRIANGLES, renderingData[3].size, GL_UNSIGNED_INT, renderingData[3].offset);
 
-  for (int i = bloomBufferCount - 1; i > 0 ; --i) {
+  for (int i = bloomBufferCount - 1; i > 0; --i) {
     glBindFramebuffer(GL_FRAMEBUFFER, offBloom[i - 1]->GetFramebuffer());
     glViewport(0, 0, offBloom[i - 1]->Width(), offBloom[i - 1]->Height());
     progSimple->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offBloom[i]->GetTexutre());
@@ -461,6 +425,70 @@ void GameEngine::Render() const
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+/**
+*
+*/
+bool GameEngine::LoadTextureFromFile(const char* filename)
+{
+  const auto itr = textureBuffer.find(filename);
+  if (itr != textureBuffer.end()) {
+    return true;
+  }
+  TexturePtr texture = Texture::LoadFromFile(filename);
+  if (!texture) {
+    return false;
+  }
+  textureBuffer.insert(std::make_pair(std::string(filename), texture));
+  return true;
+}
+
+/*
+*
+*/
+const TexturePtr& GameEngine::GetTexture(const char* filename) const
+{
+  const auto itr = textureBuffer.find(filename);
+  if (itr != textureBuffer.end()) {
+    return itr->second;
+  }
+  static const TexturePtr dummy;
+  return dummy;
+}
+
+/**
+*
+*/
+bool GameEngine::LoadMeshFromFile(const char* filename)
+{
+  return meshBuffer->LoadMeshFromFile(filename);
+}
+
+/**
+*
+*/
+const Mesh::MeshPtr& GameEngine::GetMesh(const char* name)
+{
+  return meshBuffer->GetMesh(name);
+}
+
+/**
+*
+*/
+Entity::Entity* GameEngine::AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func)
+{
+  const Mesh::MeshPtr& mesh = meshBuffer->GetMesh(meshName);
+  const TexturePtr& tex = GetTexture(texName);
+  return entityBuffer->AddEntity(pos, mesh, tex, progTutorial, func);
+}
+
+/**
+*
+*/
+void GameEngine::RemoveEntity(Entity::Entity* e)
+{
+  entityBuffer->RemoveEntity(e);
 }
 
 /**
