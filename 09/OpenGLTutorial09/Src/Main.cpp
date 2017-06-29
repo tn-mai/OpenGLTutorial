@@ -17,11 +17,7 @@ void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm:
     game.RemoveEntity(&entity);
     return;
   }
-  GameEngine::TransformationData data;
-  data.matModel = entity.TRSMatrix();
-  data.matNormal = glm::mat4_cast(entity.Rotation());
-  data.matMVP = matProj * matView * data.matModel;
-  memcpy(ubo, &data, sizeof(data));
+  DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
 }
 
 /**
@@ -68,11 +64,7 @@ struct UpdateToroid {
       }
       entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
     }
-    GameEngine::TransformationData data;
-    data.matModel = entity.TRSMatrix();
-    data.matNormal = glm::mat4_cast(entity.Rotation());
-    data.matMVP = matProj * matView * data.matModel;
-    memcpy(ubo, &data, sizeof(data));
+    DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
   }
   const Entity::Entity* target;
   float reversePoint;
@@ -136,6 +128,7 @@ struct UpdatePlayer {
             p->Velocity(glm::vec3(0, 0, 16));
             p->Scale(glm::vec3(0.25f, 0.25f, 0.25f));
             p->Rotation(glm::angleAxis(3.14f, glm::vec3(0, 1, 0)));
+            p->Id(2);
           }
           pos.x += 0.6f;
         }
@@ -147,6 +140,38 @@ struct UpdatePlayer {
     DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
   }
   double shotInterval = 0;
+};
+
+/**
+* ”š”­‚ÌXV.
+*/
+struct UpdateBlast {
+  void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj) {
+    timer += delta;
+    if (timer >= 2) {
+      GameEngine::Instance().RemoveEntity(&entity);
+      return;
+    }
+    entity.Scale(glm::vec3(1 + timer));
+    static const glm::vec4 color[] = {
+      glm::vec4(1.0f, 1.0f, 0.75f, 1),
+      glm::vec4(1.0f, 0.5f, 0.1f, 1),
+      glm::vec4(0.25f, 0.1f, 0.1f, 0),
+      glm::vec4(0.25f, 0.1f, 0.1f, 1),
+    };
+    const double tmp = timer * 1;
+    const float fract = std::fmod(tmp, 1);
+    const glm::vec4 col0 = color[static_cast<int>(tmp)];
+    const glm::vec4 col1 = color[static_cast<int>(tmp) + 1];
+    const glm::vec4 newColor = col0 * glm::vec4(1 - fract) + col1 * glm::vec4(fract);
+    entity.Color(newColor);
+    glm::vec3 euler = glm::eulerAngles(entity.Rotation());
+    euler.y += glm::radians(30.0f) * static_cast<float>(delta);
+    entity.Rotation(glm::quat(euler));
+
+    DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
+  }
+  double timer = 0;
 };
 
 /**
@@ -182,10 +207,42 @@ struct Update {
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
         if (Entity::Entity* p = game.AddEntity(pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer))
           ) {
+          p->Id(1);
           p->Velocity(glm::vec3(pos.x < 0 ? 0.1f : -0.1f, 0, -1));
         }
       }
       poppingTimer = rndPoppingTime(game.Rand());
+    }
+
+    std::vector<Entity::Entity*> enemyList;
+    std::vector<Entity::Entity*> playerShotList;
+    Entity::Buffer::Iterator end = game.EndEntity();
+    for (Entity::Buffer::Iterator itr = game.BeginEntity(); itr != end; ++itr) {
+      switch (itr->Id()) {
+      case 1: enemyList.push_back(&*itr); break;
+      case 2: playerShotList.push_back(&*itr); break;
+      }
+    }
+    int firstEnemy = 0;
+    for (auto shot : playerShotList) {
+      const glm::vec3 ltShot = shot->Position() - glm::vec3(0.5f, 0.5f, 1.0f);
+      const glm::vec3 rbShot = shot->Position() + glm::vec3(0.5f, 0.5f, 1.0f);
+      const auto end = enemyList.end();
+      for (auto enemy = enemyList.begin() + firstEnemy; enemy != end; ++enemy) {
+        const glm::vec3 lt = (*enemy)->Position() - glm::vec3(1.0f, 1.0f, 1.0f);
+        const glm::vec3 rb = (*enemy)->Position() + glm::vec3(1.0f, 1.0f, 1.0f);
+        if (lt.x >= rbShot.x || rb.x <= ltShot.x || lt.z >= rbShot.z || rb.z <= rbShot.z) {
+          continue;
+        }
+        Entity::Entity* p = game.AddEntity((*enemy)->Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast());
+        static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
+        p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
+        game.RemoveEntity(*enemy);
+        game.RemoveEntity(shot);
+        *enemy = enemyList[firstEnemy];
+        ++firstEnemy;
+        break;
+      }
     }
   }
   Entity::Entity* pPlayer = nullptr;
@@ -205,13 +262,13 @@ int main()
 
   game.LoadTextureFromFile("Res/Model/Toroid.bmp");
   game.LoadTextureFromFile("Res/Model/Player.bmp");
-  game.LoadMeshFromFile("Res/Model/Toroid.fbx");
   game.LoadMeshFromFile("Res/Model/Player.fbx");
+  game.LoadMeshFromFile("Res/Model/Toroid.fbx");
+  game.LoadMeshFromFile("Res/Model/Blast.fbx");
 
   Entity::Entity* p = game.AddEntity(glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
   p->Rotation(glm::rotate(glm::quat(), glm::radians(180.0f), glm::vec3(0, 1, 0)));
   p->Scale(glm::vec3(0.25f));
-
   game.SetUpdateFunc(Update(p));
 
   const double delta = 1.0 / 60.0;
