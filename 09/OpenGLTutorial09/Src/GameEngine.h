@@ -28,6 +28,7 @@ public:
     glm::mat4 matMVP;
     glm::mat4 matModel;
     glm::mat3x4 matNormal;
+    glm::vec4 color;
     glm::mat4 matTex;
   };
 
@@ -76,6 +77,8 @@ public:
     viewTarget = at;
     viewUp = up;
   }
+  Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
+  Entity::Buffer::Iterator EndEntity() { return entityBuffer->End(); }
 
 private:
   GameEngine() = default;

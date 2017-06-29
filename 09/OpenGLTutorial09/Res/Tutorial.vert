@@ -18,11 +18,12 @@ layout(std140) uniform TransformationData
 	mat4 matMVP;
 	mat4 matModel;
 	mat3x4 matNormal;
+	vec4 color;
 	mat4 matTex;
 } transformationData;
 
 void main() {
-  outColor = vColor;
+  outColor = vColor * transformationData.color;
   outTexCoord = (transformationData.matTex * vec4(vTexCoord, 0, 1)).xy;
   outWorldPosition = (transformationData.matModel * vec4(vPosition, 1.0)).xyz;
   outNormal = mat3(transformationData.matNormal) * vNormal;

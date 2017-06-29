@@ -324,11 +324,12 @@ void GameEngine::Render() const
   glClearDepth(1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-  const glm::mat4x4 matView = glm::lookAt(viewPos, viewTarget, viewUp);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   uboLight->BufferSubData(&lightData);
-
+  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+  const glm::mat4x4 matView = glm::lookAt(viewPos, viewTarget, viewUp);
   entityBuffer->Update(1.0f / 60.0f, matView, matProj);
   entityBuffer->Draw(meshBuffer);
 
@@ -350,6 +351,8 @@ void GameEngine::Render() const
 #endif
 
   glDisable(GL_DEPTH_TEST);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_BLEND);
 
   progBloom1st->UseProgram();
   glBindFramebuffer(GL_FRAMEBUFFER, offBloom[0]->GetFramebuffer());
@@ -500,5 +503,6 @@ void DefaultUpdateVertexData(Entity::Entity& e, void* ubo, double, const glm::ma
   data.matModel = e.TRSMatrix();
   data.matNormal = glm::mat4_cast(e.Rotation());
   data.matMVP = matProj * matView * data.matModel;
+  data.color = e.Color();
   memcpy(ubo, &data, sizeof(data));
 }
