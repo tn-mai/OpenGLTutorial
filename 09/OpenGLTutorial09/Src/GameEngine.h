@@ -65,7 +65,7 @@ public:
   const Mesh::MeshPtr& GetMesh(const char* name);
   bool LoadTextureFromFile(const char* filename, GLenum wrapMode = GL_CLAMP_TO_EDGE);
   const TexturePtr& GetTexture(const char* filename) const;
-  Entity::Entity* AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func);
+  Entity::Entity* AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, bool hasLight=true);
   void RemoveEntity(Entity::Entity*);
   std::mt19937& Rand() { return rand; }
   void Light(int index, const PointLight& light) { lightData.light[index] = light; }
@@ -94,6 +94,7 @@ private:
   Shader::ProgramPtr progComposition;
   Shader::ProgramPtr progSimple;
   Shader::ProgramPtr progLensFlare;
+  Shader::ProgramPtr progNonLighting;
 
   LightingData lightData;
 

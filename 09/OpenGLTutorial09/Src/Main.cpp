@@ -26,9 +26,7 @@ void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm:
 struct UpdateToroid {
   explicit UpdateToroid(const Entity::Entity* t) : target(t)
   {
-    static const std::uniform_real_distribution<float> rndOffset(-5.0f, 2.0f);
     GameEngine& game = GameEngine::Instance();
-    reversePoint = 20.0f + rndOffset(game.Rand());
   }
 
   void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
@@ -38,23 +36,24 @@ struct UpdateToroid {
     if (pos.z < -2.0f || pos.x < -40.0f || pos.x > 40.0f) {
       game.RemoveEntity(&entity);
       return;
-    } else if (pos.z < reversePoint) {
+    } else if (isEscape || (pos.z < 35.0f && std::abs(pos.x - target->Position().x) <= 3.0f)) {
+      isEscape = true;
       glm::vec3 v = entity.Velocity();
       if (accelX) {
         v.x += accelX;
         entity.Velocity(v);
       } else {
-        accelX = v.x * -0.05f;
+        accelX = v.x * -0.025f;
         if (Entity::Entity* p = game.AddEntity(pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
           glm::vec3 targetPos = target->Position();
           targetPos.x += std::uniform_real_distribution<float>(-2, 2)(game.Rand());
           targetPos.z += std::uniform_real_distribution<float>(-2, 2)(game.Rand());
-          glm::vec3 vec = glm::normalize(targetPos - entity.Position()) * 2.0f;
+          glm::vec3 vec = glm::normalize(targetPos - entity.Position()) * 4.0f;
           p->Velocity(vec);
         }
       }
       entity.Velocity(v);
-      glm::quat q = glm::rotate(glm::quat(), -accelX * 4.0f, glm::vec3(0, 0, 1));
+      glm::quat q = glm::rotate(glm::quat(), -accelX * 2.0f, glm::vec3(0, 0, 1));
       entity.Rotation(q * entity.Rotation());
     } else {
       float rot = glm::angle(entity.Rotation());
@@ -67,7 +66,7 @@ struct UpdateToroid {
     DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
   }
   const Entity::Entity* target;
-  float reversePoint;
+  bool isEscape = false;
   float accelX = 0;
 };
 
@@ -178,7 +177,7 @@ struct UpdateBlast {
 * ゲーム状態の更新.
 */
 struct Update {
-  explicit Update(Entity::Entity* p) : pPlayer(p) {}
+  Update(Entity::Entity* p0, Entity::Entity* p1) : pPlayer(p0), pSpaceSphere(p1) {}
   void operator()(double delta)
   {
     GameEngine& game = GameEngine::Instance();
@@ -197,7 +196,11 @@ struct Update {
     game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
     game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
 
-    std::uniform_int_distribution<> distributerX(-15, 15);
+    glm::vec3 rotSpace = glm::eulerAngles(pSpaceSphere->Rotation());
+    rotSpace.x += static_cast<float>(glm::radians(0.25) * delta);
+    pSpaceSphere->Rotation(rotSpace);
+
+    std::uniform_int_distribution<> distributerX(-12, 12);
     std::uniform_int_distribution<> distributerZ(40, 44);
     poppingTimer -= delta;
     if (poppingTimer <= 0) {
@@ -208,7 +211,7 @@ struct Update {
         if (Entity::Entity* p = game.AddEntity(pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer))
           ) {
           p->Id(1);
-          p->Velocity(glm::vec3(pos.x < 0 ? 0.1f : -0.1f, 0, -1));
+          p->Velocity(glm::vec3(pos.x < 0 ? 1.0f : -1.0f, 0, -4));
         }
       }
       poppingTimer = rndPoppingTime(game.Rand());
@@ -246,6 +249,7 @@ struct Update {
     }
   }
   Entity::Entity* pPlayer = nullptr;
+  Entity::Entity* pSpaceSphere = nullptr;
 };
 
 /// エントリーポイント.
@@ -262,14 +266,20 @@ int main()
 
   game.LoadTextureFromFile("Res/Model/Toroid.bmp");
   game.LoadTextureFromFile("Res/Model/Player.bmp");
+  game.LoadTextureFromFile("Res/Model/SpaceSphere.bmp", GL_REPEAT);
   game.LoadMeshFromFile("Res/Model/Player.fbx");
   game.LoadMeshFromFile("Res/Model/Toroid.fbx");
   game.LoadMeshFromFile("Res/Model/Blast.fbx");
+  game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
 
-  Entity::Entity* p = game.AddEntity(glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
-  p->Rotation(glm::rotate(glm::quat(), glm::radians(180.0f), glm::vec3(0, 1, 0)));
-  p->Scale(glm::vec3(0.25f));
-  game.SetUpdateFunc(Update(p));
+  Entity::Entity* p0 = game.AddEntity(glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
+  p0->Rotation(glm::rotate(glm::quat(), glm::radians(180.0f), glm::vec3(0, 1, 0)));
+  p0->Scale(glm::vec3(0.25f));
+
+  Entity::Entity* p1 =  game.AddEntity(glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
+//  p1->Scale(glm::vec3(0.5f));
+
+  game.SetUpdateFunc(Update(p0, p1));
 
   const double delta = 1.0 / 60.0;
   while (!window.ShouldClose()) {

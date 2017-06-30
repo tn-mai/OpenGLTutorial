@@ -189,6 +189,8 @@
     <None Include="Res\Bloom1st.vert" />
     <None Include="Res\FinalComposition.frag" />
     <None Include="Res\FinalComposition.vert" />
+    <None Include="Res\NonLighting.frag" />
+    <None Include="Res\NonLighting.vert" />
     <None Include="Res\PostEffect.frag" />
     <None Include="Res\PostEffect.vert" />
     <None Include="Res\Simple.frag" />

@@ -253,6 +253,7 @@ bool GameEngine::InitImpl()
   progComposition = Shader::Program::Create("Res/FinalComposition.vert", "Res/FinalComposition.frag");
   progSimple = Shader::Program::Create("Res/Simple.vert", "Res/Simple.frag");
   progLensFlare = Shader::Program::Create("Res/AnamorphicLensFlare.vert", "Res/AnamorphicLensFlare.frag");
+  progNonLighting = Shader::Program::Create("Res/NonLighting.vert", "Res/NonLighting.frag");
   if (!vbo || !ibo || !vao || !uboTrans || !uboLight || !progTutorial || !progPostEffect || !progBloom1st || !progComposition || !progLensFlare) {
     return false;
   }
@@ -328,7 +329,7 @@ void GameEngine::Render() const
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   uboLight->BufferSubData(&lightData);
-  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 200.0f);
   const glm::mat4x4 matView = glm::lookAt(viewPos, viewTarget, viewUp);
   entityBuffer->Update(1.0f / 60.0f, matView, matProj);
   entityBuffer->Draw(meshBuffer);
@@ -479,11 +480,11 @@ const Mesh::MeshPtr& GameEngine::GetMesh(const char* name)
 /**
 *
 */
-Entity::Entity* GameEngine::AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func)
+Entity::Entity* GameEngine::AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, bool hasLight)
 {
   const Mesh::MeshPtr& mesh = meshBuffer->GetMesh(meshName);
   const TexturePtr& tex = GetTexture(texName);
-  return entityBuffer->AddEntity(pos, mesh, tex, progTutorial, func);
+  return entityBuffer->AddEntity(pos, mesh, tex, hasLight ? progTutorial : progNonLighting, func);
 }
 
 /**
