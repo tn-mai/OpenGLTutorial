@@ -63,7 +63,7 @@ public:
 
   bool LoadMeshFromFile(const char* filename);
   const Mesh::MeshPtr& GetMesh(const char* name);
-  bool LoadTextureFromFile(const char* filename);
+  bool LoadTextureFromFile(const char* filename, GLenum wrapMode = GL_CLAMP_TO_EDGE);
   const TexturePtr& GetTexture(const char* filename) const;
   Entity::Entity* AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func);
   void RemoveEntity(Entity::Entity*);

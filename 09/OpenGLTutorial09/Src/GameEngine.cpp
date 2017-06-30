@@ -433,13 +433,13 @@ void GameEngine::Render() const
 /**
 *
 */
-bool GameEngine::LoadTextureFromFile(const char* filename)
+bool GameEngine::LoadTextureFromFile(const char* filename, GLenum wrapMode)
 {
   const auto itr = textureBuffer.find(filename);
   if (itr != textureBuffer.end()) {
     return true;
   }
-  TexturePtr texture = Texture::LoadFromFile(filename);
+  TexturePtr texture = Texture::LoadFromFile(filename, wrapMode);
   if (!texture) {
     return false;
   }

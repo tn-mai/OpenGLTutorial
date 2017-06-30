@@ -56,7 +56,7 @@ Texture::~Texture()
 * @return 作成に成功した場合はテクスチャポインタを返す.
 *         失敗した場合はnullptr返す.
 */
-TexturePtr Texture::Create(int width, int height, GLenum iformat, GLenum format, const void* data)
+TexturePtr Texture::Create(int width, int height, GLenum iformat, GLenum format, const void* data, GLenum wrapMode)
 {
   GLenum type;
   switch (iformat) {
@@ -79,8 +79,8 @@ TexturePtr Texture::Create(int width, int height, GLenum iformat, GLenum format,
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
   glBindTexture(GL_TEXTURE_2D, 0);
   return p;
 }
@@ -93,7 +93,7 @@ TexturePtr Texture::Create(int width, int height, GLenum iformat, GLenum format,
 * @return 作成に成功した場合はテクスチャポインタを返す.
 *         失敗した場合はnullptr返す.
 */
-TexturePtr Texture::LoadFromFile(const char* filename)
+TexturePtr Texture::LoadFromFile(const char* filename, GLenum wrapMode)
 {
   struct stat st;
   if (stat(filename, &st)) {
@@ -147,7 +147,7 @@ TexturePtr Texture::LoadFromFile(const char* filename)
   GLint alignment;
   glGetIntegerv(GL_UNPACK_ALIGNMENT, &alignment);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-  TexturePtr p = Create(width, height, GL_RGB8, GL_BGR, buf.data() + offsetBytes);
+  TexturePtr p = Create(width, height, GL_RGB8, GL_BGR, buf.data() + offsetBytes, wrapMode);
   glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
   return p;
 }

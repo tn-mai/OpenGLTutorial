@@ -15,8 +15,8 @@ typedef std::shared_ptr<Texture> TexturePtr;
 class Texture
 {
 public:
-  static TexturePtr Create(int width, int height, GLenum iformat, GLenum format, const void* data);
-  static TexturePtr LoadFromFile(const char*);
+  static TexturePtr Create(int width, int height, GLenum iformat, GLenum format, const void* data, GLenum wrapMode = GL_CLAMP_TO_EDGE);
+  static TexturePtr LoadFromFile(const char*, GLenum wrapMode = GL_CLAMP_TO_EDGE);
 
   GLuint Id() const { return texId; }
   GLsizei Width() const { return width; }
