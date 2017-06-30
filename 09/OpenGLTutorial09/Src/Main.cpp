@@ -2,6 +2,7 @@
 * @file main.cpp
 */
 #include "GameEngine.h"
+#include <algorithm>
 
 /**
 * “G’e‚ÌXV.
@@ -45,16 +46,53 @@ struct UpdateToroid {
       } else {
         accelX = v.x * -0.025f;
         if (Entity::Entity* p = game.AddEntity(pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
-          glm::vec3 targetPos = target->Position();
-          targetPos.x += std::uniform_real_distribution<float>(-2, 2)(game.Rand());
-          targetPos.z += std::uniform_real_distribution<float>(-2, 2)(game.Rand());
-          glm::vec3 vec = glm::normalize(targetPos - entity.Position()) * 4.0f;
-          p->Velocity(vec);
-          p->Color(glm::vec4(4, 4, 4, 1));
+          // V0x*t + P0x = V1x*t + P1x
+          //   V0x = V1x + (P1x - P0x)/t
+          // V0y*t + P0y = V1y*t + P1y
+          //   (V0y - V1y)t = P1y - P0y
+          //   t = (P1y - P0y)/(V0y - V1y)
+          //   V0x = V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y)
+          //
+          // V0^2 = V0x^2 + V0y^2
+          //   V0x^2 = V0^2 - V0y^2
+          //   V0x=sqrt(V0^2 - V0y^2)
+          //
+          // sqrt(V0^2 - V0y^2) = V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y)
+          // V0^2 - V0y^2 = (V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y))^2
+          //            = (V1x - N*V1y + N*V0y)^2
+          //            = (VN + N*V0y)^2
+          //            = VN^2 + 2(VN*N*V0y) + (N*V0y)^2
+          //
+          // 0 = (N*V0y)^2 + 2(VN*N*V0y) + VN^2 - V0^2 + V0y^2
+          // 0 = (N^2+1)V0y^2 + (2*VN*N)V0y + (VN^2 - V0^2)
+          //
+          const glm::vec3 P0 = entity.Position();
+          const glm::vec3 P1 = target->Position();
+          const glm::vec3 V1 = target->Velocity();
+          const float V0 = 4.0f;
+          const float N = (P1.x - P0.x) / (P1.z - P0.z);
+          const float VN = V1.x - N * V1.z;
+          const float a = N * N + 1;
+          const float b = 2 * VN * N;
+          const float c =  VN * VN - V0 * V0;
+          const float D = b * b - 4 * a * c;
+          glm::vec3 targetPos = P1;
+          if (D >= 0) {
+            const float sq = std::sqrt(D);
+            const float t0 = (P1.z - P0.z) / ((-b + sq) / (2 * a) - V1.z);
+            const float t1 = (P1.z - P0.z) / ((-b - sq) / (2 * a) - V1.z);
+            const float t = std::max(t0, t1);
+            targetPos += V1 * t;
+          }
+          targetPos.x += std::normal_distribution<float>(0, 1.5f)(game.Rand());
+          targetPos.z += std::normal_distribution<float>(0, 1.5f)(game.Rand());
+          targetPos = glm::min(glm::vec3(11, 100, 20), glm::max(targetPos, glm::vec3(-11, -100, 1)));
+          p->Velocity(glm::normalize(targetPos - P0) * 4.0f);
+          p->Color(glm::vec4(6, 6, 6, 1));
         }
       }
       entity.Velocity(v);
-      glm::quat q = glm::rotate(glm::quat(), -accelX * 2.0f, glm::vec3(0, 0, 1));
+      glm::quat q = glm::rotate(glm::quat(), -accelX * 1.0f, glm::vec3(0, 0, 1));
       entity.Rotation(q * entity.Rotation());
     } else {
       float rot = glm::angle(entity.Rotation());
@@ -109,13 +147,14 @@ struct UpdatePlayer {
     }
     const float lengthSq = glm::dot(vec, vec);
     if (lengthSq) {
-      vec = glm::normalize(vec) * static_cast<float>(2 * delta);
-      const glm::vec3 pos3 = entity.Position();
-      glm::vec2 pos2 = glm::vec2(pos3.x, pos3.z) + vec;
-      pos2 = glm::min(glm::vec2(11, 20), glm::max(pos2, glm::vec2(-11, 1)));
-      entity.Position(glm::vec3(pos2.x, pos3.y, pos2.y));
+      vec = glm::normalize(vec) * 2.0f;
     }
+    entity.Velocity(glm::vec3(vec.x, 0, vec.y));
     entity.Rotation(glm::quat(glm::vec3(0, glm::radians(180.0f), rotZ)));
+
+    glm::vec3 pos3 = entity.Position();
+    pos3 = glm::min(glm::vec3(11, 100, 20), glm::max(pos3, glm::vec3(-11, -100, 1)));
+    entity.Position(pos3);
 
     if (gamepad.buttons & GamePad::A) {
       shotInterval -= delta;
