@@ -11,6 +11,7 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "Uniform.h"
+#include "GamePad.h"
 #include <glm/glm.hpp>
 #include <functional>
 #include <random>
@@ -25,10 +26,9 @@ public:
   typedef std::function<void(double)> UpdateFunc;
 
   static GameEngine& Instance();
-  bool Init();
+  bool Init(int w, int h, const char* title);
+  void Run();
   UpdateFunc SetUpdateFunc(const UpdateFunc& func);
-  void Update(double delta);
-  void Render() const;
 
   bool LoadMeshFromFile(const char* filename);
   const Mesh::MeshPtr& GetMesh(const char* name);
@@ -41,6 +41,7 @@ public:
   const Uniform::PointLight& Light(int index) const { return lightData.light[index]; }
   void AmbientLight(const glm::vec4& color) { lightData.ambientColor = color; }
   const glm::vec4& AmbientLight() const { return lightData.ambientColor; }
+  const GamePad& GetGamePad(int id) const;
   void SetView(const glm::vec3& pos, const glm::vec3& at, const glm::vec3& up) {
     viewPos = pos;
     viewTarget = at;
@@ -54,6 +55,8 @@ private:
   ~GameEngine();
   GameEngine(const GameEngine&) = delete;
   GameEngine& operator=(const GameEngine&) = delete;
+  void Update(double delta);
+  void Render() const;
 
 private:
   Shader::ProgramPtr progTutorial;

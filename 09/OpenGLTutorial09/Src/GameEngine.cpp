@@ -2,6 +2,7 @@
 * @file GameEngine.cpp
 */
 #include "GameEngine.h"
+#include "GLFWEW.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <time.h>
@@ -214,16 +215,23 @@ GameEngine::UpdateFunc GameEngine::SetUpdateFunc(const UpdateFunc& func)
 /**
 * ゲームエンジンを初期化する.
 *
+* @param w     ウィンドウの描画範囲の幅(ピクセル).
+* @param h     ウィンドウの描画範囲の高さ(ピクセル).
+* @param title ウィンドウタイトル(UTF-8の0終端文字列).
+*
 * @retval true  初期化成功.
 * @retval false 初期化失敗.
 *
 * Update, Render関数などを呼び出す前に、一度だけ呼び出しておく必要がある.
 * 一度初期化に成功すると、以後の呼び出しではなにもせずにtrueを返す.
 */
-bool GameEngine::Init()
+bool GameEngine::Init(int w, int h, const char* title)
 {
   if (isInitialized) {
     return true;
+  }
+  if (!GLFWEW::Window::Instance().Init(w, h, title)) {
+    return false;
   }
   vbo = CreateVBO(sizeof(vertices), vertices);
   ibo = CreateIBO(sizeof(indices), indices);
@@ -264,7 +272,7 @@ bool GameEngine::Init()
   };
   //  TexturePtr tex = Texture::Create(5, 5, GL_RGBA8, GL_RGBA, textureData);
 
-  rand.seed(time(nullptr));
+  rand.seed(static_cast<std::mt19937::result_type>(time(nullptr)));
 
   offscreen = OffscreenBuffer::Create(800, 600,  GL_RGBA16F);
   for (int i = 0, scale = 4; i < bloomBufferCount; ++i, scale *= 2) {
@@ -414,6 +422,30 @@ void GameEngine::Render() const
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+/**
+* ゲームを実行する.
+*/
+void GameEngine::Run()
+{
+  GLFWEW::Window& window = GLFWEW::Window::Instance();
+
+  const double delta = 1.0 / 60.0;
+  while (!window.ShouldClose()) {
+    window.UpdateGamePad();
+    Update(delta);
+    Render();
+    window.SwapBuffers();
+  }
+}
+
+/**
+*
+*/
+const GamePad& GameEngine::GetGamePad(int id) const
+{
+  return GLFWEW::Window::Instance().GetGamePad(id);
 }
 
 /**

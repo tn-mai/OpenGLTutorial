@@ -1,10 +1,7 @@
 /**
 * @file main.cpp
 */
-#include "GLFWEW.h"
 #include "GameEngine.h"
-#include <glm/gtc/matrix_transform.hpp>
-#include <string.h>
 
 /**
 * 敵弾の更新.
@@ -94,7 +91,8 @@ void UpdatePlayerShot(Entity::Entity& entity, void* ubo, double delta, const glm
 struct UpdatePlayer {
   void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
   {
-    const GamePad gamepad = GLFWEW::Window::Instance().GetGamePad(0);
+    GameEngine& game = GameEngine::Instance();
+    const GamePad gamepad = game.GetGamePad(0);
     glm::vec2 vec;
     float rotZ = 0;
     if (gamepad.buttons & GamePad::DPAD_LEFT) {
@@ -119,7 +117,6 @@ struct UpdatePlayer {
     }
     entity.Rotation(glm::quat(glm::vec3(0, glm::radians(180.0f), rotZ)));
 
-    GameEngine& game = GameEngine::Instance();
     if (gamepad.buttons & GamePad::A) {
       shotInterval -= delta;
       if (shotInterval <= 0) {
@@ -260,12 +257,8 @@ struct Update {
 /// エントリーポイント.
 int main()
 {
-  GLFWEW::Window& window = GLFWEW::Window::Instance();
-  if (!window.Init(800, 600, "OpenGL Tutorial")) {
-    return 1;
-  }
   GameEngine& game = GameEngine::Instance();
-  if (!game.Init()) {
+  if (!game.Init(800, 600, "OpenGL Tutorial")) {
     return 1;
   }
 
@@ -285,13 +278,7 @@ int main()
 
   game.SetUpdateFunc(Update(p0, p1));
 
-  const double delta = 1.0 / 60.0;
-  while (!window.ShouldClose()) {
-    window.UpdateGamePad();
-    game.Update(delta);
-    game.Render();
-    window.SwapBuffers();
-  }
+  game.Run();
 
   return 0;
 }
