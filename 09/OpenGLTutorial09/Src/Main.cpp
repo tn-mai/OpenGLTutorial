@@ -17,6 +17,9 @@ void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm:
     game.RemoveEntity(&entity);
     return;
   }
+  glm::vec3 rot = glm::eulerAngles(entity.Rotation());
+  rot.z += glm::radians(90.0f) * static_cast<float>(delta);
+  entity.Rotation(glm::quat(rot));
   DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
 }
 
@@ -50,6 +53,7 @@ struct UpdateToroid {
           targetPos.z += std::uniform_real_distribution<float>(-2, 2)(game.Rand());
           glm::vec3 vec = glm::normalize(targetPos - entity.Position()) * 4.0f;
           p->Velocity(vec);
+          p->Color(glm::vec4(4, 4, 4, 1));
         }
       }
       entity.Velocity(v);
@@ -127,6 +131,7 @@ struct UpdatePlayer {
             p->Velocity(glm::vec3(0, 0, 16));
             p->Scale(glm::vec3(0.25f, 0.25f, 0.25f));
             p->Rotation(glm::angleAxis(3.14f, glm::vec3(0, 1, 0)));
+            p->Color(glm::vec4(3));
             p->Id(2);
           }
           pos.x += 0.6f;
@@ -153,10 +158,10 @@ struct UpdateBlast {
     }
     entity.Scale(glm::vec3(1 + timer));
     static const glm::vec4 color[] = {
-      glm::vec4(1.0f, 1.0f, 0.75f, 1),
-      glm::vec4(1.0f, 0.5f, 0.1f, 1),
-      glm::vec4(0.25f, 0.1f, 0.1f, 0),
-      glm::vec4(0.25f, 0.1f, 0.1f, 1),
+      glm::vec4(1.0f, 1.0f, 0.75f, 1) * 2.0f,
+      glm::vec4(1.0f, 0.5f, 0.1f, 1) * 2.0f,
+      glm::vec4(0.25f, 0.1f, 0.1f, 0) * 2.0f,
+      glm::vec4(0.25f, 0.1f, 0.1f, 0) * 2.0f,
     };
     const double tmp = timer * 1;
     const float fract = std::fmod(tmp, 1);
@@ -277,7 +282,6 @@ int main()
   p0->Scale(glm::vec3(0.25f));
 
   Entity::Entity* p1 =  game.AddEntity(glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
-//  p1->Scale(glm::vec3(0.5f));
 
   game.SetUpdateFunc(Update(p0, p1));
 
