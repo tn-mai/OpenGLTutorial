@@ -180,6 +180,7 @@
     <ClInclude Include="Src\Shader.h" />
     <ClInclude Include="Src\Texture.h" />
     <ClInclude Include="Src\UniformBuffer.h" />
+    <ClInclude Include="Src\Uniform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

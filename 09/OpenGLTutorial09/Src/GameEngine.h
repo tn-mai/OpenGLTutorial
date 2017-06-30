@@ -10,6 +10,7 @@
 #include "Texture.h"
 #include "Mesh.h"
 #include "Entity.h"
+#include "Uniform.h"
 #include <glm/glm.hpp>
 #include <functional>
 #include <random>
@@ -20,38 +21,6 @@
 class GameEngine
 {
 public:
-  /**
-  * 座標変換データ.
-  */
-  struct TransformationData
-  {
-    glm::mat4 matMVP;
-    glm::mat4 matModel;
-    glm::mat3x4 matNormal;
-    glm::vec4 color;
-    glm::mat4 matTex;
-  };
-
-  /**
-  * ライトデータ(点光源).
-  */
-  struct PointLight
-  {
-    glm::vec4 position; ///< 座標(ワールド座標系).
-    glm::vec4 color; ///< 明るさ.
-  };
-
-  static const int maxLightCount = 8; ///< ライトの数.
-
-  /**
-  * ライティングパラメータ.
-  */
-  struct LightingData
-  {
-    glm::vec4 ambientColor; ///< 環境光.
-    PointLight light[maxLightCount]; ///< ライトのリスト.
-  };
-
   /// ゲーム状態を更新する関数の型.
   typedef std::function<void(double)> UpdateFunc;
 
@@ -68,8 +37,8 @@ public:
   Entity::Entity* AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, bool hasLight=true);
   void RemoveEntity(Entity::Entity*);
   std::mt19937& Rand() { return rand; }
-  void Light(int index, const PointLight& light) { lightData.light[index] = light; }
-  const PointLight& Light(int index) const { return lightData.light[index]; }
+  void Light(int index, const Uniform::PointLight& light) { lightData.light[index] = light; }
+  const Uniform::PointLight& Light(int index) const { return lightData.light[index]; }
   void AmbientLight(const glm::vec4& color) { lightData.ambientColor = color; }
   const glm::vec4& AmbientLight() const { return lightData.ambientColor; }
   void SetView(const glm::vec3& pos, const glm::vec3& at, const glm::vec3& up) {
@@ -96,7 +65,7 @@ private:
   Shader::ProgramPtr progLensFlare;
   Shader::ProgramPtr progNonLighting;
 
-  LightingData lightData;
+  Uniform::LightingData lightData;
 
   std::unordered_map<std::string, TexturePtr> textureBuffer;
   Mesh::BufferPtr meshBuffer;
@@ -114,7 +83,6 @@ private:
   glm::vec3 viewTarget;
   glm::vec3 viewUp;
 
-private:
   bool isInitialized = false;
   GLuint vbo = 0;
   GLuint ibo = 0;

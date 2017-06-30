@@ -244,8 +244,8 @@ bool GameEngine::InitImpl()
   vbo = CreateVBO(sizeof(vertices), vertices);
   ibo = CreateIBO(sizeof(indices), indices);
   vao = CreateVAO(vbo, ibo);
-  uboTrans = UniformBuffer::Create(sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
-  uboLight = UniformBuffer::Create(sizeof(LightingData), BindingPoint_Light, "LightingData");
+  uboTrans = UniformBuffer::Create(sizeof(Uniform::TransformationData), BindingPoint_Vertex, "VertexData");
+  uboLight = UniformBuffer::Create(sizeof(Uniform::LightingData), BindingPoint_Light, "LightingData");
   uboPostEffect = UniformBuffer::Create(sizeof(PostEffectData), 2, "PostEffectData");
   progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
   progPostEffect = Shader::Program::Create("Res/PostEffect.vert", "Res/PostEffect.frag");
@@ -266,7 +266,7 @@ bool GameEngine::InitImpl()
     return false;
   }
 
-  entityBuffer = Entity::Buffer::Create(1024, sizeof(TransformationData), BindingPoint_Vertex, "VertexData");
+  entityBuffer = Entity::Buffer::Create(1024, sizeof(Uniform::TransformationData), BindingPoint_Vertex, "VertexData");
   if (!entityBuffer) {
     return false;
   }
@@ -500,7 +500,7 @@ void GameEngine::RemoveEntity(Entity::Entity* e)
 */
 void DefaultUpdateVertexData(Entity::Entity& e, void* ubo, double, const glm::mat4& matView, const glm::mat4& matProj)
 {
-  GameEngine::TransformationData data;
+  Uniform::TransformationData data;
   data.matModel = e.TRSMatrix();
   data.matNormal = glm::mat4_cast(e.Rotation());
   data.matMVP = matProj * matView * data.matModel;
