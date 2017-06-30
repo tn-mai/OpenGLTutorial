@@ -198,28 +198,6 @@ GameEngine::~GameEngine()
 }
 
 /**
-* ゲームエンジンを初期化する.
-*
-* @retval true  初期化成功.
-* @retval false 初期化失敗.
-*
-* Update, Render関数などを呼び出す前に、一度だけ呼び出しておく必要がある.
-* 一度初期化に成功すると、以後の呼び出しではなにもせずにtrueを返す.
-*/
-bool GameEngine::Init()
-{
-  if (!isInitialized) {
-    if (!InitImpl()) {
-      this->~GameEngine();
-      new (this) GameEngine;
-      return false;
-    }
-    isInitialized = true;
-  }
-  return true;
-}
-
-/**
 * 状態更新関数を設定する.
 *
 * @param func 設定する更新関数.
@@ -238,9 +216,15 @@ GameEngine::UpdateFunc GameEngine::SetUpdateFunc(const UpdateFunc& func)
 *
 * @retval true  初期化成功.
 * @retval false 初期化失敗.
+*
+* Update, Render関数などを呼び出す前に、一度だけ呼び出しておく必要がある.
+* 一度初期化に成功すると、以後の呼び出しではなにもせずにtrueを返す.
 */
-bool GameEngine::InitImpl()
+bool GameEngine::Init()
 {
+  if (isInitialized) {
+    return true;
+  }
   vbo = CreateVBO(sizeof(vertices), vertices);
   ibo = CreateIBO(sizeof(indices), indices);
   vao = CreateVAO(vbo, ibo);
@@ -296,6 +280,7 @@ bool GameEngine::InitImpl()
   if (!offscreen || !offAnamorphic[0] || !offAnamorphic[1]) {
     return false;
   }
+  isInitialized = true;
   return true;
 }
 

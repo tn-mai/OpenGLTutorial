@@ -54,7 +54,6 @@ private:
   ~GameEngine();
   GameEngine(const GameEngine&) = delete;
   GameEngine& operator=(const GameEngine&) = delete;
-  bool InitImpl();
 
 private:
   Shader::ProgramPtr progTutorial;
