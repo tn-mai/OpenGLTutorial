@@ -236,7 +236,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   vbo = CreateVBO(sizeof(vertices), vertices);
   ibo = CreateIBO(sizeof(indices), indices);
   vao = CreateVAO(vbo, ibo);
-  uboTrans = UniformBuffer::Create(sizeof(Uniform::TransformationData), BindingPoint_Vertex, "VertexData");
+  uboTrans = UniformBuffer::Create(sizeof(Uniform::VertexData), BindingPoint_Vertex, "VertexData");
   uboLight = UniformBuffer::Create(sizeof(Uniform::LightingData), BindingPoint_Light, "LightingData");
   uboPostEffect = UniformBuffer::Create(sizeof(PostEffectData), 2, "PostEffectData");
   progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
@@ -249,7 +249,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   if (!vbo || !ibo || !vao || !uboTrans || !uboLight || !progTutorial || !progPostEffect || !progBloom1st || !progComposition || !progLensFlare) {
     return false;
   }
-  progTutorial->UniformBlockBinding("TransformationData", BindingPoint_Vertex);
+  progTutorial->UniformBlockBinding("VertexData", BindingPoint_Vertex);
   progTutorial->UniformBlockBinding("LightingData", BindingPoint_Light);
   progComposition->UniformBlockBinding("PostEffectData", 2);
 
@@ -258,7 +258,7 @@ bool GameEngine::Init(int w, int h, const char* title)
     return false;
   }
 
-  entityBuffer = Entity::Buffer::Create(1024, sizeof(Uniform::TransformationData), BindingPoint_Vertex, "VertexData");
+  entityBuffer = Entity::Buffer::Create(1024, sizeof(Uniform::VertexData), BindingPoint_Vertex, "VertexData");
   if (!entityBuffer) {
     return false;
   }
@@ -336,7 +336,7 @@ void GameEngine::Render() const
 
   progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
 
-  TransformationData transData;
+  VertexData transData;
   uboTrans->BufferSubData(&transData);
 
   LightingData lightData;
@@ -517,7 +517,7 @@ void GameEngine::RemoveEntity(Entity::Entity* e)
 */
 void DefaultUpdateVertexData(Entity::Entity& e, void* ubo, double, const glm::mat4& matView, const glm::mat4& matProj)
 {
-  Uniform::TransformationData data;
+  Uniform::VertexData data;
   data.matModel = e.TRSMatrix();
   data.matNormal = glm::mat4_cast(e.Rotation());
   data.matMVP = matProj * matView * data.matModel;

@@ -10,17 +10,17 @@ layout(location=1) out vec2 outTexCoord;
 /**
 * 頂点シェーダ入力.
 */
-layout(std140) uniform TransformationData
+layout(std140) uniform VertexData
 {
 	mat4 matMVP;
 	mat4 matModel;
 	mat3x4 matNormal;
 	vec4 color;
 	mat4 matTex;
-} transformationData;
+} vertexData;
 
 void main() {
-  outColor = vColor * transformationData.color;
-  outTexCoord = (transformationData.matTex * vec4(vTexCoord, 0, 1)).xy;
-  gl_Position = transformationData.matMVP * vec4(vPosition, 1.0);
+  outColor = vColor * vertexData.color;
+  outTexCoord = (vertexData.matTex * vec4(vTexCoord, 0, 1)).xy;
+  gl_Position = vertexData.matMVP * vec4(vPosition, 1.0);
 }

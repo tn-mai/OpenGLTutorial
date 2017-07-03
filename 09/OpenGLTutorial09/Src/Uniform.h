@@ -10,7 +10,7 @@ namespace Uniform {
 /**
 * 座標変換データ.
 */
-struct TransformationData
+struct VertexData
 {
   glm::mat4 matMVP;
   glm::mat4 matModel;
