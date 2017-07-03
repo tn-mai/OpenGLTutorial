@@ -202,14 +202,20 @@ GameEngine::~GameEngine()
 * 状態更新関数を設定する.
 *
 * @param func 設定する更新関数.
-*
-* @return 以前に設定されていた更新関数.
 */
-GameEngine::UpdateFunc GameEngine::SetUpdateFunc(const UpdateFunc& func)
+void GameEngine::UpdateFunc(const UpdateFuncType& func)
 {
-  UpdateFunc old = updateFunc;
   updateFunc = func;
-  return old;
+}
+
+/**
+* 状態更新関数を取得する.
+*
+* @return 設定されている更新関数.
+*/
+const GameEngine::UpdateFuncType& GameEngine::UpdateFunc() const
+{
+  return updateFunc;
 }
 
 /**

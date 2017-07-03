@@ -23,12 +23,13 @@ class GameEngine
 {
 public:
   /// ƒQ[ƒ€ó‘Ô‚ğXV‚·‚éŠÖ”‚ÌŒ^.
-  typedef std::function<void(double)> UpdateFunc;
+  typedef std::function<void(double)> UpdateFuncType;
 
   static GameEngine& Instance();
   bool Init(int w, int h, const char* title);
   void Run();
-  UpdateFunc SetUpdateFunc(const UpdateFunc& func);
+  void UpdateFunc(const UpdateFuncType& func);
+  const UpdateFuncType& UpdateFunc() const;
 
   bool LoadMeshFromFile(const char* filename);
   const Mesh::MeshPtr& GetMesh(const char* name);
@@ -79,7 +80,7 @@ private:
   OffscreenBufferPtr offBloom[bloomBufferCount];
   OffscreenBufferPtr offAnamorphic[2];
 
-  UpdateFunc updateFunc;
+  UpdateFuncType updateFunc;
 
   glm::vec3 viewPos;
   glm::vec3 viewTarget;

@@ -315,7 +315,7 @@ int main()
 
   Entity::Entity* p1 =  game.AddEntity(glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
 
-  game.SetUpdateFunc(Update(p0, p1));
+  game.UpdateFunc(Update(p0, p1));
 
   game.Run();
 
