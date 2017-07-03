@@ -2,6 +2,8 @@
 * @file main.cpp
 */
 #include "GameEngine.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <random>
 #include <algorithm>
 
 /**
@@ -84,8 +86,8 @@ struct UpdateToroid {
             const float t = std::max(t0, t1);
             targetPos += V1 * t;
           }
-          targetPos.x += std::normal_distribution<float>(0, 1.5f)(game.Rand());
-          targetPos.z += std::normal_distribution<float>(0, 1.5f)(game.Rand());
+          targetPos.x += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
+          targetPos.z += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
           targetPos = glm::min(glm::vec3(11, 100, 20), glm::max(targetPos, glm::vec3(-11, -100, 1)));
           p->Velocity(glm::normalize(targetPos - P0) * 4.0f);
           p->Color(glm::vec4(6, 6, 6, 1));
@@ -192,7 +194,7 @@ struct UpdateBlast {
       GameEngine::Instance().RemoveEntity(&entity);
       return;
     }
-    entity.Scale(glm::vec3(1 + timer));
+    entity.Scale(glm::vec3(static_cast<float>(1 + timer)));
     static const glm::vec4 color[] = {
       glm::vec4(1.0f, 1.0f, 0.75f, 1) * 2.0f,
       glm::vec4(1.0f, 0.5f, 0.1f, 1) * 2.0f,
@@ -200,7 +202,7 @@ struct UpdateBlast {
       glm::vec4(0.25f, 0.1f, 0.1f, 0) * 2.0f,
     };
     const double tmp = timer * 1;
-    const float fract = std::fmod(tmp, 1);
+    const float fract = static_cast<float>(std::fmod(tmp, 1));
     const glm::vec4 col0 = color[static_cast<int>(tmp)];
     const glm::vec4 col1 = color[static_cast<int>(tmp) + 1];
     const glm::vec4 newColor = col0 * glm::vec4(1 - fract) + col1 * glm::vec4(fract);
@@ -228,11 +230,7 @@ struct Update {
     static float degree = 0.0f;
     static double poppingTimer = 0.0f;
 
-    game.SetView(
-      glm::vec4(0, 20, posZ, 1),
-      glm::vec3(0, 0, lookAtZ),
-      glm::vec3(0, 0, 1)
-    );
+    game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
 
     game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
     game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
@@ -316,7 +314,6 @@ int main()
   Entity::Entity* p1 =  game.AddEntity(glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
 
   game.UpdateFunc(Update(p0, p1));
-
   game.Run();
 
   return 0;

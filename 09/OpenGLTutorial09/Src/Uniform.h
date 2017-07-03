@@ -39,6 +39,14 @@ struct LightingData
   PointLight light[maxLightCount]; ///< ライトのリスト.
 };
 
+/**
+* ポストエフェクトパラメータ.
+*/
+struct PostEffectData
+{
+  glm::mat4x4 matColor; ///< 色変換行列.
+};
+
 } // namespace Uniform
 
 #endif // UNIFORM_H_INCLUDED

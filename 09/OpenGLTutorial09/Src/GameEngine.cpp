@@ -96,14 +96,6 @@ enum BindingPoint {
 };
 
 /**
-* ポストエフェクトパラメータ.
-*/
-struct PostEffectData
-{
-  glm::mat4x4 matColor; ///< 色変換行列.
-};
-
-/**
 * Vertex Buffer Objectを作成する.
 *
 * @param size 頂点データのサイズ.
@@ -173,8 +165,6 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   SetVertexAttribPointer(2, Vertex, texCoord);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
   glBindVertexArray(0);
-  glDeleteBuffers(1, &ibo);
-  glDeleteBuffers(1, &vbo);
   return vao;
 }
 
@@ -195,6 +185,12 @@ GameEngine::~GameEngine()
 {
   if (vao) {
     glDeleteVertexArrays(1, &vao);
+  }
+  if (ibo) {
+    glDeleteBuffers(1, &ibo);
+  }
+  if (vbo) {
+    glDeleteBuffers(1, &vbo);
   }
 }
 
@@ -242,9 +238,8 @@ bool GameEngine::Init(int w, int h, const char* title)
   vbo = CreateVBO(sizeof(vertices), vertices);
   ibo = CreateIBO(sizeof(indices), indices);
   vao = CreateVAO(vbo, ibo);
-  uboTrans = UniformBuffer::Create(sizeof(Uniform::VertexData), BindingPoint_Vertex, "VertexData");
   uboLight = UniformBuffer::Create(sizeof(Uniform::LightingData), BindingPoint_Light, "LightingData");
-  uboPostEffect = UniformBuffer::Create(sizeof(PostEffectData), 2, "PostEffectData");
+  uboPostEffect = UniformBuffer::Create(sizeof(Uniform::PostEffectData), 2, "PostEffectData");
   progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
   progPostEffect = Shader::Program::Create("Res/PostEffect.vert", "Res/PostEffect.frag");
   progBloom1st = Shader::Program::Create("Res/Bloom1st.vert", "Res/Bloom1st.frag");
@@ -252,7 +247,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   progSimple = Shader::Program::Create("Res/Simple.vert", "Res/Simple.frag");
   progLensFlare = Shader::Program::Create("Res/AnamorphicLensFlare.vert", "Res/AnamorphicLensFlare.frag");
   progNonLighting = Shader::Program::Create("Res/NonLighting.vert", "Res/NonLighting.frag");
-  if (!vbo || !ibo || !vao || !uboTrans || !uboLight || !progTutorial || !progPostEffect || !progBloom1st || !progComposition || !progLensFlare) {
+  if (!vbo || !ibo || !vao || !uboLight || !progTutorial || !progPostEffect || !progBloom1st || !progComposition || !progLensFlare) {
     return false;
   }
   progTutorial->UniformBlockBinding("VertexData", BindingPoint_Vertex);
@@ -278,7 +273,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   };
   //  TexturePtr tex = Texture::Create(5, 5, GL_RGBA8, GL_RGBA, textureData);
 
-  rand.seed(static_cast<std::mt19937::result_type>(time(nullptr)));
+  rand.seed(std::random_device()());
 
   offscreen = OffscreenBuffer::Create(800, 600,  GL_RGBA16F);
   for (int i = 0, scale = 4; i < bloomBufferCount; ++i, scale *= 2) {
@@ -308,6 +303,9 @@ void GameEngine::Update(double delta)
   if (updateFunc) {
     updateFunc(delta);
   }
+  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 200.0f);
+  const glm::mat4x4 matView = glm::lookAt(camera.position, camera.target, camera.up);
+  entityBuffer->Update(1.0f / 60.0f, matView, matProj);
 }
 
 /**
@@ -328,9 +326,6 @@ void GameEngine::Render() const
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   uboLight->BufferSubData(&lightData);
-  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 200.0f);
-  const glm::mat4x4 matView = glm::lookAt(viewPos, viewTarget, viewUp);
-  entityBuffer->Update(1.0f / 60.0f, matView, matProj);
   entityBuffer->Draw(meshBuffer);
 
   glBindVertexArray(vao);
@@ -403,7 +398,7 @@ void GameEngine::Render() const
   glViewport(0, 0, 800, 600);
   progComposition->UseProgram();
 
-  PostEffectData postEffect;
+  Uniform::PostEffectData postEffect;
 #if 0
   postEffect.matColor[0] = glm::vec4(0.393f, 0.349f, 0.272f, 0);
   postEffect.matColor[1] = glm::vec4(0.769f, 0.686f, 0.534f, 0);
@@ -455,7 +450,12 @@ const GamePad& GameEngine::GetGamePad(int id) const
 }
 
 /**
+* テクスチャを読み込む.
 *
+* @param filename テクスチャファイル名.
+*
+* @retval true  読み込み成功.
+* @retval false 読み込み失敗.
 */
 bool GameEngine::LoadTextureFromFile(const char* filename, GLenum wrapMode)
 {
@@ -485,7 +485,12 @@ const TexturePtr& GameEngine::GetTexture(const char* filename) const
 }
 
 /**
+* メッシュを読み込む.
 *
+* @param filename メッシュファイル名.
+*
+* @retval true  読み込み成功.
+* @retval false 読み込み失敗.
 */
 bool GameEngine::LoadMeshFromFile(const char* filename)
 {
@@ -501,7 +506,17 @@ const Mesh::MeshPtr& GameEngine::GetMesh(const char* name)
 }
 
 /**
+* エンティティを追加する.
 *
+* @param position エンティティの座標.
+* @param meshName エンティティの表示に使用するメッシュ名.
+* @param texName  エンティティの表示に使うテクスチャファイル名.
+* @param func     エンティティの状態を更新する関数(または関数オブジェクト).
+*
+* @return 追加したエンティティへのポインタ.
+*         これ以上エンティティを追加できない場合はnullptrが返される.
+*         回転や拡大率はこのポインタ経由で設定する.
+*         なお、このポインタをアプリケーション側で保持する必要はない.
 */
 Entity::Entity* GameEngine::AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, bool hasLight)
 {
@@ -511,11 +526,95 @@ Entity::Entity* GameEngine::AddEntity(const glm::vec3& pos, const char* meshName
 }
 
 /**
+*　エンティティを削除する.
 *
+* @param 削除するエンティティのポインタ.
 */
 void GameEngine::RemoveEntity(Entity::Entity* e)
 {
   entityBuffer->RemoveEntity(e);
+}
+
+/**
+* ライトを設定する.
+*
+* @param indes  設定するライトのインデックス.
+* @param light  ライトパラメータ.
+*/
+void GameEngine::Light(int index, const Uniform::PointLight& light)
+{
+  if (index < 0 || index >= Uniform::maxLightCount) {
+    std::cerr << "WARNING: '" << index << "'は不正なライトインデックスです" << std::endl;
+    return;
+  }
+  lightData.light[index] = light;
+}
+
+/**
+* ライトを取得する.
+*
+* @param index 取得するライトのインデックス.
+*
+* @return ライトパラメータ.
+*/
+const Uniform::PointLight& GameEngine::Light(int index) const
+{
+  if (index < 0 || index >= Uniform::maxLightCount) {
+    std::cerr << "WARNING: '" << index << "'は不正なライトインデックスです" << std::endl;
+    static const Uniform::PointLight dummy;
+    return dummy;
+  }
+  return lightData.light[index];
+}
+
+/**
+* 環境光を設定する.
+*
+* @param color 環境光の明るさ.
+*/
+void GameEngine::AmbientLight(const glm::vec4& color)
+{
+  lightData.ambientColor = color;
+}
+
+/**
+* 環境光を取得する.
+*
+* @return 環境光の明るさ.
+*/
+const glm::vec4& GameEngine::AmbientLight() const
+{
+  return lightData.ambientColor;
+}
+
+/**
+* 視点の位置と姿勢を設定する.
+*
+* @param cam 設定するカメラデータ.
+*/
+void GameEngine::Camera(const CameraData& cam)
+{
+  camera = cam;
+}
+
+/**
+* 視点の位置と姿勢を取得する.
+*
+* @return カメラデータ.
+*/
+const GameEngine::CameraData& GameEngine::Camera() const
+{
+  return camera;
+}
+
+/**
+* 乱数オブジェクトを取得する.
+*
+* @return 乱数オブジェクト.
+*/
+std::mt19937& GameEngine::Rand()
+{
+  return rand;
 }
 
 /**
