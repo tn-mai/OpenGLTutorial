@@ -54,6 +54,16 @@ glm::mat4 Entity::TRSMatrix() const
 }
 
 /**
+* エンティティを破棄する.
+*
+* この関数を呼び出したあとは、エンティティを操作してはならない.
+*/
+void Entity::Destroy()
+{
+  pBuffer->RemoveEntity(this);
+}
+
+/**
 * エンティティバッファを作成する.
 *
 * @param maxEntityCount   扱えるエンティティの最大数.
@@ -83,6 +93,7 @@ BufferPtr Buffer::Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int 
   const LinkEntity* const end = &p->buffer[maxEntityCount];
   for (LinkEntity* itr = &p->buffer[0]; itr != end; ++itr) {
     itr->uboOffset = offset;
+    itr->pBuffer = p.get();
     p->freeList.Insert(itr);
     offset += ubSizePerEntity;
   }

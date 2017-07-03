@@ -43,6 +43,7 @@ public:
   glm::mat4 TRSMatrix() const;
   void Id(int n) { id = n; }
   int Id() const { return id; }
+  void Destroy();
 
 private:
   Entity() = default;
@@ -52,6 +53,7 @@ private:
 
 private:
   int id = -1;
+  Buffer* pBuffer = nullptr; ///< 生成元のBufferクラスへのポインタ.
   glm::vec3 position; ///< 座標.
   glm::quat rotation; ///< 回転.
   glm::vec3 scale = glm::vec3(1, 1, 1); ///< 大きさ.
