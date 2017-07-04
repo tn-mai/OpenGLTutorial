@@ -48,8 +48,8 @@ public:
   const glm::vec4& AmbientLight() const;
   void Camera(const CameraData& cam);
   const CameraData& Camera() const;
-  const GamePad& GetGamePad(int id) const;
   std::mt19937& Rand();
+  const GamePad& GetGamePad(int id) const;
 
   Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
   Entity::Buffer::Iterator EndEntity() { return entityBuffer->End(); }
