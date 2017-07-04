@@ -152,7 +152,7 @@ struct UpdatePlayer {
       vec = glm::normalize(vec) * 2.0f;
     }
     entity.Velocity(glm::vec3(vec.x, 0, vec.y));
-    entity.Rotation(glm::quat(glm::vec3(0, glm::radians(180.0f), rotZ)));
+    entity.Rotation(glm::quat(glm::vec3(0, 0, rotZ)));
 
     glm::vec3 pos3 = entity.Position();
     pos3 = glm::min(glm::vec3(11, 100, 20), glm::max(pos3, glm::vec3(-11, -100, 1)));
@@ -167,8 +167,6 @@ struct UpdatePlayer {
         for (int i = 0; i < 2; ++i) {
           if (Entity::Entity* p = game.AddEntity(pos, "NormalShot", "Res/Model/Player.bmp", UpdatePlayerShot)) {
             p->Velocity(glm::vec3(0, 0, 16));
-            p->Scale(glm::vec3(0.25f, 0.25f, 0.25f));
-            p->Rotation(glm::angleAxis(3.14f, glm::vec3(0, 1, 0)));
             p->Color(glm::vec4(3));
             p->Id(2);
           }
@@ -220,10 +218,16 @@ struct UpdateBlast {
 * ƒQ[ƒ€ó‘Ô‚ÌXV.
 */
 struct Update {
-  Update(Entity::Entity* p0, Entity::Entity* p1) : pPlayer(p0), pSpaceSphere(p1) {}
   void operator()(double delta)
   {
     GameEngine& game = GameEngine::Instance();
+
+    if (!pPlayer) {
+      pPlayer = game.AddEntity(glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
+    }
+    if (!pSpaceSphere) {
+      pSpaceSphere =  game.AddEntity(glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
+    }
 
     const float posZ = -8.28f;
     const float lookAtZ = 20.0f - 8.28f;
@@ -307,13 +311,7 @@ int main()
   game.LoadMeshFromFile("Res/Model/Blast.fbx");
   game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
 
-  Entity::Entity* p0 = game.AddEntity(glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
-  p0->Rotation(glm::rotate(glm::quat(), glm::radians(180.0f), glm::vec3(0, 1, 0)));
-  p0->Scale(glm::vec3(0.25f));
-
-  Entity::Entity* p1 =  game.AddEntity(glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
-
-  game.UpdateFunc(Update(p0, p1));
+  game.UpdateFunc(Update());
   game.Run();
 
   return 0;
