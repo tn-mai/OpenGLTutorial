@@ -442,7 +442,7 @@ void GameEngine::Run()
 }
 
 /**
-*
+* ゲームパッドの状態を取得する.
 */
 const GamePad& GameEngine::GetGamePad(int id) const
 {
