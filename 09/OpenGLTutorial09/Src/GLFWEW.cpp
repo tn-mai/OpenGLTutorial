@@ -137,29 +137,39 @@ const GamePad& Window::GetGamePad(int id) const
   return gamepad[id];
 }
 
+/**
+* ジョイスティックのアナログ入力装置ID.
++
+* @note XBOX360コントローラー基準.
+*/
 enum GLFWAXESID {
-  GLFWAXESID_LeftX,
-  GLFWAXESID_LeftY,
-  GLFWAXESID_BackX,
-  GLFWAXESID_RightY,
-  GLFWAXESID_RightX,
+  GLFWAXESID_LeftX, ///< 左スティックのX軸.
+  GLFWAXESID_LeftY, ///< 左スティックのY軸.
+  GLFWAXESID_BackX, ///< アナログトリガー.
+  GLFWAXESID_RightY, ///< 右スティックのY軸.
+  GLFWAXESID_RightX, ///< 右スティックのX軸.
 };
 
+/**
+* ジョイスティックのデジタル入力装置ID.
++
+* @note XBOX360コントローラー基準.
+*/
 enum GLFWBUTTONID {
-  GLFWBUTTONID_A,
-  GLFWBUTTONID_B,
-  GLFWBUTTONID_X,
-  GLFWBUTTONID_Y,
-  GLFWBUTTONID_L,
-  GLFWBUTTONID_R,
-  GLFWBUTTONID_Back,
-  GLFWBUTTONID_Start,
-  GLFWBUTTONID_LThumb,
-  GLFWBUTTONID_RThumb,
-  GLFWBUTTONID_Up,
-  GLFWBUTTONID_Right,
-  GLFWBUTTONID_Down,
-  GLFWBUTTONID_Left,
+  GLFWBUTTONID_A, ///< Aボタン.
+  GLFWBUTTONID_B, ///< Bボタン.
+  GLFWBUTTONID_X, ///< Xボタン.
+  GLFWBUTTONID_Y, ///< Yボタン.
+  GLFWBUTTONID_L, ///< Lボタン.
+  GLFWBUTTONID_R, ///< Rボタン.
+  GLFWBUTTONID_Back, ///< Backボタン.
+  GLFWBUTTONID_Start, ///< Startボタン.
+  GLFWBUTTONID_LThumb, ///< 左スティックボタン.
+  GLFWBUTTONID_RThumb, ///< 右スティックボタン.
+  GLFWBUTTONID_Up, ///< 上キー.
+  GLFWBUTTONID_Right, ///< 右キー.
+  GLFWBUTTONID_Down, ///< 下キー.
+  GLFWBUTTONID_Left, ///< 左キー.
 };
 
 /**
@@ -167,10 +177,11 @@ enum GLFWBUTTONID {
 */
 void Window::UpdateGamePad()
 {
-  int count[2];
-  const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &count[0]);
-  const uint8_t* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &count[1]);
-  if (axes && buttons && count[0] >= 2 && count[1] >= 8) {
+  const uint32_t prevButtons = gamepad[0].buttons;
+  int axesCount, buttonCount;
+  const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axesCount);
+  const uint8_t* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+  if (axes && buttons && axesCount >= 2 && buttonCount >= 8) {
     gamepad[0].buttons &= ~(GamePad::DPAD_UP | GamePad::DPAD_DOWN | GamePad::DPAD_LEFT | GamePad::DPAD_RIGHT);
     static const float threshould = 0.3f;
     if (axes[GLFWAXESID_LeftY] >= threshould) {
@@ -224,8 +235,7 @@ void Window::UpdateGamePad()
       }
     }
   }
-  gamepad[0].buttonDown = gamepad[0].buttons & ~gamepad[0].prevButtons;
-  gamepad[0].prevButtons = gamepad[0].buttons;
+  gamepad[0].buttonDown = gamepad[0].buttons & ~prevButtons;
 }
 
 } // namespace GLFWEW

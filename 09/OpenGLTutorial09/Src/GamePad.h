@@ -22,7 +22,6 @@ struct GamePad
   };
   uint32_t buttons;
   uint32_t buttonDown;
-  uint32_t prevButtons;
 };
 
 #endif // GAMEPAD_H_INCLUDED
