@@ -6,6 +6,23 @@
 #include <random>
 #include <algorithm>
 
+/// エンティティの衝突グループID.
+enum EntityGroupId {
+  EntityGroupId_Player,
+  EntityGroupId_PlayerShot,
+  EntityGroupId_Enemy,
+  EntityGroupId_EnemyShot,
+  EntityGroupId_Others,
+};
+
+/// 衝突データリスト.
+static const Entity::CollisionData collisionDataList[] = {
+  { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
+  { glm::vec3(-0.5f, -0.5f, -1.0f), glm::vec3(0.5f, 0.5f, 1.0f) },
+  { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
+  { glm::vec3(-0.25f, -0.25f, -0.25f), glm::vec3(0.25f, 0.25f, 0.25f) },
+};
+
 /**
 * 敵弾の更新.
 */
@@ -47,7 +64,7 @@ struct UpdateToroid {
         entity.Velocity(v);
       } else {
         accelX = v.x * -0.025f;
-        if (Entity::Entity* p = game.AddEntity(pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
+        if (Entity::Entity* p = game.AddEntity(EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
           // V0x*t + P0x = V1x*t + P1x
           //   V0x = V1x + (P1x - P0x)/t
           // V0y*t + P0y = V1y*t + P1y
@@ -91,6 +108,7 @@ struct UpdateToroid {
           targetPos = glm::min(glm::vec3(11, 100, 20), glm::max(targetPos, glm::vec3(-11, -100, 1)));
           p->Velocity(glm::normalize(targetPos - P0) * 4.0f);
           p->Color(glm::vec4(6, 6, 6, 1));
+          p->Collision(collisionDataList[EntityGroupId_EnemyShot]);
         }
       }
       entity.Velocity(v);
@@ -165,10 +183,10 @@ struct UpdatePlayer {
         glm::vec3 pos = entity.Position();
         pos.x -= 0.3f;
         for (int i = 0; i < 2; ++i) {
-          if (Entity::Entity* p = game.AddEntity(pos, "NormalShot", "Res/Model/Player.bmp", UpdatePlayerShot)) {
+          if (Entity::Entity* p = game.AddEntity(EntityGroupId_PlayerShot, pos, "NormalShot", "Res/Model/Player.bmp", UpdatePlayerShot)) {
             p->Velocity(glm::vec3(0, 0, 16));
             p->Color(glm::vec4(3));
-            p->Id(2);
+            p->Collision(collisionDataList[EntityGroupId_PlayerShot]);
           }
           pos.x += 0.6f;
         }
@@ -215,6 +233,20 @@ struct UpdateBlast {
 };
 
 /**
+* 自機の弾と敵の衝突処理.
+*/
+void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
+{
+  GameEngine& game = GameEngine::Instance();
+  if (Entity::Entity* p = game.AddEntity(EntityGroupId_Others, rhs.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
+    static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
+    p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
+  }
+  lhs.Destroy();
+  rhs.Destroy();
+}
+
+/**
 * ゲーム状態の更新.
 */
 struct Update {
@@ -223,10 +255,11 @@ struct Update {
     GameEngine& game = GameEngine::Instance();
 
     if (!pPlayer) {
-      pPlayer = game.AddEntity(glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
+      pPlayer = game.AddEntity(EntityGroupId_Player, glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
+      pPlayer->Collision(collisionDataList[EntityGroupId_Player]);
     }
     if (!pSpaceSphere) {
-      pSpaceSphere =  game.AddEntity(glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
+      pSpaceSphere =  game.AddEntity(EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
     }
 
     const float posZ = -8.28f;
@@ -251,46 +284,15 @@ struct Update {
       const std::uniform_int_distribution<> rndPoppingCount(1, 5);
       for (int i = rndPoppingCount(game.Rand()); i > 0; --i) {
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
-        if (Entity::Entity* p = game.AddEntity(pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer))
-          ) {
-          p->Id(1);
+        if (Entity::Entity* p = game.AddEntity(EntityGroupId_Enemy, pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer))) {
           p->Velocity(glm::vec3(pos.x < 0 ? 1.0f : -1.0f, 0, -4));
+          p->Collision(collisionDataList[EntityGroupId_Enemy]);
         }
       }
       poppingTimer = rndPoppingTime(game.Rand());
     }
-
-    std::vector<Entity::Entity*> enemyList;
-    std::vector<Entity::Entity*> playerShotList;
-    Entity::Buffer::Iterator end = game.EndEntity();
-    for (Entity::Buffer::Iterator itr = game.BeginEntity(); itr != end; ++itr) {
-      switch (itr->Id()) {
-      case 1: enemyList.push_back(&*itr); break;
-      case 2: playerShotList.push_back(&*itr); break;
-      }
-    }
-    int firstEnemy = 0;
-    for (auto shot : playerShotList) {
-      const glm::vec3 ltShot = shot->Position() - glm::vec3(0.5f, 0.5f, 1.0f);
-      const glm::vec3 rbShot = shot->Position() + glm::vec3(0.5f, 0.5f, 1.0f);
-      const auto end = enemyList.end();
-      for (auto enemy = enemyList.begin() + firstEnemy; enemy != end; ++enemy) {
-        const glm::vec3 lt = (*enemy)->Position() - glm::vec3(1.0f, 1.0f, 1.0f);
-        const glm::vec3 rb = (*enemy)->Position() + glm::vec3(1.0f, 1.0f, 1.0f);
-        if (lt.x >= rbShot.x || rb.x <= ltShot.x || lt.z >= rbShot.z || rb.z <= rbShot.z) {
-          continue;
-        }
-        Entity::Entity* p = game.AddEntity((*enemy)->Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast());
-        static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
-        p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
-        game.RemoveEntity(*enemy);
-        game.RemoveEntity(shot);
-        *enemy = enemyList[firstEnemy];
-        ++firstEnemy;
-        break;
-      }
-    }
   }
+
   Entity::Entity* pPlayer = nullptr;
   Entity::Entity* pSpaceSphere = nullptr;
 };
@@ -311,6 +313,7 @@ int main()
   game.LoadMeshFromFile("Res/Model/Blast.fbx");
   game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
 
+  game.CollisionHandler(EntityGroupId_PlayerShot, EntityGroupId_Enemy, &CollidePlayerShotAndEnemyHandler);
   game.UpdateFunc(Update());
   game.Run();
 

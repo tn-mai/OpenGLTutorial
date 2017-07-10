@@ -12,11 +12,25 @@
 #include <glm/gtx/quaternion.hpp>
 #include <memory>
 #include <functional>
+#include <vector>
 
 namespace Entity {
 
+class Entity;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr; ///< エンティティバッファポインタ型.
+typedef std::function<void(Entity&, Entity&)> CollisionHandlerType; ///< 衝突解決ハンドラ型.
+
+static const int maxGroupId = 15; ///< グループIDの最大値.
+
+/**
+* 衝突判定.
+*/
+struct CollisionData
+{
+  glm::vec3 min;
+  glm::vec3 max;
+};
 
 /**
 * エンティティ.
@@ -40,9 +54,12 @@ public:
   const glm::vec4& Color() const { return color; }
   void UpdateFunc(const UpdateFuncType& func) { updateFunc = func; }
   const UpdateFuncType& UpdateFunc() const { return updateFunc; }
+  void Collision(const CollisionData& c) { colLocal = c; }
+  const CollisionData& Collision() const { return colLocal; }
+
   glm::mat4 TRSMatrix() const;
-  void Id(int n) { id = n; }
-  int Id() const { return id; }
+  int GroupId() const { return groupId; }
+
   void Destroy();
 
 private:
@@ -52,7 +69,7 @@ private:
   Entity& operator=(const Entity&) = default;
 
 private:
-  int id = -1;
+  int groupId = -1;
   Buffer* pBuffer = nullptr; ///< 生成元のBufferクラスへのポインタ.
   glm::vec3 position; ///< 座標.
   glm::quat rotation; ///< 回転.
@@ -64,6 +81,8 @@ private:
   Shader::ProgramPtr program; ///< エンティティを描画するときに使われるシェーダ.
   GLintptr uboOffset; ///< UBOのエンティティ用領域へのバイトオフセット.
   UpdateFuncType updateFunc; ///< 状態更新関数.
+  CollisionData colLocal;
+  CollisionData colWorld;
   bool isActive = false;
 };
 
@@ -110,14 +129,19 @@ public:
 
   static BufferPtr Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int bindingPoint, const char* ubName);
 
-  Entity* AddEntity(const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t, const Shader::ProgramPtr& p, Entity::UpdateFuncType func);
+  Entity* AddEntity(int groupId, const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t, const Shader::ProgramPtr& p, Entity::UpdateFuncType func);
   void RemoveEntity(Entity* entity);
   void Update(double delta, const glm::mat4& matView, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
-  Iterator Begin() { return Iterator(activeList.next); }
-  Iterator End() { return Iterator(&activeList); }
-  ConstIterator Begin() const { return ConstIterator(activeList.next); }
-  ConstIterator End() const { return ConstIterator(&activeList); }
+
+  void CollisionHandler(int gid0, int gid1, CollisionHandlerType handler);
+  const CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;
+  void ClearCollisionHandlerList();
+
+  Iterator Begin() { return Iterator(activeList[0].next); }
+  Iterator End() { return Iterator(&activeList[0]); }
+  ConstIterator Begin() const { return ConstIterator(activeList[0].next); }
+  ConstIterator End() const { return ConstIterator(&activeList[0]); }
 
 private:
   Buffer() = default;
@@ -142,9 +166,16 @@ private:
   size_t bufferSize;
   GLsizeiptr ubSizePerEntity;
   Link freeList;
-  Link activeList;
+  Link activeList[maxGroupId + 1];
   UniformBufferPtr ubo;
   Link* itrUpdate = nullptr;
+  Link* itrUpdateRhs = nullptr;
+
+  struct CollisionHandlerElement {
+    int groupId[2];
+    CollisionHandlerType handler;
+  };
+  std::vector<CollisionHandlerElement> collisionHandlerList;
 };
 
 inline Buffer::Iterator begin(Buffer& buffer) { return buffer.Begin(); }

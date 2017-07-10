@@ -40,7 +40,7 @@ public:
   const Mesh::MeshPtr& GetMesh(const char* name);
   bool LoadTextureFromFile(const char* filename, GLenum wrapMode = GL_CLAMP_TO_EDGE);
   const TexturePtr& GetTexture(const char* filename) const;
-  Entity::Entity* AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, bool hasLight = true);
+  Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, bool hasLight = true);
   void RemoveEntity(Entity::Entity*);
   void Light(int index, const Uniform::PointLight& light);
   const Uniform::PointLight& Light(int index) const;
@@ -50,6 +50,10 @@ public:
   const CameraData& Camera() const;
   std::mt19937& Rand();
   const GamePad& GetGamePad(int id) const;
+
+  void CollisionHandler(int gid0, int gid1, Entity::CollisionHandlerType handler);
+  const Entity::CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;
+  void ClearCollisionHandlerList();
 
   Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
   Entity::Buffer::Iterator EndEntity() { return entityBuffer->End(); }
