@@ -40,7 +40,7 @@ class Entity
   friend class Buffer;
 
 public:
-  typedef std::function<void(Entity&, void*, double, const glm::mat4&, const glm::mat4&)> UpdateFuncType;
+  typedef std::function<void(Entity&, double)> UpdateFuncType;
 
   void Position(const glm::vec3& pos) { position = pos; }
   const glm::vec3& Position() const { return position; }

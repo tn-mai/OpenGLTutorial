@@ -95,6 +95,4 @@ private:
   std::mt19937 rand;
 };
 
-void DefaultUpdateVertexData(Entity::Entity& e, void* ubo, double, const glm::mat4& matView, const glm::mat4& matProj);
-
 #endif // GAMEENGINE_H_INCLUDED

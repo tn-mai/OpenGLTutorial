@@ -2,11 +2,29 @@
 * @file Entity.cpp
 */
 #include "Entity.h"
+#include "Uniform.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <algorithm>
 
 namespace Entity {
+
+/**
+* VertexDataをUBOに転送する.
+*
+* @param entity
+* @param ubo
+* @param matViewProjection
+*/
+void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4& matViewProjection)
+{
+  Uniform::VertexData data;
+  data.matModel = entity.TRSMatrix();
+  data.matNormal = glm::mat4_cast(entity.Rotation());
+  data.matMVP = matViewProjection * data.matModel;
+  data.color = entity.Color();
+  memcpy(ubo, &data, sizeof(data));
+}
 
 /**
 * リンクオブジェクトを自分の手前に追加する.
@@ -196,10 +214,14 @@ bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)
 void Buffer::Update(double delta, const glm::mat4& matView, const glm::mat4& matProj)
 {
   // 座標とワールド座標系の衝突形状を更新する.
+  // 各エンティティの状態を更新する.
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
-    for (Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
-      LinkEntity& e = *static_cast<LinkEntity*>(itr);
+    for (itrUpdate = activeList[groupId].next; itrUpdate != &activeList[groupId]; itrUpdate = itrUpdate->next) {
+      LinkEntity& e = *static_cast<LinkEntity*>(itrUpdate);
       e.position += e.velocity * static_cast<float>(delta);
+      if (e.updateFunc) {
+        e.updateFunc(e, delta);
+      }
       e.colWorld.min = e.colLocal.min + e.position;
       e.colWorld.max = e.colLocal.max + e.position;
     }
@@ -226,18 +248,17 @@ void Buffer::Update(double delta, const glm::mat4& matView, const glm::mat4& mat
       }
     }
   }
-
-  uint8_t* p = static_cast<uint8_t*>(ubo->MapBuffer());
-  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
-    for (itrUpdate = activeList[groupId].next; itrUpdate != &activeList[groupId]; itrUpdate = itrUpdate->next) {
-      LinkEntity& e = *static_cast<LinkEntity*>(itrUpdate);
-      if (e.updateFunc) {
-        e.updateFunc(e, p + e.uboOffset, delta, matView, matProj);
-      }
-    }
-  }
   itrUpdate = nullptr;
   itrUpdateRhs = nullptr;
+
+  uint8_t* p = static_cast<uint8_t*>(ubo->MapBuffer());
+  const glm::mat4 matVP = matProj * matView;
+  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
+    for (Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
+      LinkEntity& e = *static_cast<LinkEntity*>(itr);
+      UpdateUniformVertexData(e, p + e.uboOffset, matVP);
+    }
+  }
   ubo->UnmapBuffer();
 }
 

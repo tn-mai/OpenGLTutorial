@@ -667,16 +667,3 @@ void GameEngine::ClearCollisionHandlerList()
 {
   entityBuffer->ClearCollisionHandlerList();
 }
-
-/**
-* デフォルトのVertexData更新関数.
-*/
-void DefaultUpdateVertexData(Entity::Entity& e, void* ubo, double, const glm::mat4& matView, const glm::mat4& matProj)
-{
-  Uniform::VertexData data;
-  data.matModel = e.TRSMatrix();
-  data.matNormal = glm::mat4_cast(e.Rotation());
-  data.matMVP = matProj * matView * data.matModel;
-  data.color = e.Color();
-  memcpy(ubo, &data, sizeof(data));
-}

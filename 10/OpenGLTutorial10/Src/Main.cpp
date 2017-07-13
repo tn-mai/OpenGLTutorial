@@ -26,7 +26,7 @@ static const Entity::CollisionData collisionDataList[] = {
 /**
 * 敵弾の更新.
 */
-void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+void UpdateEnemyShot(Entity::Entity& entity, double delta)
 {
   const glm::vec3 pos = entity.Position();
   if (pos.x < -40.0f || pos.x > 40.0f || pos.z < -2.0f || pos.z > 40.0f) {
@@ -37,7 +37,6 @@ void UpdateEnemyShot(Entity::Entity& entity, void* ubo, double delta, const glm:
   glm::vec3 rot = glm::eulerAngles(entity.Rotation());
   rot.z += glm::radians(90.0f) * static_cast<float>(delta);
   entity.Rotation(glm::quat(rot));
-  DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
 }
 
 /**
@@ -49,7 +48,7 @@ struct UpdateToroid {
     GameEngine& game = GameEngine::Instance();
   }
 
-  void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+  void operator()(Entity::Entity& entity, double delta)
   {
     GameEngine& game = GameEngine::Instance();
     glm::vec3 pos = entity.Position();
@@ -122,7 +121,6 @@ struct UpdateToroid {
       }
       entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
     }
-    DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
   }
   const Entity::Entity* target;
   bool isEscape = false;
@@ -132,7 +130,7 @@ struct UpdateToroid {
 /**
 * 自機の弾の更新.
 */
-void UpdatePlayerShot(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+void UpdatePlayerShot(Entity::Entity& entity, double delta)
 {
   glm::vec3 pos = entity.Position();
   if (std::abs(pos.x) > 40 || pos.z < -4 || pos.z > 40.0f) {
@@ -140,14 +138,13 @@ void UpdatePlayerShot(Entity::Entity& entity, void* ubo, double delta, const glm
     game.RemoveEntity(&entity);
     return;
   }
-  DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
 }
 
 /**
 * 自機の更新
 */
 struct UpdatePlayer {
-  void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj)
+  void operator()(Entity::Entity& entity, double delta)
   {
     GameEngine& game = GameEngine::Instance();
     const GamePad gamepad = game.GetGamePad(0);
@@ -194,8 +191,6 @@ struct UpdatePlayer {
     } else {
       shotInterval = 0;
     }
-
-    DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
   }
   double shotInterval = 0;
 };
@@ -204,7 +199,7 @@ struct UpdatePlayer {
 * 爆発の更新.
 */
 struct UpdateBlast {
-  void operator()(Entity::Entity& entity, void* ubo, double delta, const glm::mat4& matView, const glm::mat4& matProj) {
+  void operator()(Entity::Entity& entity, double delta) {
     timer += delta;
     if (timer >= 2) {
       GameEngine::Instance().RemoveEntity(&entity);
@@ -226,8 +221,6 @@ struct UpdateBlast {
     glm::vec3 euler = glm::eulerAngles(entity.Rotation());
     euler.y += glm::radians(30.0f) * static_cast<float>(delta);
     entity.Rotation(glm::quat(euler));
-
-    DefaultUpdateVertexData(entity, ubo, delta, matView, matProj);
   }
   double timer = 0;
 };
@@ -259,7 +252,7 @@ struct Update {
       pPlayer->Collision(collisionDataList[EntityGroupId_Player]);
     }
     if (!pSpaceSphere) {
-      pSpaceSphere =  game.AddEntity(EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", DefaultUpdateVertexData, false);
+      pSpaceSphere =  game.AddEntity(EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", nullptr, false);
     }
 
     const float posZ = -8.28f;
