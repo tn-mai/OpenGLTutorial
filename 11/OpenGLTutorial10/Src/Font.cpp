@@ -8,10 +8,13 @@
 #include <iostream>
 #include <cstdint>
 
+/**
+* フォント描画機能を格納する名前空間.
+*/
 namespace Font {
 
 /**
-*
+* フォント用頂点データ型.
 */
 struct Vertex
 {
@@ -23,7 +26,12 @@ struct Vertex
 };
 
 /**
+* フォント描画オブジェクトを初期化する.
 *
+* @param maxChar 最大描画文字数.
+*
+* @retval true  初期化成功.
+* @retval false 初期化失敗.
 */
 bool Renderer::Init(size_t maxChar)
 {
@@ -72,7 +80,12 @@ Renderer::~Renderer()
 }
 
 /**
+* フォントファイルを読み込む.
 *
+* @param filename フォントファイル名.
+*
+* @retval true  読み込み成功.
+* @retval false 読み込み失敗.
 */
 bool Renderer::LoadFromFile(const char* filename)
 {
@@ -80,10 +93,10 @@ bool Renderer::LoadFromFile(const char* filename)
   if (!File::ReadFile(filename, buffer)) {
     return false;
   }
-  static const std::regex reInfo(R"(^info face=".*" size=\d+ bold=\d+ italic=\d+ charset=".*" unicode=\d+ stretchH=\d+ smooth=\d+ aa=\d+ padding=\d+,\d+,\d+,\d+ spacing=-?\d+,-?\d+ *\r?\n)");
-  static const std::regex reCommon(R"(^common lineHeight=\d+ base=\d+ scaleW=(\d+) scaleH=(\d+) pages=\d+ packed=\d+ *\r?\n)");
+  static const std::regex reInfo(R"#(^info face=".*" size=\d+ bold=\d+ italic=\d+ charset=".*" unicode=\d+ stretchH=\d+ smooth=\d+ aa=\d+ padding=\d+,\d+,\d+,\d+ spacing=-?\d+,-?\d+ *\r?\n)#");
+  static const std::regex reCommon(R"#(^common lineHeight=\d+ base=\d+ scaleW=(\d+) scaleH=(\d+) pages=\d+ packed=\d+ *\r?\n)#");
   static const std::regex rePage(R"#(^page id=0 file="(.*)" *\r?\n)#");
-  static const std::regex reChars(R"(^chars count=(\d+) *\r?\n)");
+  static const std::regex reChars(R"#(^chars count=(\d+) *\r?\n)#");
   static const std::regex reChar(R"#(^char id=(\d+) +x=(\d+) +y=(\d+) +width=(\d+) +height=(\d+) +xoffset=(-?\d+) +yoffset=(-?\d+) +xadvance=(-?\d+) +page=(\d+) +chnl=(\d+) *\r?\n?)#");
 
   const char* p = buffer.data();
@@ -139,7 +152,13 @@ bool Renderer::LoadFromFile(const char* filename)
 }
 
 /**
+* 文字列を追加する.
 *
+* @param position 表示開始座標.
+* @param str      追加する文字列.
+*
+* @retval true  追加成功.
+* @retval false 追加失敗.
 */
 bool Renderer::AddString(const glm::vec2& position, const char* str)
 {
@@ -192,7 +211,7 @@ bool Renderer::AddString(const glm::vec2& position, const char* str)
 }
 
 /**
-*
+* VBOをシステムメモリにマッピングする.
 */
 void Renderer::MapBuffer()
 {
@@ -209,6 +228,9 @@ void Renderer::MapBuffer()
   vboSize = 0;
 }
 
+/**
+* VBOのマッピングを解除する.
+*/
 void Renderer::UnmapBuffer()
 {
   if (pVBO && vboSize == 0) {
@@ -220,7 +242,7 @@ void Renderer::UnmapBuffer()
 }
 
 /**
-*
+* フォントを描画する.
 */
 void Renderer::Draw() const
 {
