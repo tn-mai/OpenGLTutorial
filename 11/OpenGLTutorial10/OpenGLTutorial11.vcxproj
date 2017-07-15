@@ -160,7 +160,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\BufferObject.cpp" />
     <ClCompile Include="Src\Entity.cpp" />
+    <ClCompile Include="Src\File.cpp" />
+    <ClCompile Include="Src\Font.cpp" />
     <ClCompile Include="Src\GameEngine.cpp" />
     <ClCompile Include="Src\GLFWEW.cpp" />
     <ClCompile Include="Src\Main.cpp" />
@@ -171,13 +174,16 @@
     <ClCompile Include="Src\UniformBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\BufferObject.h" />
     <ClInclude Include="Src\Entity.h" />
+    <ClInclude Include="Src\File.h" />
     <ClInclude Include="Src\GameEngine.h" />
     <ClInclude Include="Src\GamePad.h" />
     <ClInclude Include="Src\GLFWEW.h" />
     <ClInclude Include="Src\Mesh.h" />
     <ClInclude Include="Src\OffscreenBuffer.h" />
     <ClInclude Include="Src\Shader.h" />
+    <ClInclude Include="Src\Font.h" />
     <ClInclude Include="Src\Texture.h" />
     <ClInclude Include="Src\UniformBuffer.h" />
     <ClInclude Include="Src\Uniform.h" />
@@ -190,6 +196,8 @@
     <None Include="Res\Bloom1st.vert" />
     <None Include="Res\FinalComposition.frag" />
     <None Include="Res\FinalComposition.vert" />
+    <None Include="Res\Font.frag" />
+    <None Include="Res\Font.vert" />
     <None Include="Res\NonLighting.frag" />
     <None Include="Res\NonLighting.vert" />
     <None Include="Res\PostEffect.frag" />

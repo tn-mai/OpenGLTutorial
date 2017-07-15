@@ -268,6 +268,11 @@ struct Update {
     glm::vec3 rotSpace = glm::eulerAngles(pSpaceSphere->Rotation());
     rotSpace.x += static_cast<float>(glm::radians(0.25) * delta);
     pSpaceSphere->Rotation(rotSpace);
+    game.FontScale(glm::vec2(4));
+    //game.FontBorder(0.125f);
+    //game.FontThickness(1);
+    game.FontSubColor({ 255, 100, 20, 255 });
+    game.AddString(glm::vec2(-0.7f, 0.1f), "demo play");
 
     std::uniform_int_distribution<> distributerX(-12, 12);
     std::uniform_int_distribution<> distributerZ(40, 44);
@@ -305,6 +310,7 @@ int main()
   game.LoadMeshFromFile("Res/Model/Toroid.fbx");
   game.LoadMeshFromFile("Res/Model/Blast.fbx");
   game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
+  game.LoadFontFromFile("Res/BaronNeue.fnt");
 
   game.CollisionHandler(EntityGroupId_PlayerShot, EntityGroupId_Enemy, &CollidePlayerShotAndEnemyHandler);
   game.UpdateFunc(Update());

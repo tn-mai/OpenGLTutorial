@@ -12,6 +12,7 @@
 #include "Entity.h"
 #include "Uniform.h"
 #include "GamePad.h"
+#include "Font.h"
 #include <glm/glm.hpp>
 #include <functional>
 #include <random>
@@ -55,6 +56,14 @@ public:
   const Entity::CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;
   void ClearCollisionHandlerList();
 
+  bool LoadFontFromFile(const char* filename) { return fontRenderer.LoadFromFile(filename); }
+  bool AddString(const glm::vec2 pos, const char* str) {return fontRenderer.AddString(pos, str); }
+  void FontScale(const glm::vec2& scale) { fontRenderer.Scale(scale); }
+  void FontColor(glm::u8vec4 color) { fontRenderer.Color(color); }
+  void FontSubColor(glm::u8vec4 color) { fontRenderer.SubColor(color); }
+  void FontBorder(float border) { fontRenderer.Border(border); }
+  void FontThickness(float t) { fontRenderer.Thickness(t); }
+
   Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
   Entity::Buffer::Iterator EndEntity() { return entityBuffer->End(); }
 
@@ -90,6 +99,7 @@ private:
   std::unordered_map<std::string, TexturePtr> textureBuffer;
   Mesh::BufferPtr meshBuffer;
   Entity::BufferPtr entityBuffer;
+  Font::Renderer fontRenderer;
   Uniform::LightingData lightData;
   CameraData camera;
   std::mt19937 rand;

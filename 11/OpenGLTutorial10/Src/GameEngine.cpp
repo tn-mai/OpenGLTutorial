@@ -289,6 +289,9 @@ bool GameEngine::Init(int w, int h, const char* title)
   if (!offscreen || !offAnamorphic[0] || !offAnamorphic[1]) {
     return false;
   }
+
+  fontRenderer.Init(1024);
+
   isInitialized = true;
   return true;
 }
@@ -300,12 +303,14 @@ bool GameEngine::Init(int w, int h, const char* title)
 */
 void GameEngine::Update(double delta)
 {
+  fontRenderer.MapBuffer();
   if (updateFunc) {
     updateFunc(delta);
   }
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 200.0f);
   const glm::mat4x4 matView = glm::lookAt(camera.position, camera.target, camera.up);
   entityBuffer->Update(1.0f / 60.0f, matView, matProj);
+  fontRenderer.UnmapBuffer();
 }
 
 /**
@@ -416,6 +421,8 @@ void GameEngine::Render() const
   progComposition->BindTexture(GL_TEXTURE1, GL_TEXTURE_2D, offBloom[0]->GetTexutre());
   progComposition->BindTexture(GL_TEXTURE2, GL_TEXTURE_2D, offAnamorphic[0]->GetTexutre());
   glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
+
+  fontRenderer.Draw();
 
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, 0);
