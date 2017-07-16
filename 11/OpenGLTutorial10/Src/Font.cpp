@@ -2,9 +2,8 @@
 * @file Font.cpp
 */
 #include "Font.h"
-#include "File.h"
 #include "GameEngine.h"
-#include <regex>
+#include <memory>
 #include <iostream>
 #include <cstdint>
 
@@ -89,65 +88,47 @@ Renderer::~Renderer()
 */
 bool Renderer::LoadFromFile(const char* filename)
 {
-  std::vector<char> buffer;
-  if (!File::ReadFile(filename, buffer)) {
+  const std::unique_ptr<FILE, decltype(&fclose)> fp(fopen(filename, "r"), fclose);
+  if (!fp) {
     return false;
   }
-  static const std::regex reInfo(R"#(^info face=".*" size=\d+ bold=\d+ italic=\d+ charset=".*" unicode=\d+ stretchH=\d+ smooth=\d+ aa=\d+ padding=\d+,\d+,\d+,\d+ spacing=-?\d+,-?\d+ *\r?\n)#");
-  static const std::regex reCommon(R"#(^common lineHeight=\d+ base=\d+ scaleW=(\d+) scaleH=(\d+) pages=\d+ packed=\d+ *\r?\n)#");
-  static const std::regex rePage(R"#(^page id=0 file="(.*)" *\r?\n)#");
-  static const std::regex reChars(R"#(^chars count=(\d+) *\r?\n)#");
-  static const std::regex reChar(R"#(^char id=(\d+) +x=(\d+) +y=(\d+) +width=(\d+) +height=(\d+) +xoffset=(-?\d+) +yoffset=(-?\d+) +xadvance=(-?\d+) +page=(\d+) +chnl=(\d+) *\r?\n?)#");
-
-  const char* p = buffer.data();
-  std::cmatch m;
-  if (!std::regex_search(p, m, reInfo)) {
-    return false;
-  }
-  p = m[0].second;
-
-  if (!std::regex_search(p, m, reCommon)) {
-    return false;
-  }
-  const glm::vec2 reciprocalTexSize(1.0f / atoi(m[1].first), 1.0f / atoi(m[2].first));
-  p = m[0].second;
-
-  if (!std::regex_search(p, m, rePage)) {
-    return false;
-  }
-  texFilename.assign(m[1].first, m[1].second);
-  if (!GameEngine::Instance().LoadTextureFromFile(texFilename.c_str())) {
-    return false;
-  }
-  p = m[0].second;
-
-  if (!std::regex_search(p, m, reChars)) {
-    return false;
-  }
-  p = m[0].second;
   fontList.resize(128);
-
-  const std::cregex_iterator end;
-  for (std::cregex_iterator itr(p, buffer.data() + buffer.size(), reChar); itr != end; ++itr) {
-    const auto& m = *itr;
+  int ret = fscanf(fp.get(), "info face=%*s size=%*d bold=%*d italic=%*d charset=%*s unicode=%*d stretchH=%*d smooth=%*d aa=%*d padding=%*d,%*d,%*d,%*d spacing=%*d,%*d");
+  glm::vec2 scale;
+  ret = fscanf(fp.get(), " common lineHeight=%*d base=%*d scaleW=%f scaleH=%f pages=%*d packed=%*d", &scale.x, &scale.y);
+  if (ret < 2) {
+    return false;
+  }
+  const glm::vec2 reciprocalScale(1.0f / scale);
+  char tex[128];
+  ret = fscanf(fp.get(), " page id=%*d file=%127s", tex);
+  if (ret < 1) {
+    return false;
+  }
+  texFilename.assign(tex + 1, tex + strlen(tex) - 1);
+  int charCount;
+  ret = fscanf(fp.get(), " chars count=%d", &charCount);
+  if (ret < 1) {
+    return false;
+  }
+  for (int i = 0; i < charCount; ++i) {
     Font font;
-    font.id = atoi(m[1].first);
-    font.uv.x = atof(m[2].first);
-    font.uv.y = atof(m[3].first);
-    font.uv *= reciprocalTexSize;
-    font.size.x = atof(m[4].first);
-    font.size.y = atof(m[5].first);
-    font.size *= reciprocalTexSize;
+    ret = fscanf(fp.get(), " char id=%d x=%f y=%f width=%f height=%f xoffset=%f yoffset=%f xadvance=%f page=%*d chnl=%*d", &font.id, &font.uv.x, &font.uv.y, &font.size.x, &font.size.y, &font.offset.x, &font.offset.y, &font.xadvance);
+    if (ret < 8) {
+      return false;
+    }
+    font.uv *= reciprocalScale;
+    font.size *= reciprocalScale;
     font.uv.y = 1 - font.uv.y - font.size.y;
-    font.offset.x = atof(m[6].first);
-    font.offset.y = atof(m[7].first);
-    font.offset *= reciprocalTexSize;
-    font.xadvance = atof(m[8].first) * reciprocalTexSize.x;
+    font.offset *= reciprocalScale;
+    font.xadvance *= reciprocalScale.x;
     if (font.id < 128) {
       fontList[font.id] = font;
     }
   }
-
+  if (!GameEngine::Instance().LoadTextureFromFile(texFilename.c_str())) {
+    return false;
+  }
   return true;
 }
 
