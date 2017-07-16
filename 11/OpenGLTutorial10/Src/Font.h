@@ -30,7 +30,7 @@ public:
   Renderer(const Renderer&) = default;
   Renderer& operator=(const Renderer&) = default;
 
-  bool Init(size_t maxChar);
+  bool Init(size_t maxChar, const glm::vec2& ss);
   bool LoadFromFile(const char* filename);
   void Scale(const glm::vec2& s) { scale = s; }
   const glm::vec2& Scale() const { return scale; }
@@ -56,6 +56,8 @@ private:
   std::vector<Font> fontList;
   std::string texFilename;
   Shader::ProgramPtr progFont;
+  glm::vec2 screenSize;
+  glm::vec2 screenScale;
 
   glm::vec2 scale = glm::vec2(1, 1);
   glm::u8vec4 color = glm::u8vec4(255, 255, 255, 255);

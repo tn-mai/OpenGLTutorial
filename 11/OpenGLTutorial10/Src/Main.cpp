@@ -272,7 +272,7 @@ struct Update {
     //game.FontBorder(0.125f);
     //game.FontThickness(1);
     game.FontSubColor({ 255, 100, 20, 255 });
-    game.AddString(glm::vec2(-0.7f, 0.1f), "demo play");
+    game.AddString(glm::vec2(-0.45f, 0.1f), "demo play");
 
     std::uniform_int_distribution<> distributerX(-12, 12);
     std::uniform_int_distribution<> distributerZ(40, 44);

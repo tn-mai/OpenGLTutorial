@@ -28,11 +28,12 @@ struct Vertex
 * フォント描画オブジェクトを初期化する.
 *
 * @param maxChar 最大描画文字数.
+* @param screen  描画先スクリーンの大きさ.
 *
 * @retval true  初期化成功.
 * @retval false 初期化失敗.
 */
-bool Renderer::Init(size_t maxChar)
+bool Renderer::Init(size_t maxChar, const glm::vec2& screen)
 {
   if (maxChar > USHRT_MAX / 4) {
     maxChar = USHRT_MAX / 4;
@@ -67,6 +68,9 @@ bool Renderer::Init(size_t maxChar)
   if (!progFont) {
     return false;
   }
+
+  screenSize = screen;
+
   MapBuffer();
   return true;
 }
@@ -100,6 +104,7 @@ bool Renderer::LoadFromFile(const char* filename)
     return false;
   }
   const glm::vec2 reciprocalScale(1.0f / scale);
+  screenScale = scale / screenSize;
   char tex[128];
   ret = fscanf(fp.get(), " page id=%*d file=%127s", tex);
   if (ret < 1) {
@@ -144,6 +149,7 @@ bool Renderer::LoadFromFile(const char* filename)
 bool Renderer::AddString(const glm::vec2& position, const char* str)
 {
   const glm::u16vec2 thicknessAndOutline = glm::vec2(0.625f - thickness * 0.375f, border) * 65535.0f;
+
   Vertex* pp = pVBO + vboSize;
   glm::vec2 pos = position;
   for (const char* itr = str; *itr; ++itr) {
@@ -155,7 +161,7 @@ bool Renderer::AddString(const glm::vec2& position, const char* str)
       continue;
     }
     if (font.size.x != font.size.y) {
-      const glm::vec2 size = font.size * scale;
+      const glm::vec2 size = font.size * screenScale * scale;
       const glm::vec2 offsetedPos = pos + font.offset * scale;
       Vertex p[4];
       p[0].position = offsetedPos;
@@ -186,7 +192,7 @@ bool Renderer::AddString(const glm::vec2& position, const char* str)
       pp += 4;
       vboSize += 4;
     }
-    pos.x += font.xadvance * scale.x;
+    pos.x += font.xadvance * screenScale.x * scale.x;
   }
   return true;
 }

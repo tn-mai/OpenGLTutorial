@@ -290,7 +290,7 @@ bool GameEngine::Init(int w, int h, const char* title)
     return false;
   }
 
-  fontRenderer.Init(1024);
+  fontRenderer.Init(1024, glm::vec2(800, 600));
 
   isInitialized = true;
   return true;
