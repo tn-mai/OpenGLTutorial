@@ -14,6 +14,7 @@
 #include "GamePad.h"
 #include "Font.h"
 #include <glm/glm.hpp>
+#include <unordered_map>
 #include <functional>
 #include <random>
 
@@ -66,8 +67,11 @@ public:
   void FontPropotional(bool b) { fontRenderer.Propotional(b); }
   void FontXAdvance(float x) { fontRenderer.XAdvance(x); }
 
-  void Score(int s) { score = s; }
-  int Score() const { return score; }
+  double& UserVariable(const char* name) { return userNumbers[name]; }
+  double UserVariable(const char* name) const {
+    auto itr = userNumbers.find(name);
+    return itr != userNumbers.end() ? itr->second : 0;
+  }
 
   Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
   Entity::Buffer::Iterator EndEntity() { return entityBuffer->End(); }
@@ -109,7 +113,7 @@ private:
   CameraData camera;
   std::mt19937 rand;
 
-  int score = 0;
+  std::unordered_map<std::string, double> userNumbers;
 };
 
 #endif // GAMEENGINE_H_INCLUDED

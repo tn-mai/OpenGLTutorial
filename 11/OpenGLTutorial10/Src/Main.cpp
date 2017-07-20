@@ -234,7 +234,7 @@ void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
   if (Entity::Entity* p = game.AddEntity(EntityGroupId_Others, rhs.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
     static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
-    game.Score(game.Score() + 100);
+    game.UserVariable("score") += 100;
   }
   lhs.Destroy();
   rhs.Destroy();
@@ -243,7 +243,13 @@ void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
 /**
 * ÉQÅ[ÉÄèÛë‘ÇÃçXêV.
 */
-struct Update {
+struct Update
+{
+  Update()
+  {
+    GameEngine::Instance().UserVariable("score") = 0;
+  }
+
   void operator()(double delta)
   {
     GameEngine& game = GameEngine::Instance();
@@ -287,7 +293,7 @@ struct Update {
     }
 
     char str[16];
-    snprintf(str, 16, "%08d", game.Score());
+    snprintf(str, 16, "%08.0f", game.UserVariable("score"));
     game.FontPropotional(false);
     game.FontXAdvance(1.0f / 24.0f);
     game.FontScale(glm::vec2(1));
