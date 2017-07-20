@@ -289,8 +289,8 @@ struct Update {
     char str[16];
     snprintf(str, 16, "%08d", game.Score());
     game.FontPropotional(false);
-    game.FontXAdvance(1.0f / 48.0f);
-    game.FontScale(glm::vec2(2));
+    game.FontXAdvance(1.0f / 24.0f);
+    game.FontScale(glm::vec2(1));
     game.FontColor(glm::vec4(1));
     game.FontThickness(0.5f);
     game.FontBorder(0.25f);

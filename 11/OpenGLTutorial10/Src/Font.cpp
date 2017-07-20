@@ -66,7 +66,7 @@ bool Renderer::Init(size_t maxChar, const glm::vec2& screen)
     return false;
   }
 
-  reciprocalScreenSize = 1.0f / screen;
+  reciprocalScreenSize = 2.0f / screen;
   return true;
 }
 
@@ -93,13 +93,12 @@ bool Renderer::LoadFromFile(const char* filename)
   const float reciprocalFontSize = 1.0f / fontSize;
 
   glm::vec2 scale;
-  float ybase;
-  ret = fscanf(fp.get(), " common lineHeight=%*d base=%f scaleW=%f scaleH=%f pages=%*d packed=%*d", &ybase, &scale.x, &scale.y);
+  ret = fscanf(fp.get(), " common lineHeight=%*d base=%*d scaleW=%f scaleH=%f pages=%*d packed=%*d", &scale.x, &scale.y);
   if (ret < 2) {
     std::cerr << "ERROR: '" << filename << "'‚Ì“Ç‚Ýž‚Ý‚ÉŽ¸”s(line=" << line << ")" << std::endl;
     return false;
   }
-  reciprocalTexSize = glm::vec2(1.0f / scale);
+  const glm::vec2 reciprocalScale = glm::vec2(1.0f / scale);
   ++line;
 
   char tex[128];
@@ -131,15 +130,16 @@ bool Renderer::LoadFromFile(const char* filename)
   fontList.resize(128);
   for (int i = 0; i < charCount; ++i) {
     FontInfo font;
-    ret = fscanf(fp.get(), " char id=%d x=%f y=%f width=%f height=%f xoffset=%f yoffset=%f xadvance=%f page=%*d chnl=%*d", &font.id, &font.uv.x, &font.uv.y, &font.orgSize.x, &font.orgSize.y, &font.offset.x, &font.offset.y, &font.xadvance);
+    glm::vec2 uv;
+    ret = fscanf(fp.get(), " char id=%d x=%f y=%f width=%f height=%f xoffset=%f yoffset=%f xadvance=%f page=%*d chnl=%*d", &font.id, &uv.x, &uv.y, &font.size.x, &font.size.y, &font.offset.x, &font.offset.y, &font.xadvance);
     if (ret < 8) {
       std::cerr << "ERROR: '" << filename << "'‚Ì“Ç‚Ýž‚Ý‚ÉŽ¸”s(line=" << line << ")" << std::endl;
       return false;
     }
-    font.uv *= reciprocalTexSize;
-    font.tsize = font.orgSize * reciprocalTexSize;
-    font.uv.y = 1 - font.uv.y - font.tsize.y;
     font.offset.y *= -1;
+    uv.y = scale.y - uv.y - font.size.y;
+    font.uv[0] = uv * reciprocalScale * 65535.0f;
+    font.uv[1] = (uv + font.size) * reciprocalScale * 65535.0f;
     if (font.id < 128) {
       fontList[font.id] = font;
       if (font.xadvance > fixedAdvance) {
@@ -175,29 +175,29 @@ bool Renderer::AddString(const glm::vec2& position, const char* str)
       break;
     }
     const FontInfo& font = fontList[*itr];
-    if (font.id >= 0 && font.orgSize.x && font.orgSize.y) {
-      const glm::vec2 ssize = font.orgSize * reciprocalScreenSize * scale;
+    if (font.id >= 0 && font.size.x && font.size.y) {
+      const glm::vec2 size = font.size * reciprocalScreenSize * scale;
       const glm::vec2 offsetedPos = propotional ? pos + (font.offset * reciprocalScreenSize) * scale : pos;
-      p[0].position = offsetedPos + glm::vec2(0, -ssize.y);
-      p[0].uv = font.uv * 65535.0f;
+      p[0].position = offsetedPos + glm::vec2(0, -size.y);
+      p[0].uv = font.uv[0];
       p[0].color = color;
       p[0].subColor = subColor;
       p[0].thicknessAndOutline = thicknessAndOutline;
 
-      p[1].position = offsetedPos + glm::vec2(ssize.x, -ssize.y);
-      p[1].uv = (font.uv + glm::vec2(font.tsize.x, 0))  * 65535.0f;
+      p[1].position = offsetedPos + glm::vec2(size.x, -size.y);
+      p[1].uv = glm::u16vec2(font.uv[1].x, font.uv[0].y);
       p[1].color = color;
       p[1].subColor = subColor;
       p[1].thicknessAndOutline = thicknessAndOutline;
 
-      p[2].position = offsetedPos + glm::vec2(ssize.x, 0);
-      p[2].uv = (font.uv + font.tsize) * 65535.0f;
+      p[2].position = offsetedPos + glm::vec2(size.x, 0);
+      p[2].uv = font.uv[1];
       p[2].color = color;
       p[2].subColor = subColor;
       p[2].thicknessAndOutline = thicknessAndOutline;
 
       p[3].position = offsetedPos;
-      p[3].uv = (font.uv + glm::vec2(0, font.tsize.y)) * 65535.0f;
+      p[3].uv = glm::u16vec2(font.uv[0].x, font.uv[1].y);
       p[3].color = color;
       p[3].subColor = subColor;
       p[3].thicknessAndOutline = thicknessAndOutline;

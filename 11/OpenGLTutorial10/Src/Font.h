@@ -16,9 +16,8 @@ struct Vertex;
 
 struct FontInfo {
   int id = -1;
-  glm::vec2 uv;
-  glm::vec2 tsize;
-  glm::vec2 orgSize;
+  glm::u16vec2 uv[2];
+  glm::vec2 size;
   glm::vec2 offset;
   float xadvance = 0;
 };
@@ -64,7 +63,6 @@ private:
   std::string texFilename;
   Shader::ProgramPtr progFont;
   glm::vec2 reciprocalScreenSize;
-  glm::vec2 reciprocalTexSize;
 
   glm::vec2 scale = glm::vec2(1, 1);
   glm::u8vec4 color = glm::u8vec4(255, 255, 255, 255);
