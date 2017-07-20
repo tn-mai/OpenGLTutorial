@@ -57,12 +57,14 @@ public:
   void ClearCollisionHandlerList();
 
   bool LoadFontFromFile(const char* filename) { return fontRenderer.LoadFromFile(filename); }
-  bool AddString(const glm::vec2 pos, const char* str) {return fontRenderer.AddString(pos, str); }
+  bool AddString(const glm::vec2& pos, const char* str) {return fontRenderer.AddString(pos, str); }
   void FontScale(const glm::vec2& scale) { fontRenderer.Scale(scale); }
-  void FontColor(glm::u8vec4 color) { fontRenderer.Color(color); }
-  void FontSubColor(glm::u8vec4 color) { fontRenderer.SubColor(color); }
+  void FontColor(const glm::vec4& color) { fontRenderer.Color(color); }
+  void FontSubColor(const glm::vec4& color) { fontRenderer.SubColor(color); }
   void FontBorder(float border) { fontRenderer.Border(border); }
   void FontThickness(float t) { fontRenderer.Thickness(t); }
+  void FontPropotional(bool b) { fontRenderer.Propotional(b); }
+  void FontXAdvance(float x) { fontRenderer.XAdvance(x); }
 
   Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
   Entity::Buffer::Iterator EndEntity() { return entityBuffer->End(); }

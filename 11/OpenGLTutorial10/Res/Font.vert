@@ -15,7 +15,11 @@ void main() {
   outTexCoord = vTexCoord;
   outColor = vColor;
   outSubColor = vSubColor;
+#if 1
   outThicknessAndOutline.x = vThicknessAndOutline.x;
   outThicknessAndOutline.y = 0.5 - vThicknessAndOutline.y * 0.5;
-  gl_Position = vec4(vPosition.x, vPosition.y, 0, 1);
+#else
+  outThicknessAndOutline = vThicknessAndOutline;
+#endif
+  gl_Position = vec4(vPosition, 0, 1);
 }
