@@ -234,6 +234,7 @@ void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
   if (Entity::Entity* p = game.AddEntity(EntityGroupId_Others, rhs.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
     static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
+    game.Score(game.Score() + 100);
   }
   lhs.Destroy();
   rhs.Destroy();
@@ -284,6 +285,17 @@ struct Update {
       }
       poppingTimer = rndPoppingTime(game.Rand());
     }
+
+    char str[16];
+    snprintf(str, 16, "%08d", game.Score());
+    game.FontPropotional(false);
+    game.FontXAdvance(1.0f / 48.0f);
+    game.FontScale(glm::vec2(2));
+    game.FontColor(glm::vec4(1));
+    game.FontThickness(0.5f);
+    game.FontBorder(0.25f);
+    game.FontSubColor({0.25f, 0.1f, 0.4f, 0.8f});
+    game.AddString(glm::vec2(-0.2f, 1.0f), str);
   }
 
   Entity::Entity* pPlayer = nullptr;

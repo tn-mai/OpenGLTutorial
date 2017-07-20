@@ -66,6 +66,9 @@ public:
   void FontPropotional(bool b) { fontRenderer.Propotional(b); }
   void FontXAdvance(float x) { fontRenderer.XAdvance(x); }
 
+  void Score(int s) { score = s; }
+  int Score() const { return score; }
+
   Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
   Entity::Buffer::Iterator EndEntity() { return entityBuffer->End(); }
 
@@ -105,6 +108,8 @@ private:
   Uniform::LightingData lightData;
   CameraData camera;
   std::mt19937 rand;
+
+  int score = 0;
 };
 
 #endif // GAMEENGINE_H_INCLUDED
