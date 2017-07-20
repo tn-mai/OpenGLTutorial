@@ -266,19 +266,14 @@ struct Update {
     game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
 
     glm::vec3 rotSpace = glm::eulerAngles(pSpaceSphere->Rotation());
-    rotSpace.x += static_cast<float>(glm::radians(0.25) * delta);
+    rotSpace.x += static_cast<float>(glm::radians(2.5) * delta);
     pSpaceSphere->Rotation(rotSpace);
-    game.FontScale(glm::vec2(4));
-    //game.FontBorder(0.125f);
-    //game.FontThickness(1);
-    game.FontSubColor({ 255, 100, 20, 255 });
-    game.AddString(glm::vec2(-0.45f, 0.1f), "demo play");
 
     std::uniform_int_distribution<> distributerX(-12, 12);
     std::uniform_int_distribution<> distributerZ(40, 44);
     poppingTimer -= delta;
     if (poppingTimer <= 0) {
-      const std::uniform_real_distribution<> rndPoppingTime(8.0, 16.0);
+      const std::uniform_real_distribution<> rndPoppingTime(2.0, 6.0);
       const std::uniform_int_distribution<> rndPoppingCount(1, 5);
       for (int i = rndPoppingCount(game.Rand()); i > 0; --i) {
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));

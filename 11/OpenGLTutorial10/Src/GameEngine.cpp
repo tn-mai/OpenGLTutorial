@@ -439,10 +439,13 @@ void GameEngine::Run()
 {
   GLFWEW::Window& window = GLFWEW::Window::Instance();
 
-  const double delta = 1.0 / 60.0;
+  double prevTime = glfwGetTime();
   while (!window.ShouldClose()) {
+    const double curTime = glfwGetTime();
+    const double delta = curTime - prevTime;
+    prevTime = curTime;
     window.UpdateGamePad();
-    Update(delta);
+    Update(delta < 0.5 ? delta : 1.0 / 60.0);
     Render();
     window.SwapBuffers();
   }
