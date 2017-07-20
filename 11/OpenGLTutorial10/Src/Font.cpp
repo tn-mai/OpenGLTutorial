@@ -108,7 +108,15 @@ bool Renderer::LoadFromFile(const char* filename)
     std::cerr << "ERROR: '" << filename << "'の読み込みに失敗(line=" << line << ")" << std::endl;
     return false;
   }
-  texFilename.assign(tex + 1, tex + strlen(tex) - 1);
+  texFilename = filename;
+  const size_t lastSlashIndex = texFilename.find_last_of('/', std::string::npos);
+  if (lastSlashIndex == std::string::npos) {
+    texFilename.clear();
+  } else {
+    texFilename.resize(lastSlashIndex + 1);
+  }
+  texFilename.append(tex + 1); // 最初の「"」を抜いて追加.
+  texFilename.pop_back(); // 最後の「"」を消す.
   ++line;
 
   int charCount;

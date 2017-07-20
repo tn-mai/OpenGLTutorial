@@ -317,7 +317,7 @@ int main()
   game.LoadMeshFromFile("Res/Model/Toroid.fbx");
   game.LoadMeshFromFile("Res/Model/Blast.fbx");
   game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
-  game.LoadFontFromFile("Res/BaronNeue.fnt");
+  game.LoadFontFromFile("Res/Font.fnt");
 
   game.CollisionHandler(EntityGroupId_PlayerShot, EntityGroupId_Enemy, &CollidePlayerShotAndEnemyHandler);
   game.UpdateFunc(Update());
