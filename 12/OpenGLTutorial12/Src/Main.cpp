@@ -56,6 +56,59 @@ void UpdateEnemyShot(Entity::Entity& entity, double delta)
 }
 
 /**
+* 移動目標に追いつく位置を計算する.
+*
+* @param follower       追従開始座標.
+* @param followingSpeed 追従速度.
+* @param target         目標の現在位置.
+* @param targetVelocity 目標の移動速度.
+*
+* @return 追いつくことができればその位置、できなければtargetを返す.
+*/
+glm::vec3 CalcCatchUpPosition(const glm::vec3& follower, const float followingSpeed, const glm::vec3& target, const glm::vec3& targetVelocity)
+{
+  // V0x*t + P0x = V1x*t + P1x
+  //   V0x = V1x + (P1x - P0x)/t
+  // V0y*t + P0y = V1y*t + P1y
+  //   (V0y - V1y)t = P1y - P0y
+  //   t = (P1y - P0y)/(V0y - V1y)
+  //   V0x = V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y)
+  //
+  // V0^2 = V0x^2 + V0y^2
+  //   V0x^2 = V0^2 - V0y^2
+  //   V0x=sqrt(V0^2 - V0y^2)
+  //
+  // sqrt(V0^2 - V0y^2) = V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y)
+  // V0^2 - V0y^2 = (V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y))^2
+  //            = (V1x - N*V1y + N*V0y)^2
+  //            = (VN + N*V0y)^2
+  //            = VN^2 + 2(VN*N*V0y) + (N*V0y)^2
+  //
+  // 0 = (N*V0y)^2 + 2(VN*N*V0y) + VN^2 - V0^2 + V0y^2
+  // 0 = (N^2+1)V0y^2 + (2*VN*N)V0y + (VN^2 - V0^2)
+  //
+  const glm::vec3 P0 = follower;
+  const glm::vec3 P1 = target;
+  const glm::vec3 V1 = targetVelocity;
+  const float V0 = followingSpeed;
+  const float N = (P1.x - P0.x) / (P1.z - P0.z);
+  const float VN = V1.x - N * V1.z;
+  const float a = N * N + 1;
+  const float b = 2 * VN * N;
+  const float c =  VN * VN - V0 * V0;
+  const float D = b * b - 4 * a * c;
+  glm::vec3 targetPos = P1;
+  if (D >= 0) {
+    const float sq = std::sqrt(D);
+    const float t0 = (P1.z - P0.z) / ((-b + sq) / (2 * a) - V1.z);
+    const float t1 = (P1.z - P0.z) / ((-b - sq) / (2 * a) - V1.z);
+    const float t = std::max(t0, t1);
+    targetPos += V1 * t;
+  }
+  return targetPos;
+}
+
+/**
 * 敵の更新.
 */
 struct UpdateToroid {
@@ -79,49 +132,13 @@ struct UpdateToroid {
         entity.Velocity(v);
       } else {
         accelX = v.x * -0.04f;
+        const float V0 = 16.0f;
         if (Entity::Entity* p = game.AddEntity(EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
-          // V0x*t + P0x = V1x*t + P1x
-          //   V0x = V1x + (P1x - P0x)/t
-          // V0y*t + P0y = V1y*t + P1y
-          //   (V0y - V1y)t = P1y - P0y
-          //   t = (P1y - P0y)/(V0y - V1y)
-          //   V0x = V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y)
-          //
-          // V0^2 = V0x^2 + V0y^2
-          //   V0x^2 = V0^2 - V0y^2
-          //   V0x=sqrt(V0^2 - V0y^2)
-          //
-          // sqrt(V0^2 - V0y^2) = V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y)
-          // V0^2 - V0y^2 = (V1x + (P1x - P0x)/(P1y - P0y)(V0y - V1y))^2
-          //            = (V1x - N*V1y + N*V0y)^2
-          //            = (VN + N*V0y)^2
-          //            = VN^2 + 2(VN*N*V0y) + (N*V0y)^2
-          //
-          // 0 = (N*V0y)^2 + 2(VN*N*V0y) + VN^2 - V0^2 + V0y^2
-          // 0 = (N^2+1)V0y^2 + (2*VN*N)V0y + (VN^2 - V0^2)
-          //
-          const glm::vec3 P0 = entity.Position();
-          const glm::vec3 P1 = target->Position();
-          const glm::vec3 V1 = target->Velocity();
-          const float V0 = 16.0f;
-          const float N = (P1.x - P0.x) / (P1.z - P0.z);
-          const float VN = V1.x - N * V1.z;
-          const float a = N * N + 1;
-          const float b = 2 * VN * N;
-          const float c =  VN * VN - V0 * V0;
-          const float D = b * b - 4 * a * c;
-          glm::vec3 targetPos = P1;
-          if (D >= 0) {
-            const float sq = std::sqrt(D);
-            const float t0 = (P1.z - P0.z) / ((-b + sq) / (2 * a) - V1.z);
-            const float t1 = (P1.z - P0.z) / ((-b - sq) / (2 * a) - V1.z);
-            const float t = std::max(t0, t1);
-            targetPos += V1 * t;
-          }
+          glm::vec3 targetPos = CalcCatchUpPosition(entity.Position(), V0, target->Position(), target->Velocity());
           targetPos.x += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
           targetPos.z += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
           targetPos = glm::min(glm::vec3(11, 100, 20), glm::max(targetPos, glm::vec3(-11, -100, 1)));
-          p->Velocity(glm::normalize(targetPos - P0) * V0);
+          p->Velocity(glm::normalize(targetPos - entity.Position()) * V0);
           p->Color(glm::vec4(6, 6, 6, 1));
           p->Collision(collisionDataList[EntityGroupId_EnemyShot]);
         }
