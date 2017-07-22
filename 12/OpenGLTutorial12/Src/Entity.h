@@ -129,12 +129,12 @@ public:
 
   static BufferPtr Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int bindingPoint, const char* ubName);
 
-  Entity* AddEntity(int groupId, const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t, const Shader::ProgramPtr& p, Entity::UpdateFuncType func);
+  Entity* AddEntity(int groupId, const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t, const Shader::ProgramPtr& p, const Entity::UpdateFuncType& func);
   void RemoveEntity(Entity* entity);
   void Update(double delta, const glm::mat4& matView, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
 
-  void CollisionHandler(int gid0, int gid1, CollisionHandlerType handler);
+  void CollisionHandler(int gid0, int gid1, const CollisionHandlerType& handler);
   const CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;
   void ClearCollisionHandlerList();
 

@@ -137,7 +137,7 @@ BufferPtr Buffer::Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int 
 *         回転や拡大率はこのポインタ経由で設定する.
 *         なお、このポインタをアプリケーション側で保持する必要はない.
 */
-Entity* Buffer::AddEntity(int groupId, const glm::vec3& position, const Mesh::MeshPtr& mesh, const TexturePtr& texture, const Shader::ProgramPtr& program, Entity::UpdateFuncType func)
+Entity* Buffer::AddEntity(int groupId, const glm::vec3& position, const Mesh::MeshPtr& mesh, const TexturePtr& texture, const Shader::ProgramPtr& program, const Entity::UpdateFuncType& func)
 {
   if (freeList.prev == freeList.next) {
     std::cerr << "WARNING in Entity::Buffer::AddEntity: 空きエンティティがありません." << std::endl;
@@ -298,7 +298,7 @@ void Buffer::Draw(const Mesh::BufferPtr& meshBuffer) const
 *   Func(グループID=1のエンティティ、グループID=10のエンティティ)
 *   のように呼び出される.
 */
-void Buffer::CollisionHandler(int gid0, int gid1, CollisionHandlerType handler)
+void Buffer::CollisionHandler(int gid0, int gid1, const CollisionHandlerType& handler)
 {
   if (gid0 > gid1) {
     std::swap(gid0, gid1);
