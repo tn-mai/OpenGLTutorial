@@ -7,8 +7,17 @@
 #include <algorithm>
 #include "../Res/Audio/SampleCueSheet.h"
 
+struct TitleState;
+struct GameOverState
+{
+  void operator()(double delta);
+  Entity::Entity* pSpaceSphere = nullptr;
+  double timer = 0;
+};
+
 /// エンティティの衝突グループID.
 enum EntityGroupId {
+  EntityGroupId_Background,
   EntityGroupId_Player,
   EntityGroupId_PlayerShot,
   EntityGroupId_Enemy,
@@ -18,6 +27,7 @@ enum EntityGroupId {
 
 /// 衝突データリスト.
 static const Entity::CollisionData collisionDataList[] = {
+  { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
   { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
   { glm::vec3(-0.5f, -0.5f, -1.0f), glm::vec3(0.5f, 0.5f, 1.0f) },
   { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
@@ -63,7 +73,7 @@ struct UpdateToroid {
         v.x += accelX;
         entity.Velocity(v);
       } else {
-        accelX = v.x * -0.045f;
+        accelX = v.x * -0.04f;
         if (Entity::Entity* p = game.AddEntity(EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
           // V0x*t + P0x = V1x*t + P1x
           //   V0x = V1x + (P1x - P0x)/t
@@ -88,7 +98,7 @@ struct UpdateToroid {
           const glm::vec3 P0 = entity.Position();
           const glm::vec3 P1 = target->Position();
           const glm::vec3 V1 = target->Velocity();
-          const float V0 = 4.0f;
+          const float V0 = 16.0f;
           const float N = (P1.x - P0.x) / (P1.z - P0.z);
           const float VN = V1.x - N * V1.z;
           const float a = N * N + 1;
@@ -106,7 +116,7 @@ struct UpdateToroid {
           targetPos.x += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
           targetPos.z += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
           targetPos = glm::min(glm::vec3(11, 100, 20), glm::max(targetPos, glm::vec3(-11, -100, 1)));
-          p->Velocity(glm::normalize(targetPos - P0) * 16.0f);
+          p->Velocity(glm::normalize(targetPos - P0) * V0);
           p->Color(glm::vec4(6, 6, 6, 1));
           p->Collision(collisionDataList[EntityGroupId_EnemyShot]);
         }
@@ -116,7 +126,7 @@ struct UpdateToroid {
       entity.Rotation(q * entity.Rotation());
     } else {
       float rot = glm::angle(entity.Rotation());
-      rot += glm::radians(35.0f) * static_cast<float>(delta);
+      rot += glm::radians(120.0f) * static_cast<float>(delta);
       if (rot > glm::pi<float>() * 2.0f) {
         rot -= glm::pi<float>() * 2.0f;
       }
@@ -149,6 +159,27 @@ struct UpdatePlayer
   void operator()(Entity::Entity& entity, double delta)
   {
     GameEngine& game = GameEngine::Instance();
+    double& invinsibleSeconds = game.UserVariable("invinsible_seconds");
+    if (invinsibleSeconds > 0) {
+      invinsibleSeconds -= delta;
+      if (invinsibleSeconds <= 0) {
+        invinsibleSeconds = 0;
+        entity.Color(glm::vec4(1));
+      } else {
+        entity.Color(glm::vec4(1, 1, 1, 0.5f));
+      }
+    }
+    double& autoPilot = game.UserVariable("auto_pilot");
+    if (autoPilot) {
+      glm::vec3 pos = entity.Position();
+      pos.z += static_cast<float>(20 * delta);
+      if (pos.z >= 2) {
+        autoPilot = 0;
+        pos.z = 2;
+      }
+      entity.Position(pos);
+      return;
+    }
     const GamePad gamepad = game.GetGamePad(0);
     glm::vec2 vec;
     float rotZ = 0;
@@ -195,6 +226,7 @@ struct UpdatePlayer
       shotInterval = 0;
     }
   }
+
   double shotInterval = 0;
 };
 
@@ -245,16 +277,63 @@ void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
 }
 
 /**
+* 自機と敵または敵の弾の衝突処理.
+*/
+void PlayerAndEnemyShotCollisionHandler(Entity::Entity& lhs, Entity::Entity& rhs)
+{
+  GameEngine& game = GameEngine::Instance();
+  if (game.UserVariable("invinsible_seconds")) {
+    return;
+  }
+  Entity::Entity& player = lhs.GroupId() == EntityGroupId_Player ? lhs : rhs;
+  Entity::Entity& enemy = lhs.GroupId() != EntityGroupId_Player ? lhs : rhs;
+  if (Entity::Entity* p = game.AddEntity(EntityGroupId_Others, player.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
+    static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
+    p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
+    game.PlayAudio(0, CRI_SAMPLECUESHEET_BOMB);
+  }
+  if (enemy.GroupId() == EntityGroupId_Enemy) {
+    if (Entity::Entity* p = game.AddEntity(EntityGroupId_Others, enemy.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
+      static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
+      p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
+      game.PlayAudio(1, CRI_SAMPLECUESHEET_BOMB);
+    }
+  }
+  enemy.Destroy();
+
+  double& playerStock = game.UserVariable("player_stock");
+  if (playerStock > 0) {
+    playerStock -= 1;
+    player.Position(glm::vec3(0, 0, -40));
+    player.Velocity(glm::vec3(0));
+    game.UserVariable("auto_pilot") = 1;
+    game.UserVariable("invinsible_seconds") = 5;
+  } else {
+    game.UpdateFunc(GameOverState());
+  }
+}
+
+/**
 * ゲーム状態の更新.
 */
 struct Update
 {
   Update()
   {
-    GameEngine::Instance().UserVariable("score") = 0;
+    GameEngine& game = GameEngine::Instance();
+    game.UserVariable("score") = 0;
+    game.UserVariable("auto_pilot") = 1;
+    game.UserVariable("invinsible_seconds") = 0;
+    game.UserVariable("player_stock") = 2;
   }
   ~Update()
   {
+    if (pSpaceSphere) {
+      pSpaceSphere->Destroy();
+    }
+    if (pPlayer) {
+      pPlayer->Destroy();
+    }
   }
 
   void operator()(double delta)
@@ -262,11 +341,11 @@ struct Update
     GameEngine& game = GameEngine::Instance();
 
     if (!pPlayer) {
-      pPlayer = game.AddEntity(EntityGroupId_Player, glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
+      pPlayer = game.AddEntity(EntityGroupId_Player, glm::vec3(0, 0, -10), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
       pPlayer->Collision(collisionDataList[EntityGroupId_Player]);
     }
     if (!pSpaceSphere) {
-      pSpaceSphere =  game.AddEntity(EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", nullptr, false);
+      pSpaceSphere =  game.AddEntity(EntityGroupId_Background, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", nullptr, false);
     }
 
     const float posZ = -8.28f;
@@ -353,6 +432,41 @@ struct TitleState
   Entity::Entity* pSpaceSphere = nullptr;
 };
 
+/**
+* ゲームオーバー画面.
+*/
+void GameOverState::operator()(double delta)
+{
+  timer += delta;
+
+  GameEngine& game = GameEngine::Instance();
+  game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
+
+  if (!pSpaceSphere) {
+    pSpaceSphere = game.AddEntity(EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", nullptr, false);
+  }
+  glm::vec3 rotSpace = glm::eulerAngles(pSpaceSphere->Rotation());
+  rotSpace.x += static_cast<float>(glm::radians(2.5) * delta);
+  pSpaceSphere->Rotation(rotSpace);
+
+  const float alpha = static_cast<float>(std::min(1.0, timer * 0.2));
+
+  game.FontPropotional(true);
+  game.FontThickness(0.25f);
+  game.FontBorder(0.25f);
+  game.FontColor({ 0.9f, 0.25f, 0.25f, 1.0f * alpha });
+  game.FontSubColor({ 1.0f, 1.0f, 1.0f, 1.0f * alpha });
+  game.FontScale(glm::vec2(2));
+  game.AddString(glm::vec2(-0.5f, 0.125f), "game over");
+  game.FontScale(glm::vec2(0.5f));
+  if (timer >= 2.0 && (game.GetGamePad(0).buttonDown & (GamePad::A | GamePad::B | GamePad::START))) {
+    game.RemoveEntity(pSpaceSphere);
+    game.UpdateFunc(TitleState());
+    game.PlayAudio(1, CRI_SAMPLECUESHEET_START);
+  }
+}
+
+
 /// エントリーポイント.
 int main()
 {
@@ -371,6 +485,8 @@ int main()
   game.LoadFontFromFile("Res/Font.fnt");
 
   game.CollisionHandler(EntityGroupId_PlayerShot, EntityGroupId_Enemy, &CollidePlayerShotAndEnemyHandler);
+  game.CollisionHandler(EntityGroupId_Player, EntityGroupId_Enemy, &PlayerAndEnemyShotCollisionHandler);
+  game.CollisionHandler(EntityGroupId_Player, EntityGroupId_EnemyShot, &PlayerAndEnemyShotCollisionHandler);
   game.UpdateFunc(TitleState());
   game.Run();
 
