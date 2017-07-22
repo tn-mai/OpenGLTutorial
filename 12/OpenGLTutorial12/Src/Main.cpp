@@ -7,6 +7,11 @@
 #include <algorithm>
 #include "../Res/Audio/SampleCueSheet.h"
 
+static const char varScore[] = "score";
+static const char varAutoPilot[] = "auto_pilot";
+static const char varInvinsibleSeconds[] = "invinsible_seconds";
+static const char varPlayerStock[] = "player_stock";
+
 struct TitleState;
 struct GameOverState
 {
@@ -159,7 +164,7 @@ struct UpdatePlayer
   void operator()(Entity::Entity& entity, double delta)
   {
     GameEngine& game = GameEngine::Instance();
-    double& invinsibleSeconds = game.UserVariable("invinsible_seconds");
+    double& invinsibleSeconds = game.UserVariable(varInvinsibleSeconds);
     if (invinsibleSeconds > 0) {
       invinsibleSeconds -= delta;
       if (invinsibleSeconds <= 0) {
@@ -169,7 +174,7 @@ struct UpdatePlayer
         entity.Color(glm::vec4(1, 1, 1, 0.5f));
       }
     }
-    double& autoPilot = game.UserVariable("auto_pilot");
+    double& autoPilot = game.UserVariable(varAutoPilot);
     if (autoPilot) {
       glm::vec3 pos = entity.Position();
       pos.z += static_cast<float>(20 * delta);
@@ -269,7 +274,7 @@ void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
   if (Entity::Entity* p = game.AddEntity(EntityGroupId_Others, rhs.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
     static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
-    game.UserVariable("score") += 100;
+    game.UserVariable(varScore) += 100;
     game.PlayAudio(1, CRI_SAMPLECUESHEET_BOMB);
   }
   lhs.Destroy();
@@ -282,7 +287,7 @@ void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
 void PlayerAndEnemyShotCollisionHandler(Entity::Entity& lhs, Entity::Entity& rhs)
 {
   GameEngine& game = GameEngine::Instance();
-  if (game.UserVariable("invinsible_seconds")) {
+  if (game.UserVariable(varInvinsibleSeconds)) {
     return;
   }
   Entity::Entity& player = lhs.GroupId() == EntityGroupId_Player ? lhs : rhs;
@@ -301,13 +306,13 @@ void PlayerAndEnemyShotCollisionHandler(Entity::Entity& lhs, Entity::Entity& rhs
   }
   enemy.Destroy();
 
-  double& playerStock = game.UserVariable("player_stock");
+  double& playerStock = game.UserVariable(varPlayerStock);
   if (playerStock > 0) {
     playerStock -= 1;
     player.Position(glm::vec3(0, 0, -40));
     player.Velocity(glm::vec3(0));
-    game.UserVariable("auto_pilot") = 1;
-    game.UserVariable("invinsible_seconds") = 5;
+    game.UserVariable(varAutoPilot) = 1;
+    game.UserVariable(varInvinsibleSeconds) = 5;
   } else {
     game.UpdateFunc(GameOverState());
   }
@@ -321,19 +326,13 @@ struct Update
   Update()
   {
     GameEngine& game = GameEngine::Instance();
-    game.UserVariable("score") = 0;
-    game.UserVariable("auto_pilot") = 1;
-    game.UserVariable("invinsible_seconds") = 0;
-    game.UserVariable("player_stock") = 2;
+    game.UserVariable(varScore) = 0;
+    game.UserVariable(varAutoPilot) = 1;
+    game.UserVariable(varInvinsibleSeconds) = 0;
+    game.UserVariable(varPlayerStock) = 2;
   }
   ~Update()
   {
-    if (pSpaceSphere) {
-      pSpaceSphere->Destroy();
-    }
-    if (pPlayer) {
-      pPlayer->Destroy();
-    }
   }
 
   void operator()(double delta)
@@ -379,7 +378,7 @@ struct Update
     }
 
     char str[16];
-    snprintf(str, 16, "%08.0f", game.UserVariable("score"));
+    snprintf(str, 16, "%08.0f", game.UserVariable(varScore));
     game.FontPropotional(false);
     game.FontXAdvance(1.0f / 24.0f);
     game.FontScale(glm::vec2(1));
