@@ -7,6 +7,8 @@
 #include <iostream>
 #include <time.h>
 
+#include "Audio.h"
+
 /// 頂点データ型.
 struct Vertex
 {
@@ -183,6 +185,7 @@ GameEngine& GameEngine::Instance() {
 */
 GameEngine::~GameEngine()
 {
+  Audio::Destroy();
   if (vao) {
     glDeleteVertexArrays(1, &vao);
   }
@@ -292,6 +295,8 @@ bool GameEngine::Init(int w, int h, const char* title)
 
   fontRenderer.Init(1024, glm::vec2(800, 600));
 
+  Audio::Initialize();
+
   isInitialized = true;
   return true;
 }
@@ -303,13 +308,14 @@ bool GameEngine::Init(int w, int h, const char* title)
 */
 void GameEngine::Update(double delta)
 {
+  Audio::Update();
   fontRenderer.MapBuffer();
   if (updateFunc) {
     updateFunc(delta);
   }
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 200.0f);
   const glm::mat4x4 matView = glm::lookAt(camera.position, camera.target, camera.up);
-  entityBuffer->Update(1.0f / 60.0f, matView, matProj);
+  entityBuffer->Update(delta, matView, matProj);
   fontRenderer.UnmapBuffer();
 }
 
@@ -438,14 +444,22 @@ void GameEngine::Render() const
 void GameEngine::Run()
 {
   GLFWEW::Window& window = GLFWEW::Window::Instance();
-
   double prevTime = glfwGetTime();
+  double frames = 0;
+  double fpsTimer = 0;
   while (!window.ShouldClose()) {
     const double curTime = glfwGetTime();
     const double delta = curTime - prevTime;
     prevTime = curTime;
+    frames += 1;
+    fpsTimer += delta;
+    if (fpsTimer >= 1) {
+      fpsTimer -= 1;
+      fps = frames;
+      frames = 0;
+    }
     window.UpdateGamePad();
-    Update(delta < 0.5 ? delta : 1.0 / 60.0);
+    Update(delta);
     Render();
     window.SwapBuffers();
   }
@@ -676,4 +690,9 @@ const Entity::CollisionHandlerType& GameEngine::CollisionHandler(int gid0, int g
 void GameEngine::ClearCollisionHandlerList()
 {
   entityBuffer->ClearCollisionHandlerList();
+}
+
+void GameEngine::PlayAudio(int playerId, int cueId)
+{
+  Audio::Play(playerId, cueId);
 }

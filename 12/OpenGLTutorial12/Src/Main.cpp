@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <random>
 #include <algorithm>
+#include "../Res/Audio/SampleCueSheet.h"
 
 /// エンティティの衝突グループID.
 enum EntityGroupId {
@@ -62,7 +63,7 @@ struct UpdateToroid {
         v.x += accelX;
         entity.Velocity(v);
       } else {
-        accelX = v.x * -0.025f;
+        accelX = v.x * -0.045f;
         if (Entity::Entity* p = game.AddEntity(EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
           // V0x*t + P0x = V1x*t + P1x
           //   V0x = V1x + (P1x - P0x)/t
@@ -105,13 +106,13 @@ struct UpdateToroid {
           targetPos.x += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
           targetPos.z += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
           targetPos = glm::min(glm::vec3(11, 100, 20), glm::max(targetPos, glm::vec3(-11, -100, 1)));
-          p->Velocity(glm::normalize(targetPos - P0) * 4.0f);
+          p->Velocity(glm::normalize(targetPos - P0) * 16.0f);
           p->Color(glm::vec4(6, 6, 6, 1));
           p->Collision(collisionDataList[EntityGroupId_EnemyShot]);
         }
       }
       entity.Velocity(v);
-      glm::quat q = glm::rotate(glm::quat(), -accelX * 1.0f, glm::vec3(0, 0, 1));
+      glm::quat q = glm::rotate(glm::quat(), -accelX * 0.2f, glm::vec3(0, 0, 1));
       entity.Rotation(q * entity.Rotation());
     } else {
       float rot = glm::angle(entity.Rotation());
@@ -143,7 +144,8 @@ void UpdatePlayerShot(Entity::Entity& entity, double delta)
 /**
 * 自機の更新
 */
-struct UpdatePlayer {
+struct UpdatePlayer
+{
   void operator()(Entity::Entity& entity, double delta)
   {
     GameEngine& game = GameEngine::Instance();
@@ -164,7 +166,7 @@ struct UpdatePlayer {
     }
     const float lengthSq = glm::dot(vec, vec);
     if (lengthSq) {
-      vec = glm::normalize(vec) * 2.0f;
+      vec = glm::normalize(vec) * 12.0f;
     }
     entity.Velocity(glm::vec3(vec.x, 0, vec.y));
     entity.Rotation(glm::quat(glm::vec3(0, 0, rotZ)));
@@ -176,17 +178,18 @@ struct UpdatePlayer {
     if (gamepad.buttons & GamePad::A) {
       shotInterval -= delta;
       if (shotInterval <= 0) {
-        shotInterval = 1.0;
+        shotInterval = 0.2;
         glm::vec3 pos = entity.Position();
         pos.x -= 0.3f;
         for (int i = 0; i < 2; ++i) {
           if (Entity::Entity* p = game.AddEntity(EntityGroupId_PlayerShot, pos, "NormalShot", "Res/Model/Player.bmp", UpdatePlayerShot)) {
-            p->Velocity(glm::vec3(0, 0, 16));
+            p->Velocity(glm::vec3(0, 0, 80));
             p->Color(glm::vec4(3));
             p->Collision(collisionDataList[EntityGroupId_PlayerShot]);
           }
           pos.x += 0.6f;
         }
+        game.PlayAudio(0, CRI_SAMPLECUESHEET_PLAYERSHOT);
       }
     } else {
       shotInterval = 0;
@@ -201,25 +204,25 @@ struct UpdatePlayer {
 struct UpdateBlast {
   void operator()(Entity::Entity& entity, double delta) {
     timer += delta;
-    if (timer >= 2) {
+    if (timer >= 0.5) {
       GameEngine::Instance().RemoveEntity(&entity);
       return;
     }
-    entity.Scale(glm::vec3(static_cast<float>(1 + timer)));
+    const double tmp = timer * 4;
+    entity.Scale(glm::vec3(static_cast<float>(1 + tmp)));
     static const glm::vec4 color[] = {
       glm::vec4(1.0f, 1.0f, 0.75f, 1) * 2.0f,
       glm::vec4(1.0f, 0.5f, 0.1f, 1) * 2.0f,
       glm::vec4(0.25f, 0.1f, 0.1f, 0) * 2.0f,
       glm::vec4(0.25f, 0.1f, 0.1f, 0) * 2.0f,
     };
-    const double tmp = timer * 1;
     const float fract = static_cast<float>(std::fmod(tmp, 1));
     const glm::vec4 col0 = color[static_cast<int>(tmp)];
     const glm::vec4 col1 = color[static_cast<int>(tmp) + 1];
     const glm::vec4 newColor = col0 * glm::vec4(1 - fract) + col1 * glm::vec4(fract);
     entity.Color(newColor);
     glm::vec3 euler = glm::eulerAngles(entity.Rotation());
-    euler.y += glm::radians(30.0f) * static_cast<float>(delta);
+    euler.y += glm::radians(120.0f) * static_cast<float>(delta);
     entity.Rotation(glm::quat(euler));
   }
   double timer = 0;
@@ -235,6 +238,7 @@ void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
     static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
     game.UserVariable("score") += 100;
+    game.PlayAudio(1, CRI_SAMPLECUESHEET_BOMB);
   }
   lhs.Destroy();
   rhs.Destroy();
@@ -248,6 +252,9 @@ struct Update
   Update()
   {
     GameEngine::Instance().UserVariable("score") = 0;
+  }
+  ~Update()
+  {
   }
 
   void operator()(double delta)
@@ -285,7 +292,7 @@ struct Update
       for (int i = rndPoppingCount(game.Rand()); i > 0; --i) {
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
         if (Entity::Entity* p = game.AddEntity(EntityGroupId_Enemy, pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer))) {
-          p->Velocity(glm::vec3(pos.x < 0 ? 1.0f : -1.0f, 0, -4));
+          p->Velocity(glm::vec3(pos.x < 0 ? 4.0f : -4.0f, 0, -16));
           p->Collision(collisionDataList[EntityGroupId_Enemy]);
         }
       }
@@ -302,6 +309,8 @@ struct Update
     game.FontBorder(0.25f);
     game.FontSubColor({0.25f, 0.1f, 0.4f, 0.8f});
     game.AddString(glm::vec2(-0.2f, 1.0f), str);
+    snprintf(str, 16, "%03.0f", game.Fps());
+    game.AddString(glm::vec2(-0.95f, 1.0f), str);
   }
 
   Entity::Entity* pPlayer = nullptr;
@@ -338,6 +347,7 @@ struct TitleState
     if (game.GetGamePad(0).buttonDown & (GamePad::A | GamePad::B | GamePad::START)) {
       game.RemoveEntity(pSpaceSphere);
       game.UpdateFunc(Update());
+      game.PlayAudio(1, CRI_SAMPLECUESHEET_START);
     }
   }
   Entity::Entity* pSpaceSphere = nullptr;

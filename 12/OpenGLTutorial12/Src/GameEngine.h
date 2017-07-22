@@ -73,6 +73,9 @@ public:
     return itr != userNumbers.end() ? itr->second : 0;
   }
 
+  void PlayAudio(int playerId, int cueId);
+  double Fps() const { return fps; }
+
   Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
   Entity::Buffer::Iterator EndEntity() { return entityBuffer->End(); }
 
@@ -112,6 +115,7 @@ private:
   Uniform::LightingData lightData;
   CameraData camera;
   std::mt19937 rand;
+  double fps = 0;
 
   std::unordered_map<std::string, double> userNumbers;
 };
