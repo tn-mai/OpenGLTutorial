@@ -185,6 +185,7 @@ GameEngine& GameEngine::Instance() {
 */
 GameEngine::~GameEngine()
 {
+  updateFunc = nullptr;
   Audio::Destroy();
   if (vao) {
     glDeleteVertexArrays(1, &vao);
