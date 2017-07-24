@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <random>
 #include <algorithm>
+#include "../Res/Audio/SampleSound_acf.h"
 #include "../Res/Audio/SampleCueSheet.h"
 
 static const char varScore[] = "score";
@@ -32,8 +33,8 @@ enum EntityGroupId {
 
 /// 衝突データリスト.
 static const Entity::CollisionData collisionDataList[] = {
-  { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
-  { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
+  { glm::vec3(), glm::vec3() },
+  { glm::vec3(-0.5f, -1.0f, -0.5f), glm::vec3(0.5f, 1.0f, 0.5f) },
   { glm::vec3(-0.5f, -0.5f, -1.0f), glm::vec3(0.5f, 0.5f, 1.0f) },
   { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
   { glm::vec3(-0.25f, -0.25f, -0.25f), glm::vec3(0.25f, 0.25f, 0.25f) },
@@ -112,13 +113,17 @@ glm::vec3 CalcCatchUpPosition(const glm::vec3& follower, const float followingSp
 * 敵の更新.
 */
 struct UpdateToroid {
-  explicit UpdateToroid(const Entity::Entity* t) : target(t)
+  explicit UpdateToroid(const Entity::Entity* t, int level = 0) : target(t)
   {
     GameEngine& game = GameEngine::Instance();
+    shotInterval = std::max(0.1, 1.0 - (level % 20) * 0.05);
+    shotCount = std::min(5, level / 20 + 1);
   }
 
   void operator()(Entity::Entity& entity, double delta)
   {
+    const float V0 = 16.0f;
+
     GameEngine& game = GameEngine::Instance();
     glm::vec3 pos = entity.Position();
     if (pos.z < -2.0f || pos.x < -40.0f || pos.x > 40.0f) {
@@ -126,24 +131,49 @@ struct UpdateToroid {
       return;
     } else if (isEscape || (pos.z < 35.0f && std::abs(pos.x - target->Position().x) <= 3.0f)) {
       isEscape = true;
+      bool doShot = false;
       glm::vec3 v = entity.Velocity();
       if (accelX) {
         v.x += accelX;
         entity.Velocity(v);
+        shotTimer -= delta;
+        if (shotTimer <= 0) {
+          shotTimer = shotInterval;
+          doShot = true;
+        }
       } else {
         accelX = v.x * -0.04f;
-        const float V0 = 16.0f;
-        if (Entity::Entity* p = game.AddEntity(EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
-          glm::vec3 targetPos = CalcCatchUpPosition(entity.Position(), V0, target->Position(), target->Velocity());
-          targetPos.x += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
-          targetPos.z += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
-          targetPos = glm::min(glm::vec3(11, 100, 20), glm::max(targetPos, glm::vec3(-11, -100, 1)));
-          p->Velocity(glm::normalize(targetPos - entity.Position()) * V0);
-          p->Color(glm::vec4(6, 6, 6, 1));
-          p->Collision(collisionDataList[EntityGroupId_EnemyShot]);
-        }
+        shotTimer = shotInterval;
+        doShot = true;
       }
       entity.Velocity(v);
+
+      const glm::bvec3 flags = glm::lessThan(pos, glm::vec3(12, 100, 40)) && glm::greaterThan(pos, glm::vec3(-12, -100, 0));
+      if (doShot && glm::all(flags)) {
+        glm::vec3 targetPos = CalcCatchUpPosition(entity.Position(), V0, target->Position(), target->Velocity());
+        targetPos.x += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
+        targetPos.z += static_cast<float>(std::normal_distribution<>(0, 1.5f)(game.Rand()));
+        targetPos = glm::min(glm::vec3(11, 100, 20), glm::max(targetPos, glm::vec3(-11, -100, 1)));
+        const glm::vec3 velocity = glm::normalize(targetPos - entity.Position()) * V0;
+        static const float rotList[][2] = {
+          { glm::radians(0.0f), glm::radians(0.0f) },
+          { glm::radians(-15.0f), glm::radians(30.0f) },
+          { glm::radians(-15.0f), glm::radians(15.0f) },
+          { glm::radians(-30.0f), glm::radians(20.0f) },
+          { glm::radians(-30.0f), glm::radians(15.0f) },
+          { glm::radians(-30.0f), glm::radians(15.0f) },
+        };
+        float rot = rotList[shotCount - 1][0];
+        for (int i = 0; i < shotCount; ++i) {
+          if (Entity::Entity* p = game.AddEntity(EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
+            p->Velocity(glm::rotate(glm::quat(glm::vec3(0, rot, 0)), velocity));
+            p->Color(glm::vec4(6, 6, 6, 1));
+            p->Collision(collisionDataList[EntityGroupId_EnemyShot]);
+          }
+          rot += rotList[shotCount - 1][1];
+        }
+      }
+
       glm::quat q = glm::rotate(glm::quat(), -accelX * 0.2f, glm::vec3(0, 0, 1));
       entity.Rotation(q * entity.Rotation());
     } else {
@@ -158,6 +188,9 @@ struct UpdateToroid {
   const Entity::Entity* target;
   bool isEscape = false;
   float accelX = 0;
+  double shotInterval;
+  int shotCount;
+  double shotTimer;
 };
 
 /**
@@ -232,6 +265,7 @@ struct UpdatePlayer
       shotInterval -= delta;
       if (shotInterval <= 0) {
         shotInterval = 0.2;
+        game.PlayAudio(0, CRI_SAMPLECUESHEET_PLAYERSHOT);
         glm::vec3 pos = entity.Position();
         pos.x -= 0.3f;
         for (int i = 0; i < 2; ++i) {
@@ -242,7 +276,6 @@ struct UpdatePlayer
           }
           pos.x += 0.6f;
         }
-        game.PlayAudio(0, CRI_SAMPLECUESHEET_PLAYERSHOT);
       }
     } else {
       shotInterval = 0;
@@ -291,9 +324,9 @@ void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
   if (Entity::Entity* p = game.AddEntity(EntityGroupId_Others, rhs.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
     static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
-    game.UserVariable(varScore) += 100;
-    game.PlayAudio(1, CRI_SAMPLECUESHEET_BOMB);
   }
+  game.UserVariable(varScore) += 100;
+  game.PlayAudio(1, CRI_SAMPLECUESHEET_BOMB);
   lhs.Destroy();
   rhs.Destroy();
 }
@@ -350,6 +383,12 @@ struct Update
   }
   ~Update()
   {
+    if (pPlayer) {
+      pPlayer->Destroy();
+    }
+    if (pSpaceSphere) {
+      pSpaceSphere->Destroy();
+    }
   }
 
   void operator()(double delta)
@@ -386,12 +425,13 @@ struct Update
       const std::uniform_int_distribution<> rndPoppingCount(1, 5);
       for (int i = rndPoppingCount(game.Rand()); i > 0; --i) {
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
-        if (Entity::Entity* p = game.AddEntity(EntityGroupId_Enemy, pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer))) {
+        if (Entity::Entity* p = game.AddEntity(EntityGroupId_Enemy, pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer, enemeyLevel))) {
           p->Velocity(glm::vec3(pos.x < 0 ? 4.0f : -4.0f, 0, -16));
           p->Collision(collisionDataList[EntityGroupId_Enemy]);
         }
       }
       poppingTimer = rndPoppingTime(game.Rand());
+      enemeyLevel = std::min(100, enemeyLevel + 1);
     }
 
     char str[16];
@@ -406,10 +446,13 @@ struct Update
     game.AddString(glm::vec2(-0.2f, 1.0f), str);
     snprintf(str, 16, "%03.0f", game.Fps());
     game.AddString(glm::vec2(-0.95f, 1.0f), str);
+    snprintf(str, 16, "leve:%03d", enemeyLevel);
+    game.AddString(glm::vec2(0.6f, 1.0f), str);
   }
 
   Entity::Entity* pPlayer = nullptr;
   Entity::Entity* pSpaceSphere = nullptr;
+  int enemeyLevel = 0;
 };
 
 /**
@@ -488,6 +531,9 @@ int main()
 {
   GameEngine& game = GameEngine::Instance();
   if (!game.Init(800, 600, "OpenGL Tutorial")) {
+    return 1;
+  }
+  if (!game.InitAudio("Res/Audio/SampleSound.acf", "Res/Audio/SampleCueSheet.acb", nullptr, CRI_SAMPLESOUND_ACF_DSPSETTING_DSPBUSSETTING_0)) {
     return 1;
   }
 

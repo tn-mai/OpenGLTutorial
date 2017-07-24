@@ -296,8 +296,6 @@ bool GameEngine::Init(int w, int h, const char* title)
 
   fontRenderer.Init(1024, glm::vec2(800, 600));
 
-  Audio::Initialize();
-
   isInitialized = true;
   return true;
 }
@@ -693,7 +691,26 @@ void GameEngine::ClearCollisionHandlerList()
   entityBuffer->ClearCollisionHandlerList();
 }
 
+/**
+* オーディオを初期化する.
+*/
+bool GameEngine::InitAudio(const char* acfPath, const char* acbPath, const char* awbPath, const char* dspBusName)
+{
+  return Audio::Initialize(acfPath, acbPath, awbPath, dspBusName);
+}
+
+/**
+* 音を再生する.
+*/
 void GameEngine::PlayAudio(int playerId, int cueId)
 {
   Audio::Play(playerId, cueId);
+}
+
+/**
+* 音を停止する.
+*/
+void GameEngine::StopAudio(int playerId)
+{
+  Audio::Stop(playerId);
 }

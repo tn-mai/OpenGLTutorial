@@ -53,6 +53,10 @@ public:
   std::mt19937& Rand();
   const GamePad& GetGamePad(int id) const;
 
+  bool InitAudio(const char* acfPath, const char* acbPath, const char* awbPath, const char* dspBusName);
+  void PlayAudio(int playerId, int cueId);
+  void StopAudio(int playerId);
+
   void CollisionHandler(int gid0, int gid1, Entity::CollisionHandlerType handler);
   const Entity::CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;
   void ClearCollisionHandlerList();
@@ -73,7 +77,6 @@ public:
     return itr != userNumbers.end() ? itr->second : 0;
   }
 
-  void PlayAudio(int playerId, int cueId);
   double Fps() const { return fps; }
 
   Entity::Buffer::Iterator BeginEntity() { return entityBuffer->Begin(); }
