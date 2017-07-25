@@ -112,7 +112,7 @@ struct UpdateToroid {
           doShot = true;
         }
       } else {
-        accelX = v.x * -0.04f;
+        accelX = v.x * -0.03f;
         shotTimer = shotInterval;
         doShot = true;
       }
@@ -376,17 +376,17 @@ void MainGame::operator()(double delta)
     std::uniform_int_distribution<> distributerZ(40, 44);
     poppingTimer -= delta;
     if (poppingTimer <= 0) {
-      const std::uniform_real_distribution<> rndPoppingTime(2.0, 6.0);
-      const std::uniform_int_distribution<> rndPoppingCount(1, 5);
+      const std::uniform_real_distribution<> rndPoppingTime(2.0 - (enemyLevel % 20) / 10, 6.0 - (enemyLevel % 20) / 6);
+      const std::uniform_int_distribution<> rndPoppingCount(1 + (enemyLevel % 20) / 8, 3 + (enemyLevel % 20)/ 3);
       for (int i = rndPoppingCount(game.Rand()); i > 0; --i) {
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
-        if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Enemy, pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer, enemeyLevel))) {
+        if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Enemy, pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer, enemyLevel))) {
           p->Velocity(glm::vec3(pos.x < 0 ? 4.0f : -4.0f, 0, -16));
           p->Collision(Global::collisionDataList[Global::EntityGroupId_Enemy]);
         }
       }
       poppingTimer = rndPoppingTime(game.Rand());
-      enemeyLevel = std::min(100, enemeyLevel + 1);
+      enemyLevel = std::min(100, enemyLevel + 1);
     }
   } else if (game.UserVariable(Global::varInvinsibleSeconds) <= 0) {
     pPlayer->Destroy();
@@ -406,7 +406,7 @@ void MainGame::operator()(double delta)
   game.AddString(glm::vec2(-0.2f, 1.0f), str);
   snprintf(str, 16, "%03.0f", game.Fps());
   game.AddString(glm::vec2(-0.95f, 1.0f), str);
-  snprintf(str, 16, "leve:%03d", enemeyLevel);
+  snprintf(str, 16, "leve:%03d", enemyLevel);
   game.AddString(glm::vec2(0.6f, 1.0f), str);
 }
 

@@ -17,7 +17,7 @@ public:
 private:
   Entity::Entity* pPlayer = nullptr;
   Entity::Entity* pSpaceSphere = nullptr;
-  int enemeyLevel = 0;
+  int enemyLevel = 0;
 };
 
 } // namespace State
