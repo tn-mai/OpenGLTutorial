@@ -371,10 +371,6 @@ void MainGame::operator()(double delta)
   game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
   game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
 
-  glm::vec3 rotSpace = glm::eulerAngles(pSpaceSphere->Rotation());
-  rotSpace.x += static_cast<float>(glm::radians(2.5) * delta);
-  pSpaceSphere->Rotation(rotSpace);
-
   if (game.UserVariable(Global::varPlayerStock) >= 0) {
     std::uniform_int_distribution<> distributerX(-12, 12);
     std::uniform_int_distribution<> distributerZ(40, 44);

@@ -9,6 +9,13 @@
 
 namespace State {
 
+void UpdateSpaceSphere(Entity::Entity& entity, double delta)
+{
+  glm::vec3 rotSpace = glm::eulerAngles(entity.Rotation());
+  rotSpace.x += static_cast<float>(glm::radians(2.5) * delta);
+  entity.Rotation(rotSpace);
+}
+
 Title::Title(Entity::Entity* p) : pSpaceSphere(p)
 {
 }
@@ -19,12 +26,8 @@ void Title::operator()(double delta)
   game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
 
   if (!pSpaceSphere) {
-    pSpaceSphere = game.AddEntity(Global::EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", nullptr, GameEngine::ShaderId::Background);
+    pSpaceSphere = game.AddEntity(Global::EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, GameEngine::ShaderId::Background);
   }
-  glm::vec3 rotSpace = glm::eulerAngles(pSpaceSphere->Rotation());
-  rotSpace.x += static_cast<float>(glm::radians(2.5) * delta);
-  pSpaceSphere->Rotation(rotSpace);
-
   game.FontPropotional(true);
   game.FontThickness(0.25f);
   game.FontBorder(0.25f);

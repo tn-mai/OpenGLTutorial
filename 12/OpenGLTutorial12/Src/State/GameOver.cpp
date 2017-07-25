@@ -21,10 +21,6 @@ void GameOver::operator()(double delta)
   GameEngine& game = GameEngine::Instance();
   game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
 
-  glm::vec3 rotSpace = glm::eulerAngles(pSpaceSphere->Rotation());
-  rotSpace.x += static_cast<float>(glm::radians(2.5) * delta);
-  pSpaceSphere->Rotation(rotSpace);
-
   const float alpha = static_cast<float>(std::min(1.0, timer * 0.2));
 
   game.FontPropotional(true);
