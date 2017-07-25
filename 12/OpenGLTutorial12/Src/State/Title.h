@@ -17,6 +17,7 @@ public:
   void operator()(double delta);
 private:
   Entity::Entity* pSpaceSphere = nullptr;
+  float timer = 0;
 };
 
 } // namespace State
