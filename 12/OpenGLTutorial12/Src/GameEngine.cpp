@@ -545,17 +545,24 @@ const Mesh::MeshPtr& GameEngine::GetMesh(const char* name)
 * @param meshName エンティティの表示に使用するメッシュ名.
 * @param texName  エンティティの表示に使うテクスチャファイル名.
 * @param func     エンティティの状態を更新する関数(または関数オブジェクト).
+* @param shaderId エンティティの表示に使うシェーダのID.
 *
 * @return 追加したエンティティへのポインタ.
 *         これ以上エンティティを追加できない場合はnullptrが返される.
 *         回転や拡大率はこのポインタ経由で設定する.
 *         なお、このポインタをアプリケーション側で保持する必要はない.
 */
-Entity::Entity* GameEngine::AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, bool hasLight)
+Entity::Entity* GameEngine::AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, ShaderId shaderId)
 {
+  Shader::ProgramPtr program;
+  switch (shaderId) {
+  default:
+  case ShaderId::Normal: program = progTutorial; break;
+  case ShaderId::Background: program = progNonLighting; break;
+  }
   const Mesh::MeshPtr& mesh = meshBuffer->GetMesh(meshName);
   const TexturePtr& tex = GetTexture(texName);
-  return entityBuffer->AddEntity(groupId, pos, mesh, tex, hasLight ? progTutorial : progNonLighting, func);
+  return entityBuffer->AddEntity(groupId, pos, mesh, tex, program, func);
 }
 
 /**

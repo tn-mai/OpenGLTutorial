@@ -32,6 +32,12 @@ public:
     glm::vec3 up;
   };
 
+  /// シェーダの種類.
+  enum class ShaderId {
+    Normal, ///< 通常エンティティ用(ライティングあり).
+    Background, ///< 背景エンティティ用(ライティングなし).
+  };
+
   static GameEngine& Instance();
   bool Init(int w, int h, const char* title);
   void Run();
@@ -42,7 +48,7 @@ public:
   const Mesh::MeshPtr& GetMesh(const char* name);
   bool LoadTextureFromFile(const char* filename, GLenum wrapMode = GL_CLAMP_TO_EDGE);
   const TexturePtr& GetTexture(const char* filename) const;
-  Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, bool hasLight = true);
+  Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, ShaderId shaderId = ShaderId::Normal);
   void RemoveEntity(Entity::Entity*);
   void Light(int index, const Uniform::PointLight& light);
   const Uniform::PointLight& Light(int index) const;
