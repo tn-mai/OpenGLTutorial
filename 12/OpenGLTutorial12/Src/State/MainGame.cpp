@@ -417,6 +417,8 @@ void MainGame::operator()(double delta)
   game.AddString(glm::vec2(-0.95f, 1.0f), str);
   snprintf(str, 16, "level:%03d", enemyLevel);
   game.AddString(glm::vec2(0.6f, 1.0f), str);
+  snprintf(str, 16, "LEFT:%02.0f", std::max(0.0, game.UserVariable(Global::varPlayerStock)));
+  game.AddString(glm::vec2(-0.975f, -0.9f), str);
 }
 
 } // namespace State
