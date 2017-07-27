@@ -16,7 +16,7 @@ void main() {
 	fragColor.rgb += max(texture(colorSampler, inTexCoord + ts.zy).rgb, threshould) - threshould;
 	fragColor.rgb += max(texture(colorSampler, inTexCoord + ts.xw).rgb, threshould) - threshould;
 	fragColor.rgb += max(texture(colorSampler, inTexCoord + ts.zw).rgb, threshould) - threshould;
-	fragColor.rgb *= 1.0 / 4.0 / 4.0;
+	fragColor.rgb *= 1.0 / 4.0;
 	fragColor.a = 1.0;
 	fragColor *= inColor;
 }
