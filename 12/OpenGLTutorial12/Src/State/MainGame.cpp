@@ -415,7 +415,7 @@ void MainGame::operator()(double delta)
   game.AddString(glm::vec2(-0.2f, 1.0f), str);
   snprintf(str, 16, "%03.0f", game.Fps());
   game.AddString(glm::vec2(-0.95f, 1.0f), str);
-  snprintf(str, 16, "leve:%03d", enemyLevel);
+  snprintf(str, 16, "level:%03d", enemyLevel);
   game.AddString(glm::vec2(0.6f, 1.0f), str);
 }
 
