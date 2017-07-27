@@ -10,6 +10,15 @@
 
 namespace State {
 
+/// 衝突データリスト.
+static const Entity::CollisionData collisionDataList[] = {
+  {},
+  { glm::vec3(-0.5f, -1.0f, -0.5f), glm::vec3(0.5f, 1.0f, 0.5f) },
+  { glm::vec3(-0.5f, -0.5f, -1.0f), glm::vec3(0.5f, 0.5f, 1.0f) },
+  { glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f) },
+  { glm::vec3(-0.25f, -0.25f, -0.25f), glm::vec3(0.25f, 0.25f, 0.25f) },
+};
+
 /**
 * 敵弾の更新.
 */
@@ -138,7 +147,7 @@ struct UpdateToroid {
           if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
             p->Velocity(glm::rotate(glm::quat(glm::vec3(0, rot, 0)), velocity));
             p->Color(glm::vec4(6, 6, 6, 1));
-            p->Collision(Global::collisionDataList[Global::EntityGroupId_EnemyShot]);
+            p->Collision(collisionDataList[Global::EntityGroupId_EnemyShot]);
           }
           rot += rotList[shotCount - 1][1];
         }
@@ -242,7 +251,7 @@ struct UpdatePlayer
           if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_PlayerShot, pos, "NormalShot", "Res/Model/Player.bmp", UpdatePlayerShot)) {
             p->Velocity(glm::vec3(0, 0, 80));
             p->Color(glm::vec4(3));
-            p->Collision(Global::collisionDataList[Global::EntityGroupId_PlayerShot]);
+            p->Collision(collisionDataList[Global::EntityGroupId_PlayerShot]);
           }
           pos.x += 0.6f;
         }
@@ -350,7 +359,7 @@ MainGame::MainGame(Entity::Entity* p) : pSpaceSphere(p)
   game.CollisionHandler(Global::EntityGroupId_Player, Global::EntityGroupId_EnemyShot, &PlayerAndEnemyShotCollisionHandler);
 
   pPlayer = game.AddEntity(Global::EntityGroupId_Player, glm::vec3(0, 0, -10), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
-  pPlayer->Collision(Global::collisionDataList[Global::EntityGroupId_Player]);
+  pPlayer->Collision(collisionDataList[Global::EntityGroupId_Player]);
 }
 
 MainGame::~MainGame()
@@ -382,7 +391,7 @@ void MainGame::operator()(double delta)
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
         if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Enemy, pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer, enemyLevel))) {
           p->Velocity(glm::vec3(pos.x < 0 ? 4.0f : -4.0f, 0, -16));
-          p->Collision(Global::collisionDataList[Global::EntityGroupId_Enemy]);
+          p->Collision(collisionDataList[Global::EntityGroupId_Enemy]);
         }
       }
       poppingTimer = rndPoppingTime(game.Rand());
