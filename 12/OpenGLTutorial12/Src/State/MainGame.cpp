@@ -146,7 +146,7 @@ struct UpdateToroid {
         for (int i = 0; i < shotCount; ++i) {
           if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
             p->Velocity(glm::rotate(glm::quat(glm::vec3(0, rot, 0)), velocity));
-            p->Color(glm::vec4(6, 6, 6, 1));
+            p->Color(glm::vec4(3, 3, 3, 1));
             p->Collision(collisionDataList[Global::EntityGroupId_EnemyShot]);
           }
           rot += rotList[shotCount - 1][1];
@@ -250,7 +250,7 @@ struct UpdatePlayer
         for (int i = 0; i < 2; ++i) {
           if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_PlayerShot, pos, "NormalShot", "Res/Model/Player.bmp", UpdatePlayerShot)) {
             p->Velocity(glm::vec3(0, 0, 80));
-            p->Color(glm::vec4(3));
+            p->Color(glm::vec4(3, 3, 3, 1));
             p->Collision(collisionDataList[Global::EntityGroupId_PlayerShot]);
           }
           pos.x += 0.6f;
