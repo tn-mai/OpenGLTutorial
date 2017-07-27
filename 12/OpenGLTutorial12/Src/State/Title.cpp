@@ -26,7 +26,7 @@ void Title::operator()(double delta)
   game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
 
   if (!pSpaceSphere) {
-    pSpaceSphere = game.AddEntity(Global::EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, GameEngine::ShaderId::Background);
+    pSpaceSphere = game.AddEntity(Global::EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, "NonLighting");
   }
   const float offset = timer == 0 ? 0 : (2.0f - timer) * (2.0f - timer) * 2.0f;
   game.FontPropotional(true);

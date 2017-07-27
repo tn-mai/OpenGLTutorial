@@ -244,19 +244,30 @@ bool GameEngine::Init(int w, int h, const char* title)
   vao = CreateVAO(vbo, ibo);
   uboLight = UniformBuffer::Create(sizeof(Uniform::LightingData), BindingPoint_Light, "LightingData");
   uboPostEffect = UniformBuffer::Create(sizeof(Uniform::PostEffectData), 2, "PostEffectData");
-  progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
-  progPostEffect = Shader::Program::Create("Res/PostEffect.vert", "Res/PostEffect.frag");
-  progBloom1st = Shader::Program::Create("Res/Bloom1st.vert", "Res/Bloom1st.frag");
-  progComposition = Shader::Program::Create("Res/FinalComposition.vert", "Res/FinalComposition.frag");
-  progSimple = Shader::Program::Create("Res/Simple.vert", "Res/Simple.frag");
-  progLensFlare = Shader::Program::Create("Res/AnamorphicLensFlare.vert", "Res/AnamorphicLensFlare.frag");
-  progNonLighting = Shader::Program::Create("Res/NonLighting.vert", "Res/NonLighting.frag");
-  if (!vbo || !ibo || !vao || !uboLight || !progTutorial || !progPostEffect || !progBloom1st || !progComposition || !progLensFlare) {
+  if (!vbo || !ibo || !vao || !uboLight || !uboPostEffect) {
     return false;
   }
-  progTutorial->UniformBlockBinding("VertexData", BindingPoint_Vertex);
-  progTutorial->UniformBlockBinding("LightingData", BindingPoint_Light);
-  progComposition->UniformBlockBinding("PostEffectData", 2);
+
+  static const char* const shaderNameList[][3] = {
+    { "Tutorial", "Res/Tutorial.vert", "Res/Tutorial.frag" },
+    { "PostEffect", "Res/PostEffect.vert", "Res/PostEffect.frag" },
+    { "Bloom", "Res/Bloom1st.vert", "Res/Bloom1st.frag" },
+    { "Composition", "Res/FinalComposition.vert", "Res/FinalComposition.frag" },
+    { "Simple", "Res/Simple.vert", "Res/Simple.frag" },
+    { "LensFlare", "Res/AnamorphicLensFlare.vert", "Res/AnamorphicLensFlare.frag" },
+    { "NonLighting", "Res/NonLighting.vert", "Res/NonLighting.frag" },
+  };
+  shaderMap.reserve(sizeof(shaderNameList) / sizeof(shaderNameList[0]));
+  for (auto& e : shaderNameList) {
+    Shader::ProgramPtr program = Shader::Program::Create(e[1], e[2]);
+    if (!program) {
+      return false;
+    }
+    shaderMap.insert(std::make_pair(std::string(e[0]), program));
+  }
+  shaderMap["Tutorial"]->UniformBlockBinding("VertexData", BindingPoint_Vertex);
+  shaderMap["Tutorial"]->UniformBlockBinding("LightingData", BindingPoint_Light);
+  shaderMap["Composition"]->UniformBlockBinding("PostEffectData", 2);
 
   meshBuffer = Mesh::Buffer::Create(10 * 1024, 30 * 1024);
   if (!meshBuffer) {
@@ -359,20 +370,23 @@ void GameEngine::Render() const
   glDisable(GL_CULL_FACE);
   glDisable(GL_BLEND);
 
-  progBloom1st->UseProgram();
+  const Shader::ProgramPtr& progBloom = shaderMap.find("Bloom")->second;
+  progBloom->UseProgram();
   glBindFramebuffer(GL_FRAMEBUFFER, offBloom[0]->GetFramebuffer());
   glViewport(0, 0, offBloom[0]->Width(), offBloom[0]->Height());
-  progBloom1st->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
+  progBloom->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
   glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
 
-  progPostEffect->UseProgram();
+  const Shader::ProgramPtr& progShrink = shaderMap.find("Simple")->second;
+  progShrink->UseProgram();
   for (int i = 1; i < bloomBufferCount; ++i) {
     glBindFramebuffer(GL_FRAMEBUFFER, offBloom[i]->GetFramebuffer());
     glViewport(0, 0, offBloom[i]->Width(), offBloom[i]->Height());
-    progPostEffect->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offBloom[i - 1]->GetTexutre());
+    progShrink->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offBloom[i - 1]->GetTexutre());
     glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
   }
 
+  const Shader::ProgramPtr& progLensFlare = shaderMap.find("LensFlare")->second;
   progLensFlare->UseProgram();
   glBindFramebuffer(GL_FRAMEBUFFER, offAnamorphic[0]->GetFramebuffer());
   glViewport(0, 0, offAnamorphic[0]->Width(), offAnamorphic[0]->Height());
@@ -386,11 +400,12 @@ void GameEngine::Render() const
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_ONE, GL_ONE);
-  progSimple->UseProgram();
 
+  const Shader::ProgramPtr& progEnlarge = shaderMap.find("PostEffect")->second;
+  progEnlarge->UseProgram();
   glBindFramebuffer(GL_FRAMEBUFFER, offAnamorphic[0]->GetFramebuffer());
   glViewport(0, 0, offAnamorphic[0]->Width(), offAnamorphic[0]->Height());
-  progSimple->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offAnamorphic[1]->GetTexutre());
+  progEnlarge->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offAnamorphic[1]->GetTexutre());
   glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
   glDrawElements(GL_TRIANGLES, renderingData[2].size, GL_UNSIGNED_INT, renderingData[2].offset);
   glDrawElements(GL_TRIANGLES, renderingData[3].size, GL_UNSIGNED_INT, renderingData[3].offset);
@@ -398,7 +413,7 @@ void GameEngine::Render() const
   for (int i = bloomBufferCount - 1; i > 0; --i) {
     glBindFramebuffer(GL_FRAMEBUFFER, offBloom[i - 1]->GetFramebuffer());
     glViewport(0, 0, offBloom[i - 1]->Width(), offBloom[i - 1]->Height());
-    progSimple->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offBloom[i]->GetTexutre());
+    progEnlarge->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offBloom[i]->GetTexutre());
     glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
   }
 
@@ -406,6 +421,8 @@ void GameEngine::Render() const
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, 800, 600);
+
+  const Shader::ProgramPtr& progComposition = shaderMap.find("Composition")->second;
   progComposition->UseProgram();
 
   Uniform::PostEffectData postEffect;
@@ -545,24 +562,28 @@ const Mesh::MeshPtr& GameEngine::GetMesh(const char* name)
 * @param meshName エンティティの表示に使用するメッシュ名.
 * @param texName  エンティティの表示に使うテクスチャファイル名.
 * @param func     エンティティの状態を更新する関数(または関数オブジェクト).
-* @param shaderId エンティティの表示に使うシェーダのID.
+* @param shader   エンティティの表示に使うシェーダ名.
 *
 * @return 追加したエンティティへのポインタ.
 *         これ以上エンティティを追加できない場合はnullptrが返される.
 *         回転や拡大率はこのポインタ経由で設定する.
 *         なお、このポインタをアプリケーション側で保持する必要はない.
 */
-Entity::Entity* GameEngine::AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, ShaderId shaderId)
+Entity::Entity* GameEngine::AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, const char* shader)
 {
-  Shader::ProgramPtr program;
-  switch (shaderId) {
-  default:
-  case ShaderId::Normal: program = progTutorial; break;
-  case ShaderId::Background: program = progNonLighting; break;
+  decltype(shaderMap)::const_iterator itr = shaderMap.end();
+  if (shader) {
+    itr = shaderMap.find(shader);
+  }
+  if (itr == shaderMap.end()) {
+    itr = shaderMap.find("Tutorial");
+    if (itr == shaderMap.end()) {
+      return nullptr;
+    }
   }
   const Mesh::MeshPtr& mesh = meshBuffer->GetMesh(meshName);
   const TexturePtr& tex = GetTexture(texName);
-  return entityBuffer->AddEntity(groupId, pos, mesh, tex, program, func);
+  return entityBuffer->AddEntity(groupId, pos, mesh, tex, itr->second, func);
 }
 
 /**
