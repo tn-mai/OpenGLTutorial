@@ -113,7 +113,7 @@ struct UpdateToroid {
       bool doShot = false;
       glm::vec3 v = entity.Velocity();
       if (accelX) {
-        v.x += accelX;
+        v.x += accelX * static_cast<float>(delta);
         entity.Velocity(v);
         shotTimer -= delta;
         if (shotTimer <= 0) {
@@ -121,11 +121,13 @@ struct UpdateToroid {
           doShot = true;
         }
       } else {
-        accelX = v.x * -0.03f;
+        accelX = v.x * -8.0f;
         shotTimer = shotInterval;
         doShot = true;
       }
       entity.Velocity(v);
+      glm::quat q = glm::rotate(glm::quat(), -accelX * 0.2f * static_cast<float>(delta), glm::vec3(0, 0, 1));
+      entity.Rotation(q * entity.Rotation());
 
       const glm::bvec3 flags = glm::lessThan(pos, glm::vec3(12, 100, 40)) && glm::greaterThan(pos, glm::vec3(-12, -100, 0));
       if (doShot && glm::all(flags)) {
@@ -152,9 +154,6 @@ struct UpdateToroid {
           rot += rotList[shotCount - 1][1];
         }
       }
-
-      glm::quat q = glm::rotate(glm::quat(), -accelX * 0.2f, glm::vec3(0, 0, 1));
-      entity.Rotation(q * entity.Rotation());
     } else {
       float rot = glm::angle(entity.Rotation());
       rot += glm::radians(120.0f) * static_cast<float>(delta);
