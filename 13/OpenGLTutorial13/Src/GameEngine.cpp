@@ -656,6 +656,7 @@ const glm::vec4& GameEngine::AmbientLight() const
 void GameEngine::Camera(const CameraData& cam)
 {
   camera = cam;
+  lightData.eyePos = glm::vec4(cam.position, 0);
 }
 
 /**

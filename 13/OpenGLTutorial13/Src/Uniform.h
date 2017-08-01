@@ -35,6 +35,7 @@ static const int maxLightCount = 8; ///< ライトの数.
 */
 struct LightingData
 {
+  glm::vec4 eyePos;
   glm::vec4 ambientColor; ///< 環境光.
   PointLight light[maxLightCount]; ///< ライトのリスト.
 };
