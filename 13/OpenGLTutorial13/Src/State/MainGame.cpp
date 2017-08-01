@@ -207,8 +207,10 @@ struct UpdatePlayer
       glm::vec3 pos = entity.Position();
       pos.z += static_cast<float>(20 * delta);
       if (pos.z >= 2) {
-        autoPilot = 0;
         pos.z = 2;
+        if (autoPilot == 1) {
+          autoPilot = 0;
+        }
       }
       entity.Position(pos);
       return;
@@ -346,28 +348,78 @@ void PlayerAndEnemyShotCollisionHandler(Entity::Entity& lhs, Entity::Entity& rhs
   }
 }
 
+const glm::vec3 cameraStart(5, -3, -10);
+const glm::vec3 cameraEnd(0, 20, -8);
+const glm::vec3 cameraTarget(0, 0, 12);
+const double timerPeriod1 = 3;
+
 MainGame::MainGame(Entity::Entity* p) : pSpaceSphere(p)
 {
   GameEngine& game = GameEngine::Instance();
   game.UserVariable(Global::varScore) = 0;
-  game.UserVariable(Global::varAutoPilot) = 1;
+  game.UserVariable(Global::varAutoPilot) = 2;
   game.UserVariable(Global::varInvinsibleSeconds) = 0;
   game.UserVariable(Global::varPlayerStock) = 2;
   game.CollisionHandler(Global::EntityGroupId_PlayerShot, Global::EntityGroupId_Enemy, &CollidePlayerShotAndEnemyHandler);
   game.CollisionHandler(Global::EntityGroupId_Player, Global::EntityGroupId_Enemy, &PlayerAndEnemyShotCollisionHandler);
   game.CollisionHandler(Global::EntityGroupId_Player, Global::EntityGroupId_EnemyShot, &PlayerAndEnemyShotCollisionHandler);
 
-  pPlayer = game.AddEntity(Global::EntityGroupId_Player, glm::vec3(0, 0, -10), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
+  game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
+  game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
+
+  pPlayer = game.AddEntity(Global::EntityGroupId_Player, glm::vec3(0, 0, -20), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
+  glm::vec3 burnerPos = pPlayer->Position() + glm::vec3(-0.5f, 0, -1);
+  for (auto& e : pPlayerBurner) {
+    e = game.AddEntity(Global::EntityGroupId_Player, burnerPos, "NormalShot", "Res/Model/Player.bmp", UpdatePlayer());
+    e->Color(glm::vec4(6, 6, 6, 0.75));
+    burnerPos.x += 1.0f;
+  }
   pPlayer->Collision(collisionDataList[Global::EntityGroupId_Player]);
-  game.PlayAudio(2, CRI_SAMPLECUESHEET_BGM02);
+
+  game.Camera({ cameraStart, pPlayer->Position(), glm::vec3(0, 0, 1) });
 }
 
 MainGame::~MainGame()
 {
 }
 
+void MainGame::StartingDemo(double delta)
+{
+  GameEngine& game = GameEngine::Instance();
+
+  timer += delta;
+  const float ratio = static_cast<float>(timer * (1 / timerPeriod1));
+  if (ratio <= 1) {
+    const glm::vec3 pos = glm::mix(cameraStart, cameraEnd, glm::min(1.0f, ratio));
+    const glm::vec3 target = glm::mix(pPlayer->Position(), cameraTarget, glm::clamp((ratio - 0.5f) * 2.0f, 0.0f, 1.0f));
+    game.Camera({ pos, target, glm::vec3(0, 0, 1) });
+
+    const glm::vec3 burnerScale(glm::min(1.0f, (1.0f - ratio) * 10.0f));
+    for (auto& e : pPlayerBurner) {
+      glm::vec3 pos = e->Position();
+      pos.z = pPlayer->Position().z -1;
+      e->Position(pos);
+      e->Scale(burnerScale);
+    }
+  } else {
+    for (auto& e : pPlayerBurner) {
+      game.RemoveEntity(e);
+      e = nullptr;
+    }
+    game.Camera({ cameraEnd, cameraTarget, glm::vec3(0, 0, 1) });
+    game.UserVariable(Global::varAutoPilot) = 0;
+    game.PlayAudio(2, CRI_SAMPLECUESHEET_BGM02);
+    mode = Mode_Main;
+  }
+}
+
 void MainGame::operator()(double delta)
 {
+  if (mode == Mode_StartingDemo) {
+    StartingDemo(delta);
+    return;
+  }
+
   GameEngine& game = GameEngine::Instance();
 
   const float posZ = -8.28f;
@@ -376,9 +428,6 @@ void MainGame::operator()(double delta)
   static double poppingTimer = 0.0f;
 
   game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
-
-  game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
-  game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
 
   if (game.UserVariable(Global::varPlayerStock) >= 0) {
     std::uniform_int_distribution<> distributerX(-12, 12);
