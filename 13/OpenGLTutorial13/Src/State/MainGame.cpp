@@ -377,6 +377,7 @@ MainGame::MainGame(Entity::Entity* p) : pSpaceSphere(p)
   pPlayer->Collision(collisionDataList[Global::EntityGroupId_Player]);
 
   game.Camera({ cameraStart, pPlayer->Position(), glm::vec3(0, 0, 1) });
+  game.PlayAudio(0, CRI_SAMPLECUESHEET_AFTERBURNER);
 }
 
 MainGame::~MainGame()
