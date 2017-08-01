@@ -21,7 +21,6 @@ private:
   Entity::Entity* pPlayer = nullptr;
   Entity::Entity* pPlayerBurner[2] = { nullptr };
   Entity::Entity* pSpaceSphere = nullptr;
-  int enemyLevel = 0;
 
   enum Mode {
     Mode_StartingDemo,

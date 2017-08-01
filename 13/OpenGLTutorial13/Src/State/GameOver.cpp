@@ -33,6 +33,25 @@ void GameOver::operator()(double delta)
   game.FontScale(glm::vec2(2));
   game.AddString(glm::vec2(-0.5f, 0.125f), "game over");
   game.FontScale(glm::vec2(0.5f));
+
+  game.FontScale(glm::vec2(1));
+  game.FontColor(glm::vec4(1));
+  game.FontThickness(0.5f);
+  game.FontBorder(0.25f);
+  game.FontSubColor({0.25f, 0.1f, 0.4f, 0.8f});
+  char str[16];
+  snprintf(str, 16, "level:");
+  game.AddString(glm::vec2(-0.25f, -0.125f), str);
+  snprintf(str, 16, "score:");
+  game.AddString(glm::vec2(-0.35f, -0.25f), str);
+
+  game.FontPropotional(false);
+  game.FontXAdvance(1.0f / 24.0f);
+  snprintf(str, 16, "%03.0f", game.UserVariable(Global::varEnemyLevel));
+  game.AddString(glm::vec2(0.0f, -0.125f), str);
+  snprintf(str, 16, "%08.0f", game.UserVariable(Global::varScore));
+  game.AddString(glm::vec2(-0.05f, -0.25f), str);
+
   if (timer >= 2.0 && (game.GetGamePad(0).buttonDown & (GamePad::A | GamePad::B | GamePad::START))) {
     game.UpdateFunc(Title(pSpaceSphere));
     game.StopAudio(2);

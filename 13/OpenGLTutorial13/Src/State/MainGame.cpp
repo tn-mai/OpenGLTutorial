@@ -244,7 +244,7 @@ struct UpdatePlayer
     if (gamepad.buttons & GamePad::A) {
       shotInterval -= delta;
       if (shotInterval <= 0) {
-        shotInterval = 0.2;
+        shotInterval = 0.125;
         game.PlayAudio(0, CRI_SAMPLECUESHEET_PLAYERSHOT);
         glm::vec3 pos = entity.Position();
         pos.x -= 0.3f;
@@ -360,6 +360,7 @@ MainGame::MainGame(Entity::Entity* p) : pSpaceSphere(p)
   game.UserVariable(Global::varAutoPilot) = 2;
   game.UserVariable(Global::varInvinsibleSeconds) = 0;
   game.UserVariable(Global::varPlayerStock) = 2;
+  game.UserVariable(Global::varEnemyLevel) = 0;
   game.CollisionHandler(Global::EntityGroupId_PlayerShot, Global::EntityGroupId_Enemy, &CollidePlayerShotAndEnemyHandler);
   game.CollisionHandler(Global::EntityGroupId_Player, Global::EntityGroupId_Enemy, &PlayerAndEnemyShotCollisionHandler);
   game.CollisionHandler(Global::EntityGroupId_Player, Global::EntityGroupId_EnemyShot, &PlayerAndEnemyShotCollisionHandler);
@@ -435,6 +436,7 @@ void MainGame::operator()(double delta)
     std::uniform_int_distribution<> distributerZ(40, 44);
     poppingTimer -= delta;
     if (poppingTimer <= 0) {
+      int enemyLevel = static_cast<int>(game.UserVariable(Global::varEnemyLevel));
       const std::uniform_real_distribution<> rndPoppingTime(2.0 - (enemyLevel % 20) / 10, 6.0 - (enemyLevel % 20) / 6);
       const std::uniform_int_distribution<> rndPoppingCount(1 + (enemyLevel % 20) / 8, 3 + (enemyLevel % 20)/ 3);
       for (int i = rndPoppingCount(game.Rand()); i > 0; --i) {
@@ -444,8 +446,8 @@ void MainGame::operator()(double delta)
           p->Collision(collisionDataList[Global::EntityGroupId_Enemy]);
         }
       }
+      game.UserVariable(Global::varEnemyLevel) = std::min(100, enemyLevel + 1);
       poppingTimer = rndPoppingTime(game.Rand());
-      enemyLevel = std::min(100, enemyLevel + 1);
     }
   } else if (game.UserVariable(Global::varInvinsibleSeconds) <= 0) {
     pPlayer->Destroy();
@@ -466,7 +468,7 @@ void MainGame::operator()(double delta)
   game.AddString(glm::vec2(-0.2f, 1.0f), str);
   snprintf(str, 16, "%03.0f", game.Fps());
   game.AddString(glm::vec2(-0.95f, 1.0f), str);
-  snprintf(str, 16, "level:%03d", enemyLevel);
+  snprintf(str, 16, "level:%03.0f", game.UserVariable(Global::varEnemyLevel));
   game.AddString(glm::vec2(0.6f, 1.0f), str);
   snprintf(str, 16, "LEFT:%02.0f", std::max(0.0, game.UserVariable(Global::varPlayerStock)));
   game.AddString(glm::vec2(-0.975f, -0.9f), str);

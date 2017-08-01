@@ -11,6 +11,7 @@ static const char varScore[] = "score";
 static const char varAutoPilot[] = "auto_pilot";
 static const char varInvinsibleSeconds[] = "invinsible_seconds";
 static const char varPlayerStock[] = "player_stock";
+static const char varEnemyLevel[] = "enemy_level";
 
 /// エンティティの衝突グループID.
 enum EntityGroupId {
