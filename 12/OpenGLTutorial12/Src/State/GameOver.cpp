@@ -12,6 +12,8 @@ namespace State {
 
 GameOver::GameOver(Entity::Entity* p) : pSpaceSphere(p)
 {
+  GameEngine& game = GameEngine::Instance();
+  game.PlayAudio(2, CRI_SAMPLECUESHEET_GAMEOVER);
 }
 
 void GameOver::operator()(double delta)
@@ -33,6 +35,7 @@ void GameOver::operator()(double delta)
   game.FontScale(glm::vec2(0.5f));
   if (timer >= 2.0 && (game.GetGamePad(0).buttonDown & (GamePad::A | GamePad::B | GamePad::START))) {
     game.UpdateFunc(Title(pSpaceSphere));
+    game.StopAudio(2);
     game.PlayAudio(1, CRI_SAMPLECUESHEET_START);
   }
 }

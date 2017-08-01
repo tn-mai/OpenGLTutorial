@@ -359,6 +359,7 @@ MainGame::MainGame(Entity::Entity* p) : pSpaceSphere(p)
 
   pPlayer = game.AddEntity(Global::EntityGroupId_Player, glm::vec3(0, 0, -10), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
   pPlayer->Collision(collisionDataList[Global::EntityGroupId_Player]);
+  game.PlayAudio(2, CRI_SAMPLECUESHEET_BGM02);
 }
 
 MainGame::~MainGame()
@@ -399,6 +400,7 @@ void MainGame::operator()(double delta)
   } else if (game.UserVariable(Global::varInvinsibleSeconds) <= 0) {
     pPlayer->Destroy();
     game.ClearCollisionHandlerList();
+    game.StopAudio(2);
     game.UpdateFunc(GameOver(pSpaceSphere));
   }
 
