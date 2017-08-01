@@ -177,7 +177,10 @@ bool Renderer::AddString(const glm::vec2& position, const char* str)
     const FontInfo& font = fontList[*itr];
     if (font.id >= 0 && font.size.x && font.size.y) {
       const glm::vec2 size = font.size * reciprocalScreenSize * scale;
-      const glm::vec2 offsetedPos = propotional ? pos + (font.offset * reciprocalScreenSize) * scale : pos;
+      glm::vec2 offsetedPos = pos + (font.offset * reciprocalScreenSize) * scale;
+      if (!propotional) {
+        offsetedPos.x = pos.x;
+      }
       p[0].position = offsetedPos + glm::vec2(0, -size.y);
       p[0].uv = font.uv[0];
       p[0].color = color;
