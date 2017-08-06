@@ -269,7 +269,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   shaderMap["Tutorial"]->UniformBlockBinding("LightingData", BindingPoint_Light);
   shaderMap["Composition"]->UniformBlockBinding("PostEffectData", 2);
 
-  meshBuffer = Mesh::Buffer::Create(10 * 1024, 30 * 1024);
+  meshBuffer = Mesh::Buffer::Create(65536, 30 * 1024);
   if (!meshBuffer) {
     return false;
   }

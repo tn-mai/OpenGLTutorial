@@ -21,6 +21,7 @@ int main()
   game.LoadTextureFromFile("Res/Model/SpaceSphere.bmp");
   game.LoadMeshFromFile("Res/Model/Player.fbx");
   game.LoadMeshFromFile("Res/Model/Toroid.fbx");
+  game.LoadMeshFromFile("Res/Model/Cardioid.fbx");
   game.LoadMeshFromFile("Res/Model/Blast.fbx");
   game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
   game.LoadFontFromFile("Res/Font.fnt");

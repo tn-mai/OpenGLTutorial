@@ -88,11 +88,18 @@ glm::vec3 CalcCatchUpPosition(const glm::vec3& follower, const float followingSp
   return targetPos;
 }
 
+enum class EnemyType
+{
+  Toroid,
+  ToroidAcute,
+  Cardioid,
+};
+
 /**
 * ìGÇÃçXêV.
 */
 struct UpdateToroid {
-  explicit UpdateToroid(const Entity::Entity* t, int level = 0) : target(t)
+  explicit UpdateToroid(const Entity::Entity* t, EnemyType tp, int level = 0) : target(t), type(tp)
   {
     GameEngine& game = GameEngine::Instance();
     shotInterval = std::max(0.1, 1.0 - (level % 20) * 0.05);
@@ -154,7 +161,7 @@ struct UpdateToroid {
           rot += rotList[shotCount - 1][1];
         }
       }
-    } else {
+    } else if (type == EnemyType::Toroid) {
       float rot = glm::angle(entity.Rotation());
       rot += glm::radians(120.0f) * static_cast<float>(delta);
       if (rot > glm::pi<float>() * 2.0f) {
@@ -164,6 +171,7 @@ struct UpdateToroid {
     }
   }
   const Entity::Entity* target;
+  EnemyType type;
   bool isEscape = false;
   float accelX = 0;
   double shotInterval;
@@ -437,11 +445,23 @@ void MainGame::operator()(double delta)
     poppingTimer -= delta;
     if (poppingTimer <= 0) {
       int enemyLevel = static_cast<int>(game.UserVariable(Global::varEnemyLevel));
+      const int enemyType = ((enemyLevel % 20) * 6 + 3) / 40;
       const std::uniform_real_distribution<> rndPoppingTime(2.0 - (enemyLevel % 20) / 10, 6.0 - (enemyLevel % 20) / 6);
       const std::uniform_int_distribution<> rndPoppingCount(1 + (enemyLevel % 20) / 8, 3 + (enemyLevel % 20)/ 3);
       for (int i = rndPoppingCount(game.Rand()); i > 0; --i) {
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
-        if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Enemy, pos, "Toroid", "Res/Model/Toroid.bmp", UpdateToroid(pPlayer, enemyLevel))) {
+        static const struct {
+          const char* name;
+          EnemyType type;
+        } meshNameList[] = {
+          { "Toroid", EnemyType::Toroid },
+          { "Toroid.Acute", EnemyType::ToroidAcute },
+          { "Cardioid", EnemyType::Cardioid },
+        };
+        if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Enemy, pos, meshNameList[enemyType].name, "Res/Model/Toroid.bmp", UpdateToroid(pPlayer, meshNameList[enemyType].type, enemyLevel))) {
+          if (meshNameList[enemyType].type != EnemyType::Toroid) {
+            p->Rotation(glm::vec3(0, glm::radians(180.0f), 0));
+          }
           p->Velocity(glm::vec3(pos.x < 0 ? 4.0f : -4.0f, 0, -16));
           p->Collision(collisionDataList[Global::EntityGroupId_Enemy]);
         }
