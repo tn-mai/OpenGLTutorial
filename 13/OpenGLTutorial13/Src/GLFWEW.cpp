@@ -94,8 +94,15 @@ bool Window::Init(int w, int h, const char* title)
   std::cout << "Renderer: " << renderer << std::endl;
   const GLubyte* version = glGetString(GL_VERSION);
   std::cout << "Version: " << version << std::endl;
-  const GLubyte* extensions = glGetString(GL_EXTENSIONS);
-  std::cout << "Extensions: " << extensions << std::endl;
+  std::cout << "Extensions:";
+  for (int i = 0;; ++i) {
+    const GLubyte* extensions = glGetStringi(GL_EXTENSIONS, i);
+    if (glGetError() == GL_INVALID_VALUE) {
+      break;
+    }
+    std::cout << "\n  " << extensions;
+  }
+  std::cout << std::endl;
 
   GLint param;
   glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, &param);
