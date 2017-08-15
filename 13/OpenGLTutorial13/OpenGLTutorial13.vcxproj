@@ -179,6 +179,7 @@
   <ItemGroup>
     <ClInclude Include="Src\Audio.h" />
     <ClInclude Include="Src\BufferObject.h" />
+    <ClInclude Include="Src\DXGIFormat.h" />
     <ClInclude Include="Src\Entity.h" />
     <ClInclude Include="Src\GameEngine.h" />
     <ClInclude Include="Src\GamePad.h" />

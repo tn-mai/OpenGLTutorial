@@ -119,6 +119,9 @@
     <ClInclude Include="Src\State\GameOver.h">
       <Filter>ヘッダー ファイル\State</Filter>
     </ClInclude>
+    <ClInclude Include="Src\DXGIFormat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -153,7 +153,7 @@ struct UpdateToroid {
         };
         float rot = rotList[shotCount - 1][0];
         for (int i = 0; i < shotCount; ++i) {
-          if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.bmp", UpdateEnemyShot)) {
+          if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_EnemyShot, pos, "Spario", "Res/Model/Toroid.dds", UpdateEnemyShot)) {
             p->Velocity(glm::rotate(glm::quat(glm::vec3(0, rot, 0)), velocity));
             p->Color(glm::vec4(3, 3, 3, 1));
             p->Collision(collisionDataList[Global::EntityGroupId_EnemyShot]);
@@ -309,7 +309,7 @@ struct UpdateBlast {
 void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
 {
   GameEngine& game = GameEngine::Instance();
-  if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Others, rhs.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
+  if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Others, rhs.Position(), "Blast", "Res/Model/Toroid.dds", UpdateBlast())) {
     static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
   }
@@ -330,13 +330,13 @@ void PlayerAndEnemyShotCollisionHandler(Entity::Entity& lhs, Entity::Entity& rhs
   }
   Entity::Entity& player = lhs.GroupId() == Global::EntityGroupId_Player ? lhs : rhs;
   Entity::Entity& enemy = lhs.GroupId() != Global::EntityGroupId_Player ? lhs : rhs;
-  if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Others, player.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
+  if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Others, player.Position(), "Blast", "Res/Model/Toroid.dds", UpdateBlast())) {
     static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
     game.PlayAudio(0, CRI_SAMPLECUESHEET_BOMB);
   }
   if (enemy.GroupId() == Global::EntityGroupId_Enemy) {
-    if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Others, enemy.Position(), "Blast", "Res/Model/Toroid.bmp", UpdateBlast())) {
+    if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Others, enemy.Position(), "Blast", "Res/Model/Toroid.dds", UpdateBlast())) {
       static const std::uniform_real_distribution<float> rotRange(0.0f, 359.0f);
       p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
       game.PlayAudio(1, CRI_SAMPLECUESHEET_BOMB);
@@ -458,7 +458,7 @@ void MainGame::operator()(double delta)
           { "Toroid.Acute", EnemyType::ToroidAcute },
           { "Cardioid", EnemyType::Cardioid },
         };
-        if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Enemy, pos, meshNameList[enemyType].name, "Res/Model/Toroid.bmp", UpdateToroid(pPlayer, meshNameList[enemyType].type, enemyLevel))) {
+        if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Enemy, pos, meshNameList[enemyType].name, "Res/Model/Toroid.dds", UpdateToroid(pPlayer, meshNameList[enemyType].type, enemyLevel))) {
           if (meshNameList[enemyType].type != EnemyType::Toroid) {
             p->Rotation(glm::vec3(0, glm::radians(180.0f), 0));
           }
