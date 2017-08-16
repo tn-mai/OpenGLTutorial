@@ -3,7 +3,7 @@
 layout(location=0) in vec4 inColor;
 layout(location=1) in vec2 inTexCoord;
 layout(location=2) in vec3 inWorldPosition;
-layout(location=3) in vec3 inNormal;
+layout(location=3) in mat3 inTBN;
 
 out vec4 fragColor;
 
@@ -34,11 +34,11 @@ void main() {
     vec3 lightVector = lightingData.light[i].position.xyz - inWorldPosition;
     float lightPower = 1.0 / dot(lightVector, lightVector);
 	vec3 normalizedLightVector = normalize(lightVector);
-    float cosTheta = clamp(dot(inNormal, normalizedLightVector), 0, 1);
+    float cosTheta = clamp(dot(inTBN[2], normalizedLightVector), 0, 1);
     lightColor += lightingData.light[i].color.rgb * cosTheta * lightPower;
 
     vec3 eyeVector = normalize(lightingData.eyePos.xyz - lightingData.light[i].position.xyz);
-    specularColor += lightingData.light[i].color.rgb * pow(max(dot(eyeVector, reflect(normalizedLightVector, inNormal)), 0), shininess);
+    specularColor += lightingData.light[i].color.rgb * pow(max(dot(eyeVector, reflect(normalizedLightVector, inTBN[2])), 0), shininess);
   }
   specularColor *= normFactor;
   fragColor = inColor * texture(colorSampler, inTexCoord);

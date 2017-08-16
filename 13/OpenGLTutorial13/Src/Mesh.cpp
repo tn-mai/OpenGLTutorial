@@ -17,6 +17,7 @@ struct Vertex
   glm::vec4 color; ///< 色
   glm::vec2 texCoord; ///< テクスチャ座標.
   glm::vec3 normal; ///< 法線
+  glm::vec4 tangent;
 };
 
 /**
@@ -88,6 +89,7 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   SetVertexAttribPointer(1, Vertex, color);
   SetVertexAttribPointer(2, Vertex, texCoord);
   SetVertexAttribPointer(3, Vertex, normal);
+  SetVertexAttribPointer(4, Vertex, tangent);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
   glBindVertexArray(0);
   return vao;
@@ -234,6 +236,26 @@ bool FbxLoader::Convert(FbxNode* fbxNode)
   return true;
 }
 
+template<typename T>
+T GetElement(
+  FbxGeometryElement::EMappingMode mappingMode,
+  bool isDirectRef,
+  const FbxLayerElementArrayTemplate<int>* pIndexList,
+  const FbxLayerElementArrayTemplate<T>* pList,
+  int cpIndex,
+  int polygonVertex,
+  const T& defaultValue)
+{
+  switch (mappingMode) {
+  case FbxLayerElement::eByControlPoint:
+    return (*pList)[isDirectRef ? cpIndex : (*pIndexList)[cpIndex]];
+  case FbxLayerElement::eByPolygonVertex:
+    return (*pList)[isDirectRef ? polygonVertex : (*pIndexList)[polygonVertex]];
+  default:
+    return defaultValue;
+  }
+}
+
 /**
 * FBXメッシュを中間データに変換する.
 *
@@ -307,6 +329,7 @@ bool FbxLoader::LoadMesh(FbxNode* fbxNode)
   const bool hasColor = fbxMesh->GetElementVertexColorCount() > 0;
   const bool hasTexcoord = fbxMesh->GetElementUVCount() > 0;
   const bool hasNormal = fbxMesh->GetElementNormalCount() > 0;
+  const bool hasTangent = fbxMesh->GetElementTangentCount() > 0;
 
   // UVデータ名を取得する.
   FbxStringList uvSetNameList;
@@ -325,6 +348,27 @@ bool FbxLoader::LoadMesh(FbxNode* fbxNode)
     IsColorDirectRef = fbxColorList->GetReferenceMode() == FbxLayerElement::eDirect;
     colorIndexList = &fbxColorList->GetIndexArray();
     colorList = &fbxColorList->GetDirectArray();
+  }
+
+  FbxGeometryElement::EMappingMode tangentMappingMode = FbxLayerElement::eNone;
+  bool isTangentDirectRef = true;
+  const FbxLayerElementArrayTemplate<int>* tangentIndexList = nullptr;
+  const FbxLayerElementArrayTemplate<FbxVector4>* tangentList = nullptr;
+  FbxGeometryElement::EMappingMode binormalMappingMode = FbxLayerElement::eNone;
+  bool isBinormalDirectRef = true;
+  const FbxLayerElementArrayTemplate<int>* binormalIndexList = nullptr;
+  const FbxLayerElementArrayTemplate<FbxVector4>* binormalList = nullptr;
+  if (hasTangent) {
+    const FbxGeometryElementTangent* fbxTangentList = fbxMesh->GetElementTangent();
+    tangentMappingMode = fbxTangentList->GetMappingMode();
+    isTangentDirectRef = fbxTangentList->GetReferenceMode() == FbxLayerElement::eDirect;
+    tangentIndexList = &fbxTangentList->GetIndexArray();
+    tangentList = &fbxTangentList->GetDirectArray();
+    const FbxGeometryElementBinormal* fbxBinormaltList = fbxMesh->GetElementBinormal();
+    binormalMappingMode = fbxBinormaltList->GetMappingMode();
+    isBinormalDirectRef = fbxBinormaltList->GetReferenceMode() == FbxLayerElement::eDirect;
+    binormalIndexList = &fbxBinormaltList->GetIndexArray();
+    binormalList = &fbxBinormaltList->GetDirectArray();
   }
 
   // マテリアルが存在する場合は、頂点のマテリアルインデックスリストを取得する.
@@ -353,16 +397,7 @@ bool FbxLoader::LoadMesh(FbxNode* fbxNode)
       v.position = ToVec3(matTRS.MultT(fbxControlPoints[cpIndex]));
       v.color = glm::vec4(1);
       if (hasColor) {
-        switch (colorMappingMode) {
-        case FbxLayerElement::eByControlPoint:
-          v.color = ToVec4((*colorList)[IsColorDirectRef ? cpIndex : (*colorIndexList)[cpIndex]]);
-          break;
-        case FbxLayerElement::eByPolygonVertex:
-          v.color = ToVec4((*colorList)[IsColorDirectRef ? polygonVertex : (*colorIndexList)[polygonVertex]]);
-          break;
-        default:
-          break;
-        }
+        v.color = ToVec4(GetElement(colorMappingMode, IsColorDirectRef, colorIndexList, colorList, cpIndex, polygonVertex, FbxColor(1, 1, 1, 1)));
       }
       v.texCoord = glm::vec2(0);
       if (hasTexcoord) {
@@ -376,6 +411,16 @@ bool FbxLoader::LoadMesh(FbxNode* fbxNode)
         FbxVector4 normal;
         fbxMesh->GetPolygonVertexNormal(polygonIndex, pos, normal);
         v.normal = glm::normalize(ToVec3(matR.MultT(normal)));
+      }
+      v.tangent = glm::vec4(1, 0, 0, 1);
+      if (hasTangent) {
+        const FbxVector4 binormal = matR.MultT(GetElement(binormalMappingMode, isBinormalDirectRef, binormalIndexList, binormalList, cpIndex, polygonVertex, FbxVector4(0, 1, 0, 1)));
+        const FbxVector4 tangent = GetElement(tangentMappingMode, isTangentDirectRef, tangentIndexList, tangentList, cpIndex, polygonVertex, FbxVector4(1, 0, 0, 1));
+        v.tangent = glm::vec4(glm::normalize(ToVec3(matR.MultT(tangent))), 1);
+        const glm::vec3 binormalTmp = glm::normalize(glm::cross(glm::vec3(v.normal), glm::vec3(v.tangent)));
+        if (glm::dot(ToVec3(binormal), binormalTmp) < 0) {
+          v.tangent.w = -1;
+        }
       }
       TemporaryMaterial& materialData = mesh.materialList[materialIndexList ? (*materialIndexList)[polygonIndex] : 0];
       materialData.indexBuffer.push_back(static_cast<uint32_t>(materialData.vertexBuffer.size()));
