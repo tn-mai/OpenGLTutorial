@@ -582,8 +582,9 @@ Entity::Entity* GameEngine::AddEntity(int groupId, const glm::vec3& pos, const c
     }
   }
   const Mesh::MeshPtr& mesh = meshBuffer->GetMesh(meshName);
-  const TexturePtr& tex = GetTexture(texName);
-  return entityBuffer->AddEntity(groupId, pos, mesh, tex, itr->second, func);
+  const TexturePtr& tex0 = GetTexture(texName);
+  const TexturePtr& tex1 = GetTexture("Res/Model/DummyNormal.dds");
+  return entityBuffer->AddEntity(groupId, pos, mesh, tex0, tex1, itr->second, func);
 }
 
 /**

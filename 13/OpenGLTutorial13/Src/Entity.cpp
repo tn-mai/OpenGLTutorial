@@ -137,7 +137,7 @@ BufferPtr Buffer::Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int 
 *         回転や拡大率はこのポインタ経由で設定する.
 *         なお、このポインタをアプリケーション側で保持する必要はない.
 */
-Entity* Buffer::AddEntity(int groupId, const glm::vec3& position, const Mesh::MeshPtr& mesh, const TexturePtr& texture, const Shader::ProgramPtr& program, const Entity::UpdateFuncType& func)
+Entity* Buffer::AddEntity(int groupId, const glm::vec3& position, const Mesh::MeshPtr& mesh, const TexturePtr& t0, const TexturePtr& t1, const Shader::ProgramPtr& program, const Entity::UpdateFuncType& func)
 {
   if (freeList.prev == freeList.next) {
     std::cerr << "WARNING in Entity::Buffer::AddEntity: 空きエンティティがありません." << std::endl;
@@ -156,7 +156,8 @@ Entity* Buffer::AddEntity(int groupId, const glm::vec3& position, const Mesh::Me
   entity->velocity = glm::vec3();
   entity->color = glm::vec4(1, 1, 1, 1);
   entity->mesh = mesh;
-  entity->texture = texture;
+  entity->texture[0] = t0;
+  entity->texture[1] = t1;
   entity->program = program;
   entity->updateFunc = func;
   entity->isActive = true;
@@ -187,7 +188,9 @@ void Buffer::RemoveEntity(Entity* entity)
   }
   freeList.Insert(p);
   p->mesh.reset();
-  p->texture.reset();
+  for (auto& e : p->texture) {
+    e.reset();
+  }
   p->program.reset();
   p->updateFunc = nullptr;
   p->isActive = false;
@@ -275,7 +278,9 @@ void Buffer::Draw(const Mesh::BufferPtr& meshBuffer) const
       const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
       if (e.mesh && e.texture && e.program) {
         e.program->UseProgram();
-        e.program->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, e.texture->Id());
+        for (size_t i = 0; i < sizeof(e.texture) / sizeof(e.texture[0]); ++i) {
+          e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
+        }
         ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
         e.mesh->Draw(meshBuffer);
       }

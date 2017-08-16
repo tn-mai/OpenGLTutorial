@@ -56,6 +56,8 @@ public:
   const UpdateFuncType& UpdateFunc() const { return updateFunc; }
   void Collision(const CollisionData& c) { colLocal = c; }
   const CollisionData& Collision() const { return colLocal; }
+  void Texture(size_t n, const TexturePtr& p) { texture[n] = p; }
+  const TexturePtr& Texture(size_t n) const { return texture[n]; }
 
   glm::mat4 TRSMatrix() const;
   int GroupId() const { return groupId; }
@@ -77,7 +79,7 @@ private:
   glm::vec3 velocity; ///< 速度.
   glm::vec4 color = glm::vec4(1, 1, 1, 1); ///< 色.
   Mesh::MeshPtr mesh; ///< エンティティを描画するときに使われるメッシュデータ.
-  TexturePtr texture; ///< エンティティを描画するときに使われるテクスチャ.
+  TexturePtr texture[2]; ///< エンティティを描画するときに使われるテクスチャ.
   Shader::ProgramPtr program; ///< エンティティを描画するときに使われるシェーダ.
   GLintptr uboOffset; ///< UBOのエンティティ用領域へのバイトオフセット.
   UpdateFuncType updateFunc; ///< 状態更新関数.
@@ -129,7 +131,7 @@ public:
 
   static BufferPtr Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int bindingPoint, const char* ubName);
 
-  Entity* AddEntity(int groupId, const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t, const Shader::ProgramPtr& p, const Entity::UpdateFuncType& func);
+  Entity* AddEntity(int groupId, const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t0, const TexturePtr& t1, const Shader::ProgramPtr& p, const Entity::UpdateFuncType& func);
   void RemoveEntity(Entity* entity);
   void Update(double delta, const glm::mat4& matView, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;

@@ -16,7 +16,9 @@ int main()
     return 1;
   }
 
+  game.LoadTextureFromFile("Res/Model/DummyNormal.dds");
   game.LoadTextureFromFile("Res/Model/Toroid.dds");
+  game.LoadTextureFromFile("Res/Model/Toroid.Normal.dds");
   game.LoadTextureFromFile("Res/Model/Player.bmp");
   game.LoadTextureFromFile("Res/Model/SpaceSphere.bmp");
   game.LoadMeshFromFile("Res/Model/Player.fbx");

@@ -452,11 +452,12 @@ void MainGame::operator()(double delta)
         const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
         static const struct {
           const char* name;
+          const char* normal;
           EnemyType type;
         } meshNameList[] = {
-          { "Toroid", EnemyType::Toroid },
-          { "Toroid.Acute", EnemyType::ToroidAcute },
-          { "Cardioid", EnemyType::Cardioid },
+          { "Toroid", "Res/Model/Toroid.Normal.dds", EnemyType::Toroid },
+          { "Toroid.Acute", nullptr, EnemyType::ToroidAcute },
+          { "Cardioid", nullptr, EnemyType::Cardioid },
         };
         if (Entity::Entity* p = game.AddEntity(Global::EntityGroupId_Enemy, pos, meshNameList[enemyType].name, "Res/Model/Toroid.dds", UpdateToroid(pPlayer, meshNameList[enemyType].type, enemyLevel))) {
           if (meshNameList[enemyType].type != EnemyType::Toroid) {
@@ -464,6 +465,9 @@ void MainGame::operator()(double delta)
           }
           p->Velocity(glm::vec3(pos.x < 0 ? 4.0f : -4.0f, 0, -16));
           p->Collision(collisionDataList[Global::EntityGroupId_Enemy]);
+          if (meshNameList[enemyType].normal) {
+            p->Texture(1, game.GetTexture(meshNameList[enemyType].normal));
+          }
         }
       }
       game.UserVariable(Global::varEnemyLevel) = std::min(100, enemyLevel + 1);

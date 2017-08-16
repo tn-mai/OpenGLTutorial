@@ -22,26 +22,30 @@ layout(std140) uniform LightingData
   PointLight light[maxLight];
 } lightingData;
 
-uniform sampler2D colorSampler;
+uniform sampler2D colorSampler[2];
 
 const float shininess = 2;
 const float normFactor = (shininess + 2) * (1.0 / (2.0 * 3.1415926)) * 0.0001;
 
-void main() {
+void main()
+{
+  vec3 normal = texture(colorSampler[1], inTexCoord).xyz;
+  normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
+  normal = inTBN * normal;
   vec3 lightColor = lightingData.ambientColor.rgb;
   vec3 specularColor = vec3(0);
   for (int i = 0; i < maxLight; ++i) {
     vec3 lightVector = lightingData.light[i].position.xyz - inWorldPosition;
     float lightPower = 1.0 / dot(lightVector, lightVector);
 	vec3 normalizedLightVector = normalize(lightVector);
-    float cosTheta = clamp(dot(inTBN[2], normalizedLightVector), 0, 1);
+    float cosTheta = clamp(dot(normal, normalizedLightVector), 0, 1);
     lightColor += lightingData.light[i].color.rgb * cosTheta * lightPower;
 
     vec3 eyeVector = normalize(lightingData.eyePos.xyz - lightingData.light[i].position.xyz);
-    specularColor += lightingData.light[i].color.rgb * pow(max(dot(eyeVector, reflect(normalizedLightVector, inTBN[2])), 0), shininess);
+    specularColor += lightingData.light[i].color.rgb * pow(max(dot(eyeVector, reflect(normalizedLightVector, normal)), 0), shininess);
   }
   specularColor *= normFactor;
-  fragColor = inColor * texture(colorSampler, inTexCoord);
+  fragColor = inColor * texture(colorSampler[0], inTexCoord);
 #if 1
   fragColor.rgb *= lightColor;
   fragColor.rgb += specularColor;
