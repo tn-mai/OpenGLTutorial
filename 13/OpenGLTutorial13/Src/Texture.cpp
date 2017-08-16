@@ -155,6 +155,18 @@ GLuint LoadDDS(const char* filename, const struct stat& st, const uint8_t* buf, 
   case MAKE_FOURCC('D', 'X', 'T', '5'):
     format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
     break;
+  case MAKE_FOURCC('B', 'C', '4', 'U'):
+    format = GL_COMPRESSED_RED_RGTC1;
+    break;
+  case MAKE_FOURCC('B', 'C', '4', 'S'):
+    format = GL_COMPRESSED_SIGNED_RED_RGTC1;
+    break;
+  case MAKE_FOURCC('B', 'C', '5', 'U'):
+    format = GL_COMPRESSED_RG_RGTC2;
+    break;
+  case MAKE_FOURCC('B', 'C', '5', 'S'):
+    format = GL_COMPRESSED_SIGNED_RG_RGTC2;
+    break;
   case MAKE_FOURCC('D', 'X', '1', '0'): {
     const DDSHeaderDX10 headerDX10 = ReadDDSHeaderDX10(buf + 128);
     switch (headerDX10.dxgiFormat) {
