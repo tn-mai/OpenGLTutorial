@@ -12,7 +12,7 @@ namespace State {
 void UpdateSpaceSphere(Entity::Entity& entity, double delta)
 {
   glm::vec3 rotSpace = glm::eulerAngles(entity.Rotation());
-  rotSpace.x += static_cast<float>(glm::radians(2.5) * delta);
+  rotSpace.x += static_cast<float>(glm::radians(0.25) * delta);
   entity.Rotation(rotSpace);
 }
 
@@ -27,6 +27,7 @@ void Title::operator()(double delta)
 
   if (!pSpaceSphere) {
     pSpaceSphere = game.AddEntity(Global::EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, "NonLighting");
+    pSpaceSphere->Scale(glm::vec3(30));
   }
   const float offset = timer == 0 ? 0 : (2.0f - timer) * (2.0f - timer) * 2.0f;
   game.FontPropotional(true);

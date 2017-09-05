@@ -323,7 +323,7 @@ void GameEngine::Update(double delta)
   if (updateFunc) {
     updateFunc(delta);
   }
-  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 200.0f);
+  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 4.0f, 4000.0f);
   const glm::mat4x4 matView = glm::lookAt(camera.position, camera.target, camera.up);
   entityBuffer->Update(delta, matView, matProj);
   fontRenderer.UnmapBuffer();

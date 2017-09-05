@@ -21,6 +21,7 @@ private:
   Entity::Entity* pPlayer = nullptr;
   Entity::Entity* pPlayerBurner[2] = { nullptr };
   Entity::Entity* pSpaceSphere = nullptr;
+  Entity::Entity* pCarrier = nullptr;
 
   enum Mode {
     Mode_StartingDemo,

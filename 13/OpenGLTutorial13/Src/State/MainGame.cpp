@@ -304,6 +304,18 @@ struct UpdateBlast {
 };
 
 /**
+* ‹ó•ê‚ÌXV
+*/
+struct UpdateCarrier
+{
+  void operator()(Entity::Entity& entity, double delta)
+  {
+    GameEngine& game = GameEngine::Instance();
+    entity.Position(entity.Position() + glm::vec3(0, 0, static_cast<float>(-10.0 * delta)));
+  }
+};
+
+/**
 * ©‹@‚Ì’e‚Æ“G‚ÌÕ“Ëˆ—.
 */
 void CollidePlayerShotAndEnemyHandler(Entity::Entity& lhs, Entity::Entity& rhs)
@@ -375,6 +387,10 @@ MainGame::MainGame(Entity::Entity* p) : pSpaceSphere(p)
 
   game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
   game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
+
+  pCarrier = game.AddEntity(Global::EntityGroupId_Others, glm::vec3(0, -100, 600), "SpacecraftCarrier", "Res/Model/SpaceShip.Diffuse.dds", UpdateCarrier());
+  pCarrier->Texture(1, game.GetTexture("Res/Model/SpaceShip.Normal.dds"));
+  pCarrier->Rotation(glm::quat(glm::vec3(glm::radians(0.0f), glm::radians(0.0f), glm::radians(80.0f))));
 
   pPlayer = game.AddEntity(Global::EntityGroupId_Player, glm::vec3(0, 0, -20), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
   glm::vec3 burnerPos = pPlayer->Position() + glm::vec3(-0.5f, 0, -1);
