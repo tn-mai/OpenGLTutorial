@@ -275,6 +275,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   if (!meshBuffer) {
     return false;
   }
+  textureMapStack.push_back(TextureMap());
 
   entityBuffer = Entity::Buffer::Create(1024, sizeof(Uniform::VertexData), BindingPoint_Vertex, "VertexData");
   if (!entityBuffer) {
@@ -559,15 +560,14 @@ const GamePad& GameEngine::GetGamePad(int id) const
 */
 bool GameEngine::LoadTextureFromFile(const char* filename, GLenum wrapMode)
 {
-  const auto itr = textureBuffer.find(filename);
-  if (itr != textureBuffer.end()) {
+  if (GetTexture(filename)) {
     return true;
   }
   TexturePtr texture = Texture::LoadFromFile(filename, wrapMode);
   if (!texture) {
     return false;
   }
-  textureBuffer.insert(std::make_pair(std::string(filename), texture));
+  textureMapStack.back().insert(std::make_pair(std::string(filename), texture));
   return true;
 }
 
@@ -581,9 +581,11 @@ bool GameEngine::LoadTextureFromFile(const char* filename, GLenum wrapMode)
 */
 const TexturePtr& GameEngine::GetTexture(const char* filename) const
 {
-  const auto itr = textureBuffer.find(filename);
-  if (itr != textureBuffer.end()) {
-    return itr->second;
+  for (const auto& e : textureMapStack) {
+    const auto itr = e.find(filename);
+    if (itr != e.end()) {
+      return itr->second;
+    }
   }
   static const TexturePtr dummy;
   return dummy;
@@ -813,4 +815,33 @@ void GameEngine::PlayAudio(int playerId, int cueId)
 void GameEngine::StopAudio(int playerId)
 {
   Audio::Stop(playerId);
+}
+
+/**
+*
+*/
+void GameEngine::PushLevel()
+{
+  meshBuffer->PushLevel();
+  textureMapStack.push_back(TextureMap());
+}
+
+/**
+*
+*/
+void GameEngine::PopLevel()
+{
+  meshBuffer->PopLevel();
+  if (textureMapStack.size() > minimalStackSize) {
+    textureMapStack.pop_back();
+  }
+}
+
+/**
+*
+*/
+void GameEngine::ClearLevel()
+{
+  meshBuffer->ClearLevel();
+  textureMapStack.back().clear();
 }

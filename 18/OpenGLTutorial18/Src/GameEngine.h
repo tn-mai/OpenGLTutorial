@@ -61,6 +61,10 @@ public:
   void PlayAudio(int playerId, int cueId);
   void StopAudio(int playerId);
 
+  void PushLevel();
+  void PopLevel();
+  void ClearLevel();
+
   void CollisionHandler(int gid0, int gid1, Entity::CollisionHandlerType handler);
   const Entity::CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;
   void ClearCollisionHandlerList();
@@ -115,8 +119,12 @@ private:
   OffscreenBufferPtr offBloom[bloomBufferCount];
   OffscreenBufferPtr offAnamorphic[2];
 
-  std::unordered_map<std::string, TexturePtr> textureBuffer;
   Mesh::BufferPtr meshBuffer;
+
+  typedef std::unordered_map<std::string, TexturePtr> TextureMap;
+  static const size_t minimalStackSize = 1;
+  std::vector<TextureMap> textureMapStack;
+
   Entity::BufferPtr entityBuffer;
   Font::Renderer fontRenderer;
   Uniform::LightingData lightData;
