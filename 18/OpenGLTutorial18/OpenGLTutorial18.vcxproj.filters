@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="ソース ファイル\State">
-      <UniqueIdentifier>{44213086-088c-4326-afaa-a529291ed817}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\State">
-      <UniqueIdentifier>{4c22f1cb-f652-40c3-a409-3fe614a168a0}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Main.cpp">
@@ -57,14 +51,11 @@
     <ClCompile Include="Src\Audio.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Src\State\Title.cpp">
-      <Filter>ソース ファイル\State</Filter>
+    <ClCompile Include="Src\Stage01State.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Src\State\MainGame.cpp">
-      <Filter>ソース ファイル\State</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\State\GameOver.cpp">
-      <Filter>ソース ファイル\State</Filter>
+    <ClCompile Include="Src\TitleState.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,17 +98,8 @@
     <ClInclude Include="Src\Audio.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Src\State\Title.h">
-      <Filter>ヘッダー ファイル\State</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\State\Global.h">
-      <Filter>ヘッダー ファイル\State</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\State\MainGame.h">
-      <Filter>ヘッダー ファイル\State</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\State\GameOver.h">
-      <Filter>ヘッダー ファイル\State</Filter>
+    <ClInclude Include="Src\GameState.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
