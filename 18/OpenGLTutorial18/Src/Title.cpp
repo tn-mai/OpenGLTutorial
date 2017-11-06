@@ -2,8 +2,10 @@
 * @file Title.cpp
 */
 #include "Title.h"
-#include "MainGame.h"
+//#include "MainGame.h"
 #include "Global.h"
+#include "../GameState.h"
+
 #include "../GameEngine.h"
 #include "../../Res/Audio/SampleCueSheet.h"
 
@@ -46,7 +48,7 @@ void Title::operator()(double delta)
   if (timer > 0) {
     timer -= static_cast<float>(delta);
     if (timer <= 0) {
-      game.UpdateFunc(MainGame(pSpaceSphere));
+      game.UpdateFunc(GameState::MainGame(pSpaceSphere));
     }
   } else if (game.GetGamePad(0).buttonDown & (GamePad::A | GamePad::B | GamePad::START)) {
     game.PlayAudio(1, CRI_SAMPLECUESHEET_START);
