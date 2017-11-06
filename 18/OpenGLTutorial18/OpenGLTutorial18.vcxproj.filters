@@ -51,10 +51,10 @@
     <ClCompile Include="Src\Audio.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Stage01State.cpp">
+    <ClCompile Include="Src\TitleState.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Src\TitleState.cpp">
+    <ClCompile Include="Src\MainGameState.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

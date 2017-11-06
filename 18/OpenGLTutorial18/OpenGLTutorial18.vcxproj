@@ -167,10 +167,10 @@
     <ClCompile Include="Src\GameEngine.cpp" />
     <ClCompile Include="Src\GLFWEW.cpp" />
     <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\MainGameState.cpp" />
     <ClCompile Include="Src\Mesh.cpp" />
     <ClCompile Include="Src\OffscreenBuffer.cpp" />
     <ClCompile Include="Src\Shader.cpp" />
-    <ClCompile Include="Src\Stage01State.cpp" />
     <ClCompile Include="Src\Texture.cpp" />
     <ClCompile Include="Src\TitleState.cpp" />
     <ClCompile Include="Src\UniformBuffer.cpp" />

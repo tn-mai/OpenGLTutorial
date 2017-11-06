@@ -1,16 +1,16 @@
 /**
-* @file Title.cpp
+* @file TitleState.cpp
 */
-#include "Title.h"
-//#include "MainGame.h"
-#include "Global.h"
-#include "../GameState.h"
+#include "GameState.h"
 
-#include "../GameEngine.h"
-#include "../../Res/Audio/SampleCueSheet.h"
+#include "GameEngine.h"
+#include "../Res/Audio/SampleCueSheet.h"
 
-namespace State {
+namespace GameState {
 
+/**
+* 背景球を更新する.
+*/
 void UpdateSpaceSphere(Entity::Entity& entity, double delta)
 {
   glm::vec3 rotSpace = glm::eulerAngles(entity.Rotation());
@@ -18,10 +18,9 @@ void UpdateSpaceSphere(Entity::Entity& entity, double delta)
   entity.Rotation(rotSpace);
 }
 
-Title::Title(Entity::Entity* p) : pSpaceSphere(p)
-{
-}
-
+/**
+* タイトル画面を更新する.
+*/
 void Title::operator()(double delta)
 {
   GameEngine& game = GameEngine::Instance();
@@ -29,7 +28,7 @@ void Title::operator()(double delta)
   game.KeyValue(0.02f);
 
   if (!pSpaceSphere) {
-    pSpaceSphere = game.AddEntity(Global::EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, "NonLighting");
+    pSpaceSphere = game.AddEntity(EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, "NonLighting");
     game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
     game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
   }

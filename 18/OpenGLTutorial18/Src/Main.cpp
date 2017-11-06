@@ -2,7 +2,7 @@
 * @file main.cpp
 */
 #include "GameEngine.h"
-#include "State/Title.h" 
+#include "GameState.h"
 #include "../Res/Audio/SampleSound_acf.h"
 
 /// エントリーポイント.
@@ -27,7 +27,7 @@ int main()
   game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
   game.LoadFontFromFile("Res/Font.fnt");
 
-  game.UpdateFunc(State::Title());
+  game.UpdateFunc(GameState::Title());
   game.Run();
 
   return 0;
