@@ -46,6 +46,7 @@ public:
   Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, const char* shader = nullptr);
   Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, const char* normalName, Entity::Entity::UpdateFuncType func, const char* shader = nullptr);
   void RemoveEntity(Entity::Entity*);
+  void RemoveAllEntity();
   void Light(int index, const Uniform::PointLight& light);
   const Uniform::PointLight& Light(int index) const;
   void AmbientLight(const glm::vec4& color);

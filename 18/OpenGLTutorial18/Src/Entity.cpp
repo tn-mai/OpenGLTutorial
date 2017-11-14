@@ -197,6 +197,18 @@ void Buffer::RemoveEntity(Entity* entity)
 }
 
 /**
+*
+*/
+void Buffer::RemoveAllEntity()
+{
+  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
+    while (activeList[groupId].next != &activeList[groupId]) {
+      RemoveEntity(static_cast<LinkEntity*>(activeList[groupId].next));
+    }
+  }
+}
+
+/**
 * ‹éŒ`“¯m‚ÌÕ“Ë”»’è.
 */
 bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)

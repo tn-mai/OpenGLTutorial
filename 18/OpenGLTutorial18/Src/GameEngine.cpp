@@ -672,6 +672,14 @@ void GameEngine::RemoveEntity(Entity::Entity* e)
 }
 
 /**
+* 全てのエンティティを削除する.
+*/
+void GameEngine::RemoveAllEntity()
+{
+  entityBuffer->RemoveAllEntity();
+}
+
+/**
 * ライトを設定する.
 *
 * @param indes  設定するライトのインデックス.
