@@ -27,10 +27,9 @@ enum EntityGroupId
 class Title
 {
 public:
-  explicit Title(Entity::Entity* p = nullptr) : pSpaceSphere(p) {}
   void operator()(double delta);
 private:
-  Entity::Entity* pSpaceSphere = nullptr;
+  bool initial = true;
   float timer = 0;
 };
 
@@ -38,12 +37,13 @@ private:
 class MainGame
 {
 public:
-  explicit MainGame(Entity::Entity* p);
+  MainGame();
   void operator()(double delta);
 private:
-  Entity::Entity* pSpaceSphere = nullptr;
-  Entity::Entity* pPlayer = nullptr;
   double interval = 0;
+
+  int stageNo = 0;
+  double stageTimer = -1;
 };
 
 } // namespace GameState

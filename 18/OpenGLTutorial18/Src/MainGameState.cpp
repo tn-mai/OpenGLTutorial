@@ -218,10 +218,23 @@ void PlayerAndEnemyShotCollisionHandler(Entity::Entity& lhs, Entity::Entity& rhs
 }
 
 /**
+* 背景球を更新する.
+*/
+static void UpdateSpaceSphere(Entity::Entity& entity, double delta)
+{
+  glm::vec3 rotSpace = glm::eulerAngles(entity.Rotation());
+  rotSpace.x += static_cast<float>(glm::radians(2.5) * delta);
+  entity.Rotation(rotSpace);
+}
+
+void UpdateLandscape(Entity::Entity& entity, double delta)
+{
+  entity.Position(entity.Position() + glm::vec3(0, 0, -2.0f * delta));
+}
+/**
 *　コンストラクタ.
 */
-MainGame::MainGame(Entity::Entity* p) :
-  pSpaceSphere(p)
+MainGame::MainGame()
 {
   GameEngine& game = GameEngine::Instance();
   game.CollisionHandler(EntityGroupId_PlayerShot, EntityGroupId_Enemy, &CollidePlayerShotAndEnemyHandler);
@@ -235,20 +248,83 @@ MainGame::MainGame(Entity::Entity* p) :
 void MainGame::operator()(double delta)
 {
   GameEngine& game = GameEngine::Instance();
-  if (!pPlayer) {
-    pPlayer = game.AddEntity(EntityGroupId_Player, glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
+
+  static const float stageTime = 120;
+  static const float stageTitleTime = stageTime - 3;
+
+  if (stageTimer < 0) {
+    ++stageNo;
+    stageTimer = stageTime;
+
+    game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
+    game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
+    game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
+    game.KeyValue(0.24f);
+
+    game.RemoveAllEntity();
+    game.ClearLevel();
+
+    game.LoadTextureFromFile("Res/Model/Player.bmp");
+    game.LoadMeshFromFile("Res/Model/Player.fbx");
+
+    game.LoadMeshFromFile("Res/Model/Toroid.fbx");
+    game.LoadMeshFromFile("Res/Model/Blast.fbx");
+    game.LoadTextureFromFile("Res/Model/Toroid.bmp");
+    game.LoadTextureFromFile("Res/Model/Toroid.Normal.bmp");
+
+    switch (stageNo) {
+    case 1: {
+      game.KeyValue(0.24f);
+      game.LoadMeshFromFile("Res/Model/BG01.fbx");
+      game.LoadTextureFromFile("Res/Model/BG01.Diffuse.bmp");
+      game.LoadTextureFromFile("Res/Model/BG01.Normal.bmp");
+      game.LoadTextureFromFile("Res/Model/Block.Base.Diffuse.bmp");
+      game.LoadTextureFromFile("Res/Model/Block.Base.Normal.bmp");
+      game.LoadTextureFromFile("Res/Model/Block.End.Diffuse.bmp");
+      game.LoadTextureFromFile("Res/Model/Block.End.Normal.bmp");
+      game.AddEntity(EntityGroupId_Others, glm::vec3(0, -60, 800), "Landscape01", "Res/Model/BG01.Diffuse.bmp", "Res/Model/BG01.Normal.bmp", &UpdateLandscape);
+      for (int i = 0; i < 3; ++i) {
+        auto p0 = game.AddEntity(EntityGroupId_Others, glm::vec3(3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
+        p0->Rotation(glm::vec3(0, 0, glm::radians(10.0f)));
+        auto p1 = game.AddEntity(EntityGroupId_Others, glm::vec3(-3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
+        p1->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(-10.0f)));
+      }
+      auto p0 = game.AddEntity(EntityGroupId_Others, glm::vec3(3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
+      p0->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(190.0f)));
+      auto p1 = game.AddEntity(EntityGroupId_Others, glm::vec3(-3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.End.Diffuse.bmp", "Res/Model/Block.End.Normal.bmp", UpdateLandscape);
+      p1->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(-10.0f)));
+      break;
+    }
+    default:
+    case 2: {
+      game.KeyValue(0.02f);
+      game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
+      game.LoadTextureFromFile("Res/Model/SpaceSphere.bmp");
+      game.AddEntity(EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, "NonLighting");
+      break;
+    }
+    }
+
+    auto pPlayer = game.AddEntity(EntityGroupId_Player, glm::vec3(0, 0, 2), "Aircraft", "Res/Model/Player.bmp", UpdatePlayer());
     pPlayer->Collision(collisionDataList[EntityGroupId_Player]);
   }
-
-  game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
-  game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
-  game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
+  stageTimer -= delta;
+  if (stageTimer > stageTitleTime) {
+    char str[32];
+    snprintf(str, sizeof(str), "stage %02d", stageNo);
+    const float timer = static_cast<float>(stageTimer) - stageTitleTime;
+    float alpha = glm::clamp(timer, 0.0f, 1.0f);
+    game.FontScale(glm::vec2(2));
+    game.FontColor(glm::vec4(1, 1, 1, alpha));
+    game.FontSubColor(glm::vec4(0.1f, 0.5f, 0.8f, 0.8f * alpha));
+    game.AddString(glm::vec2(-0.25f, 0.125f), str);
+  }
 
   std::uniform_int_distribution<> distributerX(-12, 12);
   std::uniform_int_distribution<> distributerZ(40, 44);
   interval -= delta;
   if (interval <= 0) {
-    const std::uniform_real_distribution<> rndInterval(2.0, 6.0);
+    const std::uniform_real_distribution<> rndInterval(0.1, 1.0);
     const std::uniform_int_distribution<> rndAddingCount(1, 5);
     for (int i = rndAddingCount(game.Rand()); i > 0; --i) {
       const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
