@@ -234,7 +234,7 @@ bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)
 * @param matView View行列.
 * @param matProj Projection行列.
 */
-void Buffer::Update(double delta, const CameraData* camera, const glm::mat4& matProj)
+void Buffer::Update(double delta, const glm::mat4* matView, const glm::mat4& matProj)
 {
   // 座標とワールド座標系の衝突形状を更新する.
   // 各エンティティの状態を更新する.
@@ -278,9 +278,7 @@ void Buffer::Update(double delta, const CameraData* camera, const glm::mat4& mat
   std::vector<glm::mat4> matVP;
   matVP.resize(Uniform::maxViewCount);
   for (int i = 0; i < Uniform::maxViewCount; ++i) {
-    const CameraData& cam = camera[i];
-    const glm::mat4 matView = glm::lookAt(cam.position, cam.target, cam.up);
-    matVP[i] = matProj * matView;
+    matVP[i] = matProj * matView[i];
   }
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
     for (Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {

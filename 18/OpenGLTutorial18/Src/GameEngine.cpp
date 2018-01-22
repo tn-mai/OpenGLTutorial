@@ -339,7 +339,12 @@ void GameEngine::Update(double delta)
   }
   const GLFWEW::Window& window = GLFWEW::Window::Instance();
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), static_cast<float>(window.Width()) / static_cast<float>(window.Height()), 1.0f, 1000.0f);
-  entityBuffer->Update(delta, camera, matProj);
+  glm::mat4x4 matView[Uniform::maxViewCount];
+  for (int i = 0; i < Uniform::maxViewCount; ++i) {
+    const CameraData& cam = camera[i];
+    matView[i] = glm::lookAt(cam.position, cam.target, cam.up);
+  }
+  entityBuffer->Update(delta, matView, matProj);
   fontRenderer.UnmapBuffer();
 }
 

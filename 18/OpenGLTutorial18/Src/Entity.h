@@ -23,12 +23,6 @@ typedef std::function<void(Entity&, Entity&)> CollisionHandlerType; ///< Õ“Ë‰ðŒ
 
 static const int maxGroupId = 15; ///< ƒOƒ‹[ƒvID‚ÌÅ‘å’l.
 
-struct CameraData {
-  glm::vec3 position;
-  glm::vec3 target;
-  glm::vec3 up = {0, 0, 1};
-};
-
 /**
 * Õ“Ë”»’è.
 */
@@ -149,7 +143,7 @@ public:
     }
   }
   bool GroupVisibility(int groupId, int cameraIndex) const { return visibilityFlags[groupId] & (1U << cameraIndex); }
-  void Update(double delta, const CameraData* camera, const glm::mat4& matProj);
+  void Update(double delta, const glm::mat4* matView, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
 
   void CollisionHandler(int gid0, int gid1, const CollisionHandlerType& handler);

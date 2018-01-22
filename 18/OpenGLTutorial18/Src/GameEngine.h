@@ -27,7 +27,11 @@ class GameEngine
 public:
   /// ƒQ[ƒ€ó‘Ô‚ğXV‚·‚éŠÖ”‚ÌŒ^.
   typedef std::function<void(double)> UpdateFuncType;
-  using CameraData = Entity::CameraData;
+  struct CameraData {
+    glm::vec3 position;
+    glm::vec3 target;
+    glm::vec3 up = {0, 0, 1};
+  };
 
   static GameEngine& Instance();
   bool Init(int w, int h, const char* title);
