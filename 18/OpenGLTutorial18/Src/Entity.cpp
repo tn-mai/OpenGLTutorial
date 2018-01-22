@@ -197,7 +197,7 @@ void Buffer::RemoveEntity(Entity* entity)
 }
 
 /**
-*
+* 全てのエンティティを削除する.
 */
 void Buffer::RemoveAllEntity()
 {
@@ -219,6 +219,7 @@ bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)
   return true;
 }
 
+#pragma optimize( "ts", off)
 /**
 * アクティブなエンティティの状態を更新する.
 *
