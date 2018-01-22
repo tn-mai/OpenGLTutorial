@@ -258,7 +258,9 @@ void MainGame::operator()(double delta)
     ++stageNo;
     stageTimer = stageTime;
 
-    game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
+    game.Camera(1, { glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
+    game.AttachCamera(EntityGroupId_Background, 1);
+    game.Camera(0, { glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
     game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
     game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) } );
 //    game.Light(1, { glm::vec4(-40, -100, -10, 1), glm::vec4(120, 1200, 3000, 1) } );
@@ -292,21 +294,21 @@ void MainGame::operator()(double delta)
       game.LoadTextureFromFile("Res/Model/Block.End.Normal.bmp");
 
       for (int i = 0; i < 3; ++i) {
-        auto p0 = game.AddEntity(EntityGroupId_Others, glm::vec3(3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
+        auto p0 = game.AddEntity(EntityGroupId_Background, glm::vec3(3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp");
         p0->Rotation(glm::vec3(0, 0, glm::radians(10.0f)));
-        auto p1 = game.AddEntity(EntityGroupId_Others, glm::vec3(-3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
+        auto p1 = game.AddEntity(EntityGroupId_Background, glm::vec3(-3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp");
         p1->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(-10.0f)));
       }
-      auto p0 = game.AddEntity(EntityGroupId_Others, glm::vec3(3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
+      auto p0 = game.AddEntity(EntityGroupId_Background, glm::vec3(3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp");
       p0->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(190.0f)));
-      auto p1 = game.AddEntity(EntityGroupId_Others, glm::vec3(-3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.End.Diffuse.bmp", "Res/Model/Block.End.Normal.bmp", UpdateLandscape);
+      auto p1 = game.AddEntity(EntityGroupId_Background, glm::vec3(-3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.End.Diffuse.bmp", "Res/Model/Block.End.Normal.bmp");
       p1->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(-10.0f)));
 
       for (int z = 0; z < 5; ++z) {
         const float offsetZ = static_cast<float>(z * 40 * 5);
         for (int x = 0; x < 5; ++x) {
           const float offsetX = static_cast<float>(x * 40 - 80) * 5.0f;
-          auto entity = game.AddEntity(EntityGroupId_Others, glm::vec3(offsetX, -100, offsetZ), "Landscape01", "Res/Model/BG02.Diffuse.dds", "Res/Model/BG02.Normal.bmp", &UpdateLandscape);
+          auto entity = game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -100, offsetZ), "Landscape01", "Res/Model/BG02.Diffuse.dds", "Res/Model/BG02.Normal.bmp");
 //          entity->Color(glm::vec4(2.5f, 2.5f, 2.5f, 1.0f));
         }
       }
@@ -324,8 +326,8 @@ void MainGame::operator()(double delta)
         const float offsetZ = static_cast<float>(z * 40);
         for (int x = 0; x < 5; ++x) {
           const float offsetX = static_cast<float>(x * 40 - 80);
-          auto entity = game.AddEntity(EntityGroupId_Others, glm::vec3(offsetX, -10, offsetZ), "City01", "Res/Model/City01.Diffuse.dds", "Res/Model/City01.Normal.bmp", &UpdateLandscape);
-          game.AddEntity(EntityGroupId_Others, glm::vec3(offsetX, -10, offsetZ), "City01.Shadow", "Res/Model/City01.Diffuse.dds", "Res/Model/City01.Normal.bmp", &UpdateLandscape);
+          auto entity = game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -10, offsetZ), "City01", "Res/Model/City01.Diffuse.dds", "Res/Model/City01.Normal.bmp");
+          game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -10, offsetZ), "City01.Shadow", "Res/Model/City01.Diffuse.dds", "Res/Model/City01.Normal.bmp");
         }
       }
       break;
@@ -335,7 +337,7 @@ void MainGame::operator()(double delta)
       game.KeyValue(0.02f);
       game.LoadMeshFromFile("Res/Model/SpaceSphere.fbx");
       game.LoadTextureFromFile("Res/Model/SpaceSphere.bmp");
-      game.AddEntity(EntityGroupId_Others, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, "NonLighting");
+      game.AddEntity(EntityGroupId_Background, glm::vec3(0, 0, 0), "SpaceSphere", "Res/Model/SpaceSphere.bmp", &UpdateSpaceSphere, "NonLighting");
       break;
     }
 #if 0
@@ -348,7 +350,7 @@ void MainGame::operator()(double delta)
         const float offsetZ = static_cast<float>(z * 40 * 5);
         for (int x = 0; x < 3; ++x) {
           const float offsetX = static_cast<float>(x * 40 - 40) * 5.0f;
-          auto entity = game.AddEntity(EntityGroupId_Others, glm::vec3(offsetX, -60, offsetZ), "Landscape01", "Res/Model/BG02.Diffuse.dds", "Res/Model/BG02.Normal.bmp", &UpdateLandscape);
+          auto entity = game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -60, offsetZ), "Landscape01", "Res/Model/BG02.Diffuse.dds", "Res/Model/BG02.Normal.bmp", &UpdateLandscape);
         }
       }
       break;
@@ -392,10 +394,20 @@ void MainGame::operator()(double delta)
     pBoss->Rotation(glm::angleAxis(angle, glm::vec3(0, 1, 0)));
   }
 
-  GameEngine::CameraData camera = game.Camera();
-  float cameraMoveValue = fmod(static_cast<float>(stageTimer), 45.0f) * (glm::radians(360.0f) / 45.0f);
-  camera.position.x = glm::cos(cameraMoveValue) * 5.0f;
-  game.Camera(camera);
+  switch (stageNo) {
+  case 1:
+  case 2: {
+    GameEngine::CameraData camera = game.Camera(1);
+    float cameraMoveValue = fmod(static_cast<float>(stageTimer), 45.0f) * (glm::radians(360.0f) / 45.0f);
+    camera.position.x = glm::cos(cameraMoveValue) * 5.0f;
+    camera.position.z += 4.0f * delta;
+    camera.target.z += 4.0f * delta;
+    game.Camera(1, camera);
+    break;
+  }
+  default:
+    break;
+  }
 
   std::uniform_int_distribution<> distributerX(-12, 12);
   std::uniform_int_distribution<> distributerZ(50, 54);

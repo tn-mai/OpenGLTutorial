@@ -24,7 +24,7 @@ void UpdateSpaceSphere(Entity::Entity& entity, double delta)
 void Title::operator()(double delta)
 {
   GameEngine& game = GameEngine::Instance();
-  game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
+  game.Camera(0, { glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
 
   if (initial) {
     initial = false;

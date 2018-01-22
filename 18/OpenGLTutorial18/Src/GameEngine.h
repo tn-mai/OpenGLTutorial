@@ -30,8 +30,9 @@ public:
   struct CameraData {
     glm::vec3 position;
     glm::vec3 target;
-    glm::vec3 up;
+    glm::vec3 up = {0, 0, 1};
   };
+  static const int maxCameraIndex = 7;
 
   static GameEngine& Instance();
   bool Init(int w, int h, const char* title);
@@ -43,8 +44,8 @@ public:
   const Mesh::MeshPtr& GetMesh(const char* name);
   bool LoadTextureFromFile(const char* filename, GLenum wrapMode = GL_CLAMP_TO_EDGE);
   const TexturePtr& GetTexture(const char* filename) const;
-  Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, const char* shader = nullptr);
-  Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, const char* normalName, Entity::Entity::UpdateFuncType func, const char* shader = nullptr);
+  Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func = nullptr, const char* shader = nullptr);
+  Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, const char* normalName, Entity::Entity::UpdateFuncType func = nullptr, const char* shader = nullptr);
   void RemoveEntity(Entity::Entity*);
   void RemoveAllEntity();
   void Light(int index, const Uniform::PointLight& light);
@@ -53,8 +54,11 @@ public:
   const glm::vec4& AmbientLight() const;
   float KeyValue() const { return keyValue; }
   void KeyValue(float k) { keyValue = k; }
-  void Camera(const CameraData& cam);
-  const CameraData& Camera() const;
+  void Camera(size_t index, const CameraData& cam);
+  const CameraData& Camera(size_t index) const;
+  void AttachCamera(int groupId, int index) {
+    groupIdToCameraIndex[groupId] = index;
+  }
   std::mt19937& Rand();
   const GamePad& GetGamePad(int id) const;
 
@@ -129,7 +133,8 @@ private:
   Entity::BufferPtr entityBuffer;
   Font::Renderer fontRenderer;
   Uniform::LightingData lightData;
-  CameraData camera;
+  CameraData camera[maxCameraIndex + 1];
+  int groupIdToCameraIndex[Entity::maxGroupId + 1] = { 0 };
   std::mt19937 rand;
   double fps = 0;
 

@@ -339,8 +339,13 @@ void GameEngine::Update(double delta)
   }
   const GLFWEW::Window& window = GLFWEW::Window::Instance();
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), static_cast<float>(window.Width()) / static_cast<float>(window.Height()), 1.0f, 1000.0f);
-  const glm::mat4x4 matView = glm::lookAt(camera.position, camera.target, camera.up);
-  entityBuffer->Update(delta, matView, matProj);
+  std::vector<glm::mat4> matView;
+  matView.resize(16);
+  for (int i = 0; i < 16; ++i) {
+    const auto& cam = camera[groupIdToCameraIndex[i]];
+    matView[i] = glm::lookAt(cam.position, cam.target, cam.up);
+  }
+  entityBuffer->Update(delta, matView.data(), matProj);
   fontRenderer.UnmapBuffer();
 }
 
@@ -745,22 +750,35 @@ const glm::vec4& GameEngine::AmbientLight() const
 /**
 * 視点の位置と姿勢を設定する.
 *
-* @param cam 設定するカメラデータ.
+* @param index カメラのインデックス.
+* @param cam   設定するカメラデータ.
 */
-void GameEngine::Camera(const CameraData& cam)
+void GameEngine::Camera(size_t index, const CameraData& cam)
 {
-  camera = cam;
+  camera[index] = cam;
   lightData.eyePos = glm::vec4(cam.position, 0);
 }
 
 /**
 * 視点の位置と姿勢を取得する.
 *
+* @param index カメラのインデックス.
 * @return カメラデータ.
 */
-const GameEngine::CameraData& GameEngine::Camera() const
+const GameEngine::CameraData& GameEngine::Camera(size_t index) const
 {
-  return camera;
+  return camera[index];
+}
+
+/**
+* エンティティグループにカメラを関連付ける.
+*
+* @param groupId エンティティグループID.
+* @param index カメラのインデックス.
+*/
+void GameEngine::AttachCamera(int groupId, int index)
+{
+  groupIdToCameraIndex[groupId] = index;
 }
 
 /**

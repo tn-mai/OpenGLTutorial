@@ -227,7 +227,7 @@ bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)
 * @param matView View行列.
 * @param matProj Projection行列.
 */
-void Buffer::Update(double delta, const glm::mat4& matView, const glm::mat4& matProj)
+void Buffer::Update(double delta, const glm::mat4 matView[16], const glm::mat4& matProj)
 {
   // 座標とワールド座標系の衝突形状を更新する.
   // 各エンティティの状態を更新する.
@@ -268,11 +268,17 @@ void Buffer::Update(double delta, const glm::mat4& matView, const glm::mat4& mat
   itrUpdateRhs = nullptr;
 
   uint8_t* p = static_cast<uint8_t*>(ubo->MapBuffer());
-  const glm::mat4 matVP = matProj * matView;
+  std::vector<glm::mat4> matVP;
+  matVP.resize(16);
+  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
+    if (activeList[groupId].next != &activeList[groupId]) {
+      matVP[groupId] = matProj * matView[groupId];
+    }
+  }
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
     for (Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
       LinkEntity& e = *static_cast<LinkEntity*>(itr);
-      UpdateUniformVertexData(e, p + e.uboOffset, matVP);
+      UpdateUniformVertexData(e, p + e.uboOffset, matVP[groupId]);
     }
   }
   ubo->UnmapBuffer();
