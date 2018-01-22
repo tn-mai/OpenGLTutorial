@@ -271,7 +271,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   shaderMap["Composition"]->UniformBlockBinding("PostEffectData", 2);
   shaderMap["Bloom"]->UniformBlockBinding("PostEffectData", 2);
 
-  meshBuffer = Mesh::Buffer::Create(30 * 1024, 30 * 1024);
+  meshBuffer = Mesh::Buffer::Create(60 * 1024, 60 * 1024);
   if (!meshBuffer) {
     return false;
   }
