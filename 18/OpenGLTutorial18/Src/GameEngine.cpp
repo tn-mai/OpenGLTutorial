@@ -351,6 +351,7 @@ void GameEngine::Render() const
 {
   glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
   glEnable(GL_CULL_FACE);
   glViewport(0, 0, offscreen->Width(), offscreen->Height());
   glScissor(0, 0, offscreen->Width(), offscreen->Height());
@@ -359,7 +360,7 @@ void GameEngine::Render() const
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
   uboLight->BufferSubData(&lightData);
   entityBuffer->Draw(meshBuffer);
@@ -382,6 +383,7 @@ void GameEngine::Render() const
 #endif
 
   glDisable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
   glDisable(GL_CULL_FACE);
   glDisable(GL_BLEND);
 
@@ -437,7 +439,7 @@ void GameEngine::Render() const
   glDrawElements(GL_TRIANGLES, renderingData[1].size, GL_UNSIGNED_INT, renderingData[1].offset);
 
   glEnable(GL_BLEND);
-  glBlendFunc(GL_ONE, GL_ONE);
+  glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ZERO);
 
   const Shader::ProgramPtr& progEnlarge = shaderMap.find("PostEffect")->second;
   progEnlarge->UseProgram();
@@ -508,6 +510,7 @@ void GameEngine::Render() const
   }
 
   glBindVertexArray(0);
+  glUseProgram(0);
 
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, 0);
