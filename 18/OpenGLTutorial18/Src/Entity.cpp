@@ -299,8 +299,8 @@ void Buffer::Update(double delta, const CameraData* camera, const glm::mat4& mat
 void Buffer::Draw(const Mesh::BufferPtr& meshBuffer) const
 {
   meshBuffer->BindVAO();
-  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
-    for (int viewIndex = 0; viewIndex < Uniform::maxViewCount; ++viewIndex) {
+  for (int viewIndex = 0; viewIndex < Uniform::maxViewCount; ++viewIndex) {
+    for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
       if (!(visibilityFlags[groupId] & (1 << viewIndex))) {
         continue;
       }
