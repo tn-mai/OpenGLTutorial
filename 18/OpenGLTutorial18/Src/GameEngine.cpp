@@ -339,13 +339,12 @@ void GameEngine::Update(double delta)
   }
   const GLFWEW::Window& window = GLFWEW::Window::Instance();
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), static_cast<float>(window.Width()) / static_cast<float>(window.Height()), 1.0f, 1000.0f);
-  std::vector<glm::mat4> matView;
-  matView.resize(16);
-  for (int i = 0; i < 16; ++i) {
-    const auto& cam = camera[groupIdToCameraIndex[i]];
-    matView[i] = glm::lookAt(cam.position, cam.target, cam.up);
+  std::vector<const CameraData*> cameraList;
+  cameraList.resize(16);
+  for (int i = 0; i <= Entity::maxGroupId; ++i) {
+    cameraList[i] = &camera[groupIdToCameraIndex[i]];
   }
-  entityBuffer->Update(delta, matView.data(), matProj);
+  entityBuffer->Update(delta, cameraList.data(), matProj);
   fontRenderer.UnmapBuffer();
 }
 
@@ -756,7 +755,6 @@ const glm::vec4& GameEngine::AmbientLight() const
 void GameEngine::Camera(size_t index, const CameraData& cam)
 {
   camera[index] = cam;
-  lightData.eyePos = glm::vec4(cam.position, 0);
 }
 
 /**

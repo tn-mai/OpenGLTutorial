@@ -9,6 +9,19 @@ out vec4 fragColor;
 
 const int maxLight = 4;
 
+/**
+* 頂点シェーダ入力.
+*/
+layout(std140) uniform VertexData
+{
+	mat4 matMVP;
+	mat4 matModel;
+	mat3x4 matNormal;
+	vec4 color;
+	mat4 matTex;
+	vec4 eyePos;
+} vertexData;
+
 struct PointLight
 {
   vec4 position;
@@ -17,7 +30,6 @@ struct PointLight
 
 layout(std140) uniform LightingData
 {
-  vec4 eyePos;
   vec4 ambientColor;
   PointLight light[maxLight];
 } lightingData;
@@ -25,24 +37,24 @@ layout(std140) uniform LightingData
 uniform sampler2D colorSampler[2];
 
 const float shininess = 2;
-const float normFactor = (shininess + 2) * (1.0 / (2.0 * 3.1415926)) * 0.0001;
+const float normFactor = (shininess + 2) * (1.0 / (2.0 * 3.1415926));
 
 void main()
 {
-  vec3 normal = texture(colorSampler[1], inTexCoord).xyz;
-  normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
+  vec3 normal = texture(colorSampler[1], inTexCoord).xyz * 2 - 1;
+  //normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
   normal = inTBN * normal;
   vec3 lightColor = lightingData.ambientColor.rgb;
   vec3 specularColor = vec3(0);
   for (int i = 0; i < maxLight; ++i) {
     vec3 lightVector = lightingData.light[i].position.xyz - inWorldPosition;
-    float lightPower = 1.0 / dot(lightVector, lightVector);
+    float lightPower = 1.0 / (dot(lightVector, lightVector) + 0.00001);
 	vec3 normalizedLightVector = normalize(lightVector);
     float cosTheta = clamp(dot(normal, normalizedLightVector), 0, 1);
     lightColor += lightingData.light[i].color.rgb * cosTheta * lightPower;
 
-    vec3 eyeVector = normalize(lightingData.eyePos.xyz - lightingData.light[i].position.xyz);
-    specularColor += lightingData.light[i].color.rgb * pow(max(dot(eyeVector, reflect(normalizedLightVector, normal)), 0), shininess);
+    vec3 eyeVector = normalize(vertexData.eyePos.xyz - lightingData.light[i].position.xyz);
+    specularColor += lightingData.light[i].color.rgb * pow(max(dot(eyeVector, reflect(normalizedLightVector, normal)), 0), shininess) * lightPower * 0.1;
   }
   fragColor = inColor * texture(colorSampler[0], inTexCoord);
   fragColor.rgb *= lightColor;

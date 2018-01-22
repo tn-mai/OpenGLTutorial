@@ -16,13 +16,14 @@ namespace Entity {
 * @param ubo
 * @param matViewProjection
 */
-void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4& matViewProjection)
+void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4& matViewProjection, const glm::vec3& eyePos)
 {
   Uniform::VertexData data;
   data.matModel = entity.TRSMatrix();
   data.matNormal = glm::mat4_cast(entity.Rotation());
   data.matMVP = matViewProjection * data.matModel;
   data.color = entity.Color();
+  data.eyePos = glm::vec4(eyePos, 0);
   memcpy(ubo, &data, sizeof(data));
 }
 
@@ -227,7 +228,7 @@ bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)
 * @param matView View行列.
 * @param matProj Projection行列.
 */
-void Buffer::Update(double delta, const glm::mat4 matView[16], const glm::mat4& matProj)
+void Buffer::Update(double delta, const CameraData* camera[16], const glm::mat4& matProj)
 {
   // 座標とワールド座標系の衝突形状を更新する.
   // 各エンティティの状態を更新する.
@@ -272,13 +273,16 @@ void Buffer::Update(double delta, const glm::mat4 matView[16], const glm::mat4& 
   matVP.resize(16);
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
     if (activeList[groupId].next != &activeList[groupId]) {
-      matVP[groupId] = matProj * matView[groupId];
+      const CameraData& cam = *camera[groupId];
+      const glm::mat4 matView = glm::lookAt(cam.position, cam.target, cam.up);
+      matVP[groupId] = matProj * matView;
     }
   }
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
+    const CameraData& cam = *camera[groupId];
     for (Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
       LinkEntity& e = *static_cast<LinkEntity*>(itr);
-      UpdateUniformVertexData(e, p + e.uboOffset, matVP[groupId]);
+      UpdateUniformVertexData(e, p + e.uboOffset, matVP[groupId], cam.position);
     }
   }
   ubo->UnmapBuffer();

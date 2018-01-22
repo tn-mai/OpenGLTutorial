@@ -27,12 +27,8 @@ class GameEngine
 public:
   /// ƒQ[ƒ€ó‘Ô‚ğXV‚·‚éŠÖ”‚ÌŒ^.
   typedef std::function<void(double)> UpdateFuncType;
-  struct CameraData {
-    glm::vec3 position;
-    glm::vec3 target;
-    glm::vec3 up = {0, 0, 1};
-  };
   static const int maxCameraIndex = 7;
+  using CameraData = Entity::CameraData;
 
   static GameEngine& Instance();
   bool Init(int w, int h, const char* title);
@@ -56,9 +52,7 @@ public:
   void KeyValue(float k) { keyValue = k; }
   void Camera(size_t index, const CameraData& cam);
   const CameraData& Camera(size_t index) const;
-  void AttachCamera(int groupId, int index) {
-    groupIdToCameraIndex[groupId] = index;
-  }
+  void AttachCamera(int groupId, int index);
   std::mt19937& Rand();
   const GamePad& GetGamePad(int id) const;
 

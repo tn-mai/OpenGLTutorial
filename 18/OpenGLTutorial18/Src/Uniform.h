@@ -17,6 +17,7 @@ struct VertexData
   glm::mat3x4 matNormal;
   glm::vec4 color;
   glm::mat4 matTex;
+  glm::vec4 eyePos; ///< 視点.
 };
 
 /**
@@ -35,7 +36,6 @@ static const int maxLightCount = 4; ///< ライトの数.
 */
 struct LightingData
 {
-  glm::vec4 eyePos; ///< 視点.
   glm::vec4 ambientColor; ///< 環境光.
   PointLight light[maxLightCount]; ///< ライトのリスト.
 };

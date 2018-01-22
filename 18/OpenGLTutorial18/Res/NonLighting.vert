@@ -17,6 +17,7 @@ layout(std140) uniform VertexData
 	mat3x4 matNormal;
 	vec4 color;
 	mat4 matTex;
+	vec4 eyePos;
 } vertexData;
 
 void main() {
