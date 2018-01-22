@@ -7,17 +7,18 @@
 
 namespace Uniform {
 
+static const int maxViewCount = 4;
+
 /**
 * 座標変換データ.
 */
 struct VertexData
 {
-  glm::mat4 matMVP;
+  glm::mat4 matMVP[maxViewCount];
   glm::mat4 matModel;
   glm::mat3x4 matNormal;
   glm::vec4 color;
   glm::mat4 matTex;
-  glm::vec4 eyePos; ///< 視点.
 };
 
 /**
@@ -36,6 +37,7 @@ static const int maxLightCount = 4; ///< ライトの数.
 */
 struct LightingData
 {
+  glm::vec4 eyePos[maxViewCount]; ///< 視点.
   glm::vec4 ambientColor; ///< 環境光.
   PointLight light[maxLightCount]; ///< ライトのリスト.
 };

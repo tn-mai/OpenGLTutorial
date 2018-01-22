@@ -9,19 +9,6 @@ out vec4 fragColor;
 
 const int maxLight = 4;
 
-/**
-* 頂点シェーダ入力.
-*/
-layout(std140) uniform VertexData
-{
-	mat4 matMVP;
-	mat4 matModel;
-	mat3x4 matNormal;
-	vec4 color;
-	mat4 matTex;
-	vec4 eyePos;
-} vertexData;
-
 struct PointLight
 {
   vec4 position;
@@ -30,10 +17,12 @@ struct PointLight
 
 layout(std140) uniform LightingData
 {
+  vec4 eyePos[4];
   vec4 ambientColor;
   PointLight light[maxLight];
 } lightingData;
 
+uniform int viewIndex;
 uniform sampler2D colorSampler[2];
 
 const float shininess = 2;
@@ -53,8 +42,8 @@ void main()
     float cosTheta = clamp(dot(normal, normalizedLightVector), 0, 1);
     lightColor += lightingData.light[i].color.rgb * cosTheta * lightPower;
 
-    vec3 eyeVector = normalize(vertexData.eyePos.xyz - lightingData.light[i].position.xyz);
-    specularColor += lightingData.light[i].color.rgb * pow(max(dot(eyeVector, reflect(normalizedLightVector, normal)), 0), shininess) * lightPower * 0.1;
+    vec3 eyeVector = normalize(lightingData.eyePos[viewIndex].xyz - lightingData.light[i].position.xyz);
+    specularColor += lightingData.light[i].color.rgb * pow(max(dot(eyeVector, reflect(normalizedLightVector, normal)), 0), shininess) * lightPower * 0.25;
   }
   fragColor = inColor * texture(colorSampler[0], inTexCoord);
   fragColor.rgb *= lightColor;

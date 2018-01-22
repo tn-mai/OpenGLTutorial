@@ -12,16 +12,17 @@ layout(location=1) out vec2 outTexCoord;
 */
 layout(std140) uniform VertexData
 {
-	mat4 matMVP;
+	mat4 matMVP[4];
 	mat4 matModel;
 	mat3x4 matNormal;
 	vec4 color;
 	mat4 matTex;
-	vec4 eyePos;
 } vertexData;
+
+uniform int viewIndex;
 
 void main() {
   outColor = vColor * vertexData.color;
   outTexCoord = (vertexData.matTex * vec4(vTexCoord, 0, 1)).xy;
-  gl_Position = vertexData.matMVP * vec4(vPosition, 1.0);
+  gl_Position = vertexData.matMVP[viewIndex] * vec4(vPosition, 1.0);
 }

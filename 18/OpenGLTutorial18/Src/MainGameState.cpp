@@ -258,14 +258,15 @@ void MainGame::operator()(double delta)
     ++stageNo;
     stageTimer = stageTime;
 
-    game.Camera(1, { glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
-    game.AttachCamera(EntityGroupId_Background, 1);
     game.Camera(0, { glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
+    game.Camera(1, { glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
     game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
     game.Light(0, { glm::vec4(40, 300, 10, 1), glm::vec4(120000, 120000, 120000, 1) } );
 //    game.Light(1, { glm::vec4(-40, -100, -10, 1), glm::vec4(120, 1200, 3000, 1) } );
     game.KeyValue(0.24f);
 
+    game.GroupVisibility(EntityGroupId_Background, 0, false);
+    game.GroupVisibility(EntityGroupId_Background, 1, true);
     game.RemoveAllEntity();
     game.ClearLevel();
 
@@ -285,7 +286,7 @@ void MainGame::operator()(double delta)
       game.UserVariable(varPlayerStock) = 3;
       game.KeyValue(0.16f);
       game.LoadMeshFromFile("Res/Model/Landscape.fbx");
-//      game.LoadMeshFromFile("Res/Model/BG01.fbx");
+      game.LoadMeshFromFile("Res/Model/BG01.fbx");
       game.LoadTextureFromFile("Res/Model/BG02.Diffuse.dds");
       game.LoadTextureFromFile("Res/Model/BG02.Normal.bmp");
       game.LoadTextureFromFile("Res/Model/Block.Base.Diffuse.bmp");

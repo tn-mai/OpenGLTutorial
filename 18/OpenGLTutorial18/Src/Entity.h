@@ -141,7 +141,15 @@ public:
   Entity* AddEntity(int groupId, const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr t[2], const Shader::ProgramPtr& p, const Entity::UpdateFuncType& func);
   void RemoveEntity(Entity* entity);
   void RemoveAllEntity();
-  void Update(double delta, const CameraData* camera[16], const glm::mat4& matProj);
+  void GroupVisibility(int groupId, int cameraIndex, bool isVisible) {
+    if (isVisible) {
+      visibilityFlags[groupId] |= (1U << cameraIndex);
+    } else {
+      visibilityFlags[groupId] &= ~(1U << cameraIndex);
+    }
+  }
+  bool GroupVisibility(int groupId, int cameraIndex) const { return visibilityFlags[groupId] & (1U << cameraIndex); }
+  void Update(double delta, const CameraData* camera, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
 
   void CollisionHandler(int gid0, int gid1, const CollisionHandlerType& handler);
@@ -177,6 +185,7 @@ private:
   GLsizeiptr ubSizePerEntity;
   Link freeList;
   Link activeList[maxGroupId + 1];
+  glm::u32 visibilityFlags[maxGroupId + 1] = { 0 };
   UniformBufferPtr ubo;
   Link* itrUpdate = nullptr;
   Link* itrUpdateRhs = nullptr;

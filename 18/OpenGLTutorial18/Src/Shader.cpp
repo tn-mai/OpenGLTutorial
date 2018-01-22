@@ -49,6 +49,7 @@ ProgramPtr Program::Create(const char* vsFilename, const char* fsFilename)
       break;
     }
   }
+  p->viewIndexLocation = glGetUniformLocation(p->program, "viewIndex");
 
   p->name = vsFilename;
   p->name.resize(p->name.size() - 5);
@@ -114,6 +115,16 @@ void Program::BindTexture(GLenum unit, GLenum type, GLuint texture)
   if (unit >= GL_TEXTURE0 && unit < static_cast<GLenum>(GL_TEXTURE0 + samplerCount)) {
     glActiveTexture(unit);
     glBindTexture(type, texture);
+  }
+}
+
+/**
+*
+*/
+void Program::SetViewIndex(int index)
+{
+  if (viewIndexLocation >= 0) {
+    glUniform1i(viewIndexLocation, index);
   }
 }
 

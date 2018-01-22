@@ -16,14 +16,17 @@ namespace Entity {
 * @param ubo
 * @param matViewProjection
 */
-void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4& matViewProjection, const glm::vec3& eyePos)
+void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4 matViewProjection[4], glm::u32 viewFlags)
 {
   Uniform::VertexData data;
   data.matModel = entity.TRSMatrix();
   data.matNormal = glm::mat4_cast(entity.Rotation());
-  data.matMVP = matViewProjection * data.matModel;
+  for (int i = 0; i < Uniform::maxViewCount; ++i) {
+    if (viewFlags & (1 << i)) {
+      data.matMVP[i] = matViewProjection[i] * data.matModel;
+    }
+  }
   data.color = entity.Color();
-  data.eyePos = glm::vec4(eyePos, 0);
   memcpy(ubo, &data, sizeof(data));
 }
 
@@ -120,6 +123,9 @@ BufferPtr Buffer::Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int 
     offset += ubSizePerEntity;
   }
   p->collisionHandlerList.reserve(maxGroupId);
+  for (auto& e : p->visibilityFlags) {
+    e = 1;
+  }
   return p;
 }
 
@@ -228,7 +234,7 @@ bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)
 * @param matView View行列.
 * @param matProj Projection行列.
 */
-void Buffer::Update(double delta, const CameraData* camera[16], const glm::mat4& matProj)
+void Buffer::Update(double delta, const CameraData* camera, const glm::mat4& matProj)
 {
   // 座標とワールド座標系の衝突形状を更新する.
   // 各エンティティの状態を更新する.
@@ -270,19 +276,16 @@ void Buffer::Update(double delta, const CameraData* camera[16], const glm::mat4&
 
   uint8_t* p = static_cast<uint8_t*>(ubo->MapBuffer());
   std::vector<glm::mat4> matVP;
-  matVP.resize(16);
-  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
-    if (activeList[groupId].next != &activeList[groupId]) {
-      const CameraData& cam = *camera[groupId];
-      const glm::mat4 matView = glm::lookAt(cam.position, cam.target, cam.up);
-      matVP[groupId] = matProj * matView;
-    }
+  matVP.resize(Uniform::maxViewCount);
+  for (int i = 0; i < Uniform::maxViewCount; ++i) {
+    const CameraData& cam = camera[i];
+    const glm::mat4 matView = glm::lookAt(cam.position, cam.target, cam.up);
+    matVP[i] = matProj * matView;
   }
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
-    const CameraData& cam = *camera[groupId];
     for (Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
       LinkEntity& e = *static_cast<LinkEntity*>(itr);
-      UpdateUniformVertexData(e, p + e.uboOffset, matVP[groupId], cam.position);
+      UpdateUniformVertexData(e, p + e.uboOffset, matVP.data(), visibilityFlags[groupId]);
     }
   }
   ubo->UnmapBuffer();
@@ -297,15 +300,21 @@ void Buffer::Draw(const Mesh::BufferPtr& meshBuffer) const
 {
   meshBuffer->BindVAO();
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
-    for (const Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
-      const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
-      if (e.mesh && e.texture && e.program) {
-        e.program->UseProgram();
-        for (size_t i = 0; i < sizeof(e.texture) / sizeof(e.texture[0]); ++i) {
-          e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
+    for (int viewIndex = 0; viewIndex < Uniform::maxViewCount; ++viewIndex) {
+      if (!(visibilityFlags[groupId] & (1 << viewIndex))) {
+        continue;
+      }
+      for (const Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
+        const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
+        if (e.mesh && e.texture && e.program) {
+          e.program->UseProgram();
+          for (size_t i = 0; i < sizeof(e.texture) / sizeof(e.texture[0]); ++i) {
+            e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
+          }
+          e.program->SetViewIndex(viewIndex);
+          ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
+          e.mesh->Draw(meshBuffer);
         }
-        ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
-        e.mesh->Draw(meshBuffer);
       }
     }
   }

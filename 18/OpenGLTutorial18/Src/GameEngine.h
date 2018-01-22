@@ -27,7 +27,6 @@ class GameEngine
 public:
   /// ƒQ[ƒ€ó‘Ô‚ğXV‚·‚éŠÖ”‚ÌŒ^.
   typedef std::function<void(double)> UpdateFuncType;
-  static const int maxCameraIndex = 7;
   using CameraData = Entity::CameraData;
 
   static GameEngine& Instance();
@@ -52,7 +51,8 @@ public:
   void KeyValue(float k) { keyValue = k; }
   void Camera(size_t index, const CameraData& cam);
   const CameraData& Camera(size_t index) const;
-  void AttachCamera(int groupId, int index);
+  void GroupVisibility(int groupId, int index, bool isVisible) { entityBuffer->GroupVisibility(groupId, index, isVisible); }
+  bool GroupVisibility(int groupId, int index) const { return entityBuffer->GroupVisibility(groupId, index); }
   std::mt19937& Rand();
   const GamePad& GetGamePad(int id) const;
 
@@ -127,8 +127,7 @@ private:
   Entity::BufferPtr entityBuffer;
   Font::Renderer fontRenderer;
   Uniform::LightingData lightData;
-  CameraData camera[maxCameraIndex + 1];
-  int groupIdToCameraIndex[Entity::maxGroupId + 1] = { 0 };
+  CameraData camera[Uniform::maxViewCount];
   std::mt19937 rand;
   double fps = 0;
 

@@ -339,12 +339,7 @@ void GameEngine::Update(double delta)
   }
   const GLFWEW::Window& window = GLFWEW::Window::Instance();
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), static_cast<float>(window.Width()) / static_cast<float>(window.Height()), 1.0f, 1000.0f);
-  std::vector<const CameraData*> cameraList;
-  cameraList.resize(16);
-  for (int i = 0; i <= Entity::maxGroupId; ++i) {
-    cameraList[i] = &camera[groupIdToCameraIndex[i]];
-  }
-  entityBuffer->Update(delta, cameraList.data(), matProj);
+  entityBuffer->Update(delta, camera, matProj);
   fontRenderer.UnmapBuffer();
 }
 
@@ -755,6 +750,7 @@ const glm::vec4& GameEngine::AmbientLight() const
 void GameEngine::Camera(size_t index, const CameraData& cam)
 {
   camera[index] = cam;
+  lightData.eyePos[index] = glm::vec4(cam.position, 0);
 }
 
 /**
@@ -766,17 +762,6 @@ void GameEngine::Camera(size_t index, const CameraData& cam)
 const GameEngine::CameraData& GameEngine::Camera(size_t index) const
 {
   return camera[index];
-}
-
-/**
-* エンティティグループにカメラを関連付ける.
-*
-* @param groupId エンティティグループID.
-* @param index カメラのインデックス.
-*/
-void GameEngine::AttachCamera(int groupId, int index)
-{
-  groupIdToCameraIndex[groupId] = index;
 }
 
 /**
