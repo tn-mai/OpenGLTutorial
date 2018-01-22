@@ -570,6 +570,7 @@ bool Buffer::LoadMeshFromFile(const char* filename)
     const size_t endMaterial = materialList.size();
     const size_t beginMaterial = endMaterial - e.materialList.size();
     level.meshList.insert(std::make_pair(e.name, std::make_shared<Impl>(e.name, beginMaterial, endMaterial)));
+    std::cout << "LoadMesh: " << e.name << std::endl;
   }
   return true;
 }
@@ -618,7 +619,7 @@ void Buffer::BindVAO() const
 }
 
 /**
-*
+* スタックに新しいリソースレベルを追加する.
 */
 void Buffer::PushLevel()
 {
@@ -627,7 +628,7 @@ void Buffer::PushLevel()
 }
 
 /**
-*
+* スタックの末尾のリソースレベルを除去する.
 */
 void Buffer::PopLevel()
 {
@@ -637,7 +638,7 @@ void Buffer::PopLevel()
 }
 
 /**
-*
+* 末尾のリソースレベルを空の状態にする.
 */
 void Buffer::ClearLevel()
 {
