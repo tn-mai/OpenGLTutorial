@@ -536,6 +536,9 @@ void GameEngine::Run()
     Update(delta <= 0.5 ? delta : 1.0 / 60.0);
     Render();
     window.SwapBuffers();
+    if (window.GetKey(GLFW_KEY_ESCAPE) == GLFWEW::Window::KeyState::Press) {
+      window.Close();
+    }
     if (pboIndexForWriting < 0) {
       pboIndexForWriting = 0;
     } else {
