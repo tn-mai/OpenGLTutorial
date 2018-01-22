@@ -19,6 +19,7 @@ struct GamePad
     Y = 0x0100,
     L = 0x0200,
     R = 0x0400,
+    ESC = 0x8000,
   };
   uint32_t buttons;
   uint32_t buttonDown;

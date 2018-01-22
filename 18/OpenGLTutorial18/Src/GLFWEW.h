@@ -14,12 +14,20 @@ namespace GLFWEW {
 */
 class Window {
 public:
+  enum class KeyState {
+    Press,
+    Release,
+  };
   static Window& Instance();
   bool Init(int w, int h, const char* title);
   bool ShouldClose() const;
   void SwapBuffers() const;
   void UpdateGamePad();
   const GamePad& GetGamePad(int id) const;
+  void Close();
+  KeyState GetKey(int code) const;
+  int Width() const;
+  int Height() const;
 
 private:
   Window();

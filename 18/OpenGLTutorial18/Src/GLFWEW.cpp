@@ -23,6 +23,32 @@ void ErrorCallback(int error, const char* desc)
   std::cerr << "ERROR(0x" << std::hex << std::setfill('0') << std::setw(8) << error << "): " << desc << std::endl;
 }
 
+/**
+*
+*/
+void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* userParam)
+{
+  static const char* const sourceNameList[] = { "API", "SYSTEM", "SHADER", "3RD", "APP", "OTHER" };
+  const char* sourceName = sourceNameList[GL_DEBUG_SOURCE_OTHER - GL_DEBUG_SOURCE_API];
+  if (source >= GL_DEBUG_SOURCE_API && source <= GL_DEBUG_SOURCE_OTHER) {
+    sourceName = sourceNameList[source - GL_DEBUG_SOURCE_API];
+  }
+
+  static const char* const typeNameList[] = { "ERROR", "DEPRECATED", "UNDEFINED", "PORTABILITY", "PERFORMANCE", "OTHER" };
+  const char* typeName = typeNameList[GL_DEBUG_TYPE_OTHER - GL_DEBUG_TYPE_ERROR];
+  if (type >= GL_DEBUG_TYPE_ERROR && type <= GL_DEBUG_TYPE_OTHER) {
+    typeName = typeNameList[type - GL_DEBUG_TYPE_ERROR];
+  }
+
+  static const char* const severityNameList[] = { "HIGH", "MEDIUM", "LOW" };
+  const char* severityName = severityNameList[GL_DEBUG_SEVERITY_LOW - GL_DEBUG_SEVERITY_HIGH];
+  if (severity >= GL_DEBUG_SEVERITY_HIGH && severity <= GL_DEBUG_SEVERITY_LOW) {
+    severityName = severityNameList[severity - GL_DEBUG_SEVERITY_HIGH];
+  }
+
+  std::cerr << typeName << "(" << sourceName << ", " << severityName << "): " << message << std::endl;
+}
+
 } // unnamed namespace
 
 /**
@@ -78,6 +104,8 @@ bool Window::Init(int w, int h, const char* title)
   }
 
   if (!window) {
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+    //window = glfwCreateWindow(w, h, title, glfwGetPrimaryMonitor(), nullptr);
     window = glfwCreateWindow(w, h, title, nullptr, nullptr);
     if (!window) {
       return false;
@@ -90,6 +118,9 @@ bool Window::Init(int w, int h, const char* title)
     std::cerr << "ERROR: GLEW‚Ì‰Šú‰»‚ÉŽ¸”s‚µ‚Ü‚µ‚½." << std::endl;
     return false;
   }
+
+  glDebugMessageCallback(DebugCallback, nullptr);
+
   const GLubyte* renderer = glGetString(GL_RENDERER);
   std::cout << "Renderer: " << renderer << std::endl;
   const GLubyte* version = glGetString(GL_VERSION);
@@ -235,7 +266,38 @@ void Window::UpdateGamePad()
       }
     }
   }
+  const int key = glfwGetKey(window, GLFW_KEY_ESCAPE);
+  if (key == GLFW_PRESS) {
+    gamepad[0].buttons |= GamePad::ESC;
+  } else if (key == GLFW_RELEASE) {
+    gamepad[0].buttons &= ~GamePad::ESC;
+  }
+
   gamepad[0].buttonDown = gamepad[0].buttons & ~prevButtons;
+}
+
+void Window::Close()
+{
+  glfwSetWindowShouldClose(window, 1);
+}
+
+Window::KeyState Window::GetKey(int code) const
+{
+  return glfwGetKey(window, code) == GLFW_PRESS ? KeyState::Press : KeyState::Release;
+}
+
+int Window::Width() const
+{
+  int w, h;
+  glfwGetWindowSize(window, &w, &h);
+  return w;
+}
+
+int Window::Height() const
+{
+  int w, h;
+  glfwGetWindowSize(window, &w, &h);
+  return h;
 }
 
 } // namespace GLFWEW
