@@ -831,7 +831,7 @@ void GameEngine::StopAudio(int playerId)
 }
 
 /**
-*
+* リソーススタックに新しいリソースレベルを作成する.
 */
 void GameEngine::PushLevel()
 {
@@ -840,7 +840,7 @@ void GameEngine::PushLevel()
 }
 
 /**
-*
+* リソーススタックの末尾のリソースレベルを除去する.
 */
 void GameEngine::PopLevel()
 {
@@ -851,7 +851,7 @@ void GameEngine::PopLevel()
 }
 
 /**
-*
+* 末尾のリソースレベルを空の状態にする.
 */
 void GameEngine::ClearLevel()
 {
