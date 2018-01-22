@@ -265,8 +265,10 @@ void MainGame::operator()(double delta)
 //    game.Light(1, { glm::vec4(-40, -100, -10, 1), glm::vec4(120, 1200, 3000, 1) } );
     game.KeyValue(0.24f);
 
-    game.GroupVisibility(EntityGroupId_Background, 0, false);
-    game.GroupVisibility(EntityGroupId_Background, 1, true);
+    for (int i = EntityGroupId_Player; i <= EntityGroupId_Others; ++i) {
+      game.GroupVisibility(i, 0, false);
+      game.GroupVisibility(i, 1, true);
+    }
     game.RemoveAllEntity();
     game.ClearLevel();
 
@@ -398,12 +400,12 @@ void MainGame::operator()(double delta)
   switch (stageNo) {
   case 1:
   case 2: {
-    GameEngine::CameraData camera = game.Camera(1);
+    GameEngine::CameraData camera = game.Camera(0);
     float cameraMoveValue = fmod(static_cast<float>(stageTimer), 45.0f) * (glm::radians(360.0f) / 45.0f);
     camera.position.x = glm::cos(cameraMoveValue) * 5.0f;
     camera.position.z += 4.0f * delta;
     camera.target.z += 4.0f * delta;
-    game.Camera(1, camera);
+    game.Camera(0, camera);
     break;
   }
   default:
