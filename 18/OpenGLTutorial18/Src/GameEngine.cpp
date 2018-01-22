@@ -337,7 +337,8 @@ void GameEngine::Update(double delta)
   if (updateFunc) {
     updateFunc(delta);
   }
-  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 1000.0f);
+  const GLFWEW::Window& window = GLFWEW::Window::Instance();
+  const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), static_cast<float>(window.Width()) / static_cast<float>(window.Height()), 1.0f, 1000.0f);
   const glm::mat4x4 matView = glm::lookAt(camera.position, camera.target, camera.up);
   entityBuffer->Update(delta, matView, matProj);
   fontRenderer.UnmapBuffer();
@@ -351,8 +352,8 @@ void GameEngine::Render() const
   glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
-  glViewport(0, 0, 800, 600);
-  glScissor(0, 0, 800, 600);
+  glViewport(0, 0, offscreen->Width(), offscreen->Height());
+  glScissor(0, 0, offscreen->Width(), offscreen->Height());
   glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
   glClearDepth(1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -457,7 +458,11 @@ void GameEngine::Render() const
   glDisable(GL_BLEND);
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, 800, 600);
+  GLFWEW::Window& window = GLFWEW::Window::Instance();
+  const int windowWidth = window.Width();
+  const int windowHeight = window.Height();
+  glViewport(0, 0, windowWidth, windowHeight);
+  glScissor(0, 0, windowWidth, windowHeight);
 
   const Shader::ProgramPtr& progComposition = shaderMap.find("Composition")->second;
   progComposition->UseProgram();
