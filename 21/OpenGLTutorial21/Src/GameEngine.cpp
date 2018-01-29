@@ -350,10 +350,10 @@ void GameEngine::Update(double delta)
     const CameraData& cam = camera[i];
     matView[i] = glm::lookAt(cam.position, cam.target, cam.up);
   }
-  static float offset = 100;
-  shadowParameter.lightDir = glm::normalize(lightData.light[0].position) * 100.0f;
+  static float offset = 50;
+  shadowParameter.lightDir = glm::normalize(glm::vec3(25, 50, -25)) * 50.0f;
   shadowParameter.lightDir.z += offset;
-  glm::mat4 depthProjectionMatrix = glm::ortho<float>(-200, 200, -200, 200, 10, 300);
+  glm::mat4 depthProjectionMatrix = glm::ortho<float>(-100, 100, -100, 100, 10, 200);
   glm::mat4 depthViewMatrix = glm::lookAt(shadowParameter.lightDir, glm::vec3(0,0,offset), glm::vec3(0,1,0));
   glm::mat4 depthMVP = depthProjectionMatrix * depthViewMatrix;
 
@@ -401,8 +401,12 @@ void GameEngine::Render() const
   glEnable(GL_BLEND);
   glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, offDepth->GetTexutre());
   uboLight->BufferSubData(&lightData);
   entityBuffer->Draw(meshBuffer);
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   glBindVertexArray(vao);
 

@@ -50,6 +50,7 @@ ProgramPtr Program::Create(const char* vsFilename, const char* fsFilename)
     }
   }
   p->viewIndexLocation = glGetUniformLocation(p->program, "viewIndex");
+  p->depthSamplerLocation = glGetUniformLocation(p->program, "depthSampler");
 
   p->name = vsFilename;
   p->name.resize(p->name.size() - 5);
@@ -101,6 +102,9 @@ void Program::UseProgram()
   for (GLint i = 0; i < samplerCount; ++i) {
     glUniform1i(samplerLocation + i, i);
   }
+  if (depthSamplerLocation >= 0) {
+    glUniform1i(depthSamplerLocation, 2);
+  }
 }
 
 /**
@@ -113,6 +117,9 @@ void Program::UseProgram()
 void Program::BindTexture(GLenum unit, GLenum type, GLuint texture)
 {
   if (unit >= GL_TEXTURE0 && unit < static_cast<GLenum>(GL_TEXTURE0 + samplerCount)) {
+    glActiveTexture(unit);
+    glBindTexture(type, texture);
+  } else if (unit == GL_TEXTURE2 && depthSamplerLocation >= 0) {
     glActiveTexture(unit);
     glBindTexture(type, texture);
   }

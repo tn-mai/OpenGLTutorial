@@ -36,6 +36,7 @@ private:
   GLint samplerLocation = -1; ///< サンプラーの位置.
   int samplerCount = 0; ///< サンプラーの数.
   GLint viewIndexLocation = -1; ///< 視点インデックスの位置.
+  GLint depthSamplerLocation = -1; ///< 深度サンプラーの位置.
   std::string name; ///< プログラム名.
 };
 

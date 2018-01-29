@@ -297,21 +297,21 @@ void MainGame::operator()(double delta)
       game.LoadTextureFromFile("Res/Model/Block.End.Normal.bmp");
 
       for (int i = 0; i < 3; ++i) {
-        auto p0 = game.AddEntity(EntityGroupId_Background, glm::vec3(3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp");
+        auto p0 = game.AddEntity(EntityGroupId_Background, glm::vec3(3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
         p0->Rotation(glm::vec3(0, 0, glm::radians(10.0f)));
-        auto p1 = game.AddEntity(EntityGroupId_Background, glm::vec3(-3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp");
+        auto p1 = game.AddEntity(EntityGroupId_Background, glm::vec3(-3, -10, 30 + 50 * i), "Block.Base", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
         p1->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(-10.0f)));
       }
-      auto p0 = game.AddEntity(EntityGroupId_Background, glm::vec3(3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp");
+      auto p0 = game.AddEntity(EntityGroupId_Background, glm::vec3(3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.Base.Diffuse.bmp", "Res/Model/Block.Base.Normal.bmp", UpdateLandscape);
       p0->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(190.0f)));
-      auto p1 = game.AddEntity(EntityGroupId_Background, glm::vec3(-3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.End.Diffuse.bmp", "Res/Model/Block.End.Normal.bmp");
+      auto p1 = game.AddEntity(EntityGroupId_Background, glm::vec3(-3, -10, 30 + 50 * 2), "Block.End", "Res/Model/Block.End.Diffuse.bmp", "Res/Model/Block.End.Normal.bmp", UpdateLandscape);
       p1->Rotation(glm::vec3(0, glm::radians(180.0f), glm::radians(-10.0f)));
 
       for (int z = 0; z < 5; ++z) {
         const float offsetZ = static_cast<float>(z * 40 * 5);
         for (int x = 0; x < 5; ++x) {
           const float offsetX = static_cast<float>(x * 40 - 80) * 5.0f;
-          auto entity = game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -100, offsetZ), "Landscape01", "Res/Model/BG02.Diffuse.dds", "Res/Model/BG02.Normal.bmp");
+          auto entity = game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -100, offsetZ), "Landscape01", "Res/Model/BG02.Diffuse.dds", "Res/Model/BG02.Normal.bmp", UpdateLandscape);
 //          entity->Color(glm::vec4(2.5f, 2.5f, 2.5f, 1.0f));
         }
       }
@@ -329,8 +329,8 @@ void MainGame::operator()(double delta)
         const float offsetZ = static_cast<float>(z * 40);
         for (int x = 0; x < 5; ++x) {
           const float offsetX = static_cast<float>(x * 40 - 80);
-          auto entity = game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -10, offsetZ), "City01", "Res/Model/City01.Diffuse.dds", "Res/Model/City01.Normal.bmp");
-          game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -10, offsetZ), "City01.Shadow", "Res/Model/City01.Diffuse.dds", "Res/Model/City01.Normal.bmp");
+          auto entity = game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -10, offsetZ), "City01", "Res/Model/City01.Diffuse.dds", "Res/Model/City01.Normal.bmp", UpdateLandscape);
+          game.AddEntity(EntityGroupId_Background, glm::vec3(offsetX, -10, offsetZ), "City01.Shadow", "Res/Model/City01.Diffuse.dds", "Res/Model/City01.Normal.bmp", UpdateLandscape);
         }
       }
       break;
@@ -403,8 +403,8 @@ void MainGame::operator()(double delta)
     GameEngine::CameraData camera = game.Camera(0);
     float cameraMoveValue = fmod(static_cast<float>(stageTimer), 45.0f) * (glm::radians(360.0f) / 45.0f);
     camera.position.x = glm::cos(cameraMoveValue) * 5.0f;
-    camera.position.z += 4.0f * delta;
-    camera.target.z += 4.0f * delta;
+//    camera.position.z += 4.0f * delta;
+//    camera.target.z += 4.0f * delta;
     game.Camera(0, camera);
     break;
   }
