@@ -102,6 +102,7 @@ private:
   GameEngine& operator=(const GameEngine&) = delete;
   void Update(double delta);
   void Render() const;
+  void RenderShadow() const;
 
 private:
   bool isInitialized = false;
@@ -136,6 +137,16 @@ private:
   double fps = 0;
 
   std::unordered_map<std::string, double> userNumbers;
+
+  struct ShadowParameter {
+    glm::vec3 lightPos;
+    glm::vec3 lightDir;
+    glm::f32 near;
+    glm::f32 far;
+    glm::f32 scale;
+  };
+  ShadowParameter shadowParameter;
+  OffscreenBufferPtr offDepth;
 };
 
 #endif // GAMEENGINE_H_INCLUDED

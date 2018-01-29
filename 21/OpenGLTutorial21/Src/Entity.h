@@ -143,8 +143,9 @@ public:
     }
   }
   bool GroupVisibility(int groupId, int cameraIndex) const { return visibilityFlags[groupId] & (1U << cameraIndex); }
-  void Update(double delta, const glm::mat4* matView, const glm::mat4& matProj);
+  void Update(double delta, const glm::mat4* matView, const glm::mat4& matProj, const glm::mat4& matDepthVP);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
+  void DrawDepth(const Mesh::BufferPtr& meshBuffer) const;
 
   void CollisionHandler(int gid0, int gid1, const CollisionHandlerType& handler);
   const CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;

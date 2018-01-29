@@ -16,7 +16,7 @@ namespace Entity {
 * @param ubo
 * @param matViewProjection
 */
-void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4* matViewProjection, glm::u32 viewFlags)
+void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4* matViewProjection, const glm::mat4& matDepthVP, glm::u32 viewFlags)
 {
   Uniform::VertexData data;
   data.matModel = entity.TRSMatrix();
@@ -26,6 +26,7 @@ void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4* matView
       data.matMVP[i] = matViewProjection[i] * data.matModel;
     }
   }
+  data.matDepthMVP = matDepthVP * data.matModel;
   data.color = entity.Color();
   memcpy(ubo, &data, sizeof(data));
 }
@@ -234,7 +235,7 @@ bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)
 * @param matView View行列.
 * @param matProj Projection行列.
 */
-void Buffer::Update(double delta, const glm::mat4* matView, const glm::mat4& matProj)
+void Buffer::Update(double delta, const glm::mat4* matView, const glm::mat4& matProj, const glm::mat4& matDepthVP)
 {
   // 座標とワールド座標系の衝突形状を更新する.
   // 各エンティティの状態を更新する.
@@ -283,7 +284,7 @@ void Buffer::Update(double delta, const glm::mat4* matView, const glm::mat4& mat
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
     for (Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
       LinkEntity& e = *static_cast<LinkEntity*>(itr);
-      UpdateUniformVertexData(e, p + e.uboOffset, matVP.data(), visibilityFlags[groupId]);
+      UpdateUniformVertexData(e, p + e.uboOffset, matVP.data(), matDepthVP, visibilityFlags[groupId]);
     }
   }
   ubo->UnmapBuffer();
@@ -310,6 +311,33 @@ void Buffer::Draw(const Mesh::BufferPtr& meshBuffer) const
             e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
           }
           e.program->SetViewIndex(viewIndex);
+          ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
+          e.mesh->Draw(meshBuffer);
+        }
+      }
+    }
+  }
+}
+
+/**
+* アクティブなエンティティを描画する.
+*
+* @param meshBuffer 描画に使用するメッシュバッファへのポインタ.
+*/
+void Buffer::DrawDepth(const Mesh::BufferPtr& meshBuffer) const
+{
+  meshBuffer->BindVAO();
+  for (int viewIndex = 0; viewIndex < Uniform::maxViewCount; ++viewIndex) {
+    for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
+      if (!(visibilityFlags[groupId] & (1 << viewIndex))) {
+        continue;
+      }
+      for (const Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
+        const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
+        if (e.mesh && e.texture && e.program) {
+          for (size_t i = 0; i < sizeof(e.texture) / sizeof(e.texture[0]); ++i) {
+            e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
+          }
           ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
           e.mesh->Draw(meshBuffer);
         }

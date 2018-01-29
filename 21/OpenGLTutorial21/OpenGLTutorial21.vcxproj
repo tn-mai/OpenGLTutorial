@@ -205,6 +205,8 @@
     <None Include="Res\NonLighting.vert" />
     <None Include="Res\PostEffect.frag" />
     <None Include="Res\PostEffect.vert" />
+    <None Include="Res\RenderDepth.frag" />
+    <None Include="Res\RenderDepth.vert" />
     <None Include="Res\Simple.frag" />
     <None Include="Res\Simple.vert" />
     <None Include="Res\Tutorial.frag">

@@ -257,6 +257,7 @@ bool GameEngine::Init(int w, int h, const char* title)
     { "Simple", "Res/Simple.vert", "Res/Simple.frag" },
     { "LensFlare", "Res/AnamorphicLensFlare.vert", "Res/AnamorphicLensFlare.frag" },
     { "NonLighting", "Res/NonLighting.vert", "Res/NonLighting.frag" },
+    { "RenderDepth", "Res/RenderDepth.vert", "Res/RenderDepth.frag" },
   };
   shaderMap.reserve(sizeof(shaderNameList) / sizeof(shaderNameList[0]));
   for (auto& e : shaderNameList) {
@@ -319,6 +320,11 @@ bool GameEngine::Init(int w, int h, const char* title)
     }
   }
 
+  offDepth = OffscreenBuffer::CreateDepth(2048, 2048, GL_DEPTH_COMPONENT16);
+  if (!offDepth) {
+    return false;
+  }
+
   fontRenderer.Init(1024, glm::vec2(800, 600));
 
   isInitialized = true;
@@ -344,8 +350,35 @@ void GameEngine::Update(double delta)
     const CameraData& cam = camera[i];
     matView[i] = glm::lookAt(cam.position, cam.target, cam.up);
   }
-  entityBuffer->Update(delta, matView, matProj);
+  static float offset = 100;
+  shadowParameter.lightDir = glm::normalize(lightData.light[0].position) * 100.0f;
+  shadowParameter.lightDir.z += offset;
+  glm::mat4 depthProjectionMatrix = glm::ortho<float>(-200, 200, -200, 200, 10, 300);
+  glm::mat4 depthViewMatrix = glm::lookAt(shadowParameter.lightDir, glm::vec3(0,0,offset), glm::vec3(0,1,0));
+  glm::mat4 depthMVP = depthProjectionMatrix * depthViewMatrix;
+
+  entityBuffer->Update(delta, matView, matProj, depthMVP);
   fontRenderer.UnmapBuffer();
+}
+
+/**
+* ‰e‚ð•`‰æ‚·‚é.
+*/
+void GameEngine::RenderShadow() const
+{
+  glBindFramebuffer(GL_FRAMEBUFFER, offDepth->GetFramebuffer());
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
+  glEnable(GL_CULL_FACE);
+  glDisable(GL_BLEND);
+  glViewport(0, 0, offDepth->Width(), offDepth->Height());
+  glScissor(0, 0, offDepth->Width(), offDepth->Height());
+  glClearDepth(1);
+  glClear(GL_DEPTH_BUFFER_BIT);
+
+  const Shader::ProgramPtr& progDepth = shaderMap.find("RenderDepth")->second;
+  progDepth->UseProgram();
+  entityBuffer->DrawDepth(meshBuffer);
 }
 
 /**
@@ -353,6 +386,8 @@ void GameEngine::Update(double delta)
 */
 void GameEngine::Render() const
 {
+  RenderShadow();
+
   glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);

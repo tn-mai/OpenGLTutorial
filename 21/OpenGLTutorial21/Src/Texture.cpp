@@ -327,6 +327,9 @@ TexturePtr Texture::Create(int width, int height, GLenum iformat, GLenum format,
   case GL_RGBA16F: type = GL_HALF_FLOAT; break;
   default: type = GL_UNSIGNED_BYTE;
   }
+  if (format == GL_DEPTH_COMPONENT) {
+    type = GL_FLOAT;
+  }
   struct impl : Texture {};
   TexturePtr p = std::make_shared<impl>();
   p->width = width;
