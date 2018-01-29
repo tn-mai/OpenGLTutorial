@@ -320,7 +320,7 @@ bool GameEngine::Init(int w, int h, const char* title)
     }
   }
 
-  offDepth = OffscreenBuffer::CreateDepth(2048, 2048, GL_DEPTH_COMPONENT16);
+  offDepth = OffscreenBuffer::Create(2048, 2048, GL_DEPTH_COMPONENT16);
   if (!offDepth) {
     return false;
   }

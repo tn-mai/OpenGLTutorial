@@ -17,7 +17,6 @@ class OffscreenBuffer
 {
 public:
   static OffscreenBufferPtr Create(int w, int h, GLenum = GL_RGBA8);
-  static OffscreenBufferPtr CreateDepth(int w, int h, GLenum iformat);
   GLuint GetFramebuffer() const { return framebuffer; }
   GLuint GetTexutre() const { return tex->Id(); }
   GLsizei Width() const { return tex->Width(); }
