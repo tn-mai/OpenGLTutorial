@@ -23,6 +23,7 @@ public:
   bool UniformBlockBinding(const char* blockName, GLuint bindingPoint);
   void UseProgram();
   void BindTexture(GLenum unit, GLenum type, GLuint texture);
+  void BindShadowTexture(GLenum type, GLuint texture);
   void SetViewIndex(int index);
 
 private:

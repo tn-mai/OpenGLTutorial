@@ -399,8 +399,7 @@ void GameEngine::Render() const
   glEnable(GL_BLEND);
   glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
-  glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, offDepth->GetTexutre());
+  shaderMap.find("Tutorial")->second->BindShadowTexture(GL_TEXTURE_2D, offDepth->GetTexutre());
   uboLight->BufferSubData(&lightData);
   entityBuffer->Draw(meshBuffer);
   glActiveTexture(GL_TEXTURE2);

@@ -119,8 +119,19 @@ void Program::BindTexture(GLenum unit, GLenum type, GLuint texture)
   if (unit >= GL_TEXTURE0 && unit < static_cast<GLenum>(GL_TEXTURE0 + samplerCount)) {
     glActiveTexture(unit);
     glBindTexture(type, texture);
-  } else if (unit == GL_TEXTURE2 && depthSamplerLocation >= 0) {
-    glActiveTexture(unit);
+  }
+}
+
+/**
+* シャドウテクスチャをテクスチャ・イメージ・ユニットに割り当てる.
+*
+* @param type    割り当てるテクスチャの種類(GL_TEXTURE_1D, GL_TEXTURE_2D, etc).
+* @param texture 割り当てるテクスチャオブジェクト.
+*/
+void Program::BindShadowTexture(GLenum type, GLuint texture)
+{
+  if (depthSamplerLocation >= 0) {
+    glActiveTexture(GL_TEXTURE2);
     glBindTexture(type, texture);
   }
 }
