@@ -350,11 +350,9 @@ void GameEngine::Update(double delta)
     const CameraData& cam = camera[i];
     matView[i] = glm::lookAt(cam.position, cam.target, cam.up);
   }
-  static float offset = 50;
-  shadowParameter.lightDir = glm::normalize(glm::vec3(25, 50, -25)) * 50.0f;
-  shadowParameter.lightDir.z += offset;
-  glm::mat4 depthProjectionMatrix = glm::ortho<float>(-100, 100, -100, 100, 10, 200);
-  glm::mat4 depthViewMatrix = glm::lookAt(shadowParameter.lightDir, glm::vec3(0,0,offset), glm::vec3(0,1,0));
+  const glm::vec2 range = shadowParameter.range * 0.5f;
+  glm::mat4 depthProjectionMatrix = glm::ortho<float>(-range.x, range.x, -range.y, range.y, shadowParameter.near, shadowParameter.far);
+  glm::mat4 depthViewMatrix = glm::lookAt(shadowParameter.lightPos, shadowParameter.lightPos + shadowParameter.lightDir, shadowParameter.lightUp);
   glm::mat4 depthMVP = depthProjectionMatrix * depthViewMatrix;
 
   entityBuffer->Update(delta, matView, matProj, depthMVP);

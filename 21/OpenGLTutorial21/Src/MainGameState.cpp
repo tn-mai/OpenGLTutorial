@@ -265,6 +265,15 @@ void MainGame::operator()(double delta)
 //    game.Light(1, { glm::vec4(-40, -100, -10, 1), glm::vec4(120, 1200, 3000, 1) } );
     game.KeyValue(0.24f);
 
+    GameEngine::ShadowParameter shadowParam;
+    shadowParam.lightPos = glm::vec3(20, 50, 50);
+    shadowParam.lightDir = glm::normalize(glm::vec3(-25, -50, 25));
+    shadowParam.lightUp = glm::vec3(0, 0, 1);
+    shadowParam.near = 10;
+    shadowParam.far = 200;
+    shadowParam.range = glm::vec2(300, 300);
+    game.Shadow(shadowParam);
+
     for (int i = EntityGroupId_Player; i <= EntityGroupId_Others; ++i) {
       game.GroupVisibility(i, 0, false);
       game.GroupVisibility(i, 1, true);

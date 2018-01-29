@@ -33,6 +33,16 @@ public:
     glm::vec3 up = {0, 0, 1};
   };
 
+  /// 影生成パラメータ.
+  struct ShadowParameter {
+    glm::vec3 lightPos; ///< 影を発生させるライトの位置.
+    glm::vec3 lightDir; ///<影を発生させるライトの方向.
+    glm::vec3 lightUp;  ///<影を発生させるライトの上方向.
+    glm::f32 near; ///< 描画範囲のニア平面.
+    glm::f32 far; ///< 描画範囲のファー平面.
+    glm::vec2 range; ///< 描画範囲の幅と高さ.
+  };
+
   static GameEngine& Instance();
   bool Init(int w, int h, const char* title);
   void Run();
@@ -67,6 +77,9 @@ public:
   void PushLevel();
   void PopLevel();
   void ClearLevel();
+
+  void Shadow(const ShadowParameter& param) { shadowParameter = param; }
+  const ShadowParameter& Shadow() const { return shadowParameter; }
 
   void CollisionHandler(int gid0, int gid1, Entity::CollisionHandlerType handler);
   const Entity::CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;
@@ -138,13 +151,6 @@ private:
 
   std::unordered_map<std::string, double> userNumbers;
 
-  struct ShadowParameter {
-    glm::vec3 lightPos;
-    glm::vec3 lightDir;
-    glm::f32 near;
-    glm::f32 far;
-    glm::f32 scale;
-  };
   ShadowParameter shadowParameter;
   OffscreenBufferPtr offDepth;
 };
