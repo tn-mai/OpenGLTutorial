@@ -145,7 +145,13 @@ private:
   Entity::BufferPtr entityBuffer;
   Font::Renderer fontRenderer;
   Uniform::LightingData lightData;
-  CameraData camera[Uniform::maxViewCount];
+
+  struct CameraStatus {
+    CameraData camera;
+    glm::u32 priority = 0;
+    bool isActive = false;
+  };
+  CameraStatus camera[Uniform::maxViewCount];
   std::mt19937 rand;
   double fps = 0;
 

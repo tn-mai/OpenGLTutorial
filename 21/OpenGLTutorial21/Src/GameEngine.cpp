@@ -327,6 +327,8 @@ bool GameEngine::Init(int w, int h, const char* title)
 
   fontRenderer.Init(1024, glm::vec2(800, 600));
 
+  camera[0].isActive = true;
+
   isInitialized = true;
   return true;
 }
@@ -347,7 +349,7 @@ void GameEngine::Update(double delta)
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), static_cast<float>(window.Width()) / static_cast<float>(window.Height()), 1.0f, 1000.0f);
   glm::mat4x4 matView[Uniform::maxViewCount];
   for (int i = 0; i < Uniform::maxViewCount; ++i) {
-    const CameraData& cam = camera[i];
+    const CameraData& cam = camera[i].camera;
     matView[i] = glm::lookAt(cam.position, cam.target, cam.up);
   }
   const glm::vec2 range = shadowParameter.range * 0.5f;
@@ -790,7 +792,7 @@ const glm::vec4& GameEngine::AmbientLight() const
 */
 void GameEngine::Camera(size_t index, const CameraData& cam)
 {
-  camera[index] = cam;
+  camera[index].camera = cam;
   lightData.eyePos[index] = glm::vec4(cam.position, 0);
 }
 
@@ -802,7 +804,7 @@ void GameEngine::Camera(size_t index, const CameraData& cam)
 */
 const GameEngine::CameraData& GameEngine::Camera(size_t index) const
 {
-  return camera[index];
+  return camera[index].camera;
 }
 
 /**
