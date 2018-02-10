@@ -4,6 +4,7 @@
 #include "GameEngine.h"
 #include "GLFWEW.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <array>
 #include <iostream>
 #include <time.h>
 
@@ -349,6 +350,9 @@ void GameEngine::Update(double delta)
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), static_cast<float>(window.Width()) / static_cast<float>(window.Height()), 1.0f, 1000.0f);
   glm::mat4x4 matView[Uniform::maxViewCount];
   for (int i = 0; i < Uniform::maxViewCount; ++i) {
+    if (!camera[i].isActive) {
+      continue;
+    }
     const CameraData& cam = camera[i].camera;
     matView[i] = glm::lookAt(cam.position, cam.target, cam.up);
   }
@@ -361,10 +365,28 @@ void GameEngine::Update(double delta)
   fontRenderer.UnmapBuffer();
 }
 
+struct GameEngine::RenderingContext
+{
+  std::array<int, Uniform::maxViewCount> cameraIndices;
+};
+
+/**
+* 優先順でソートされたカメラインデックス配列を作成する.
+*/
+void GameEngine::InitRenderingContext(RenderingContext& context) const
+{
+  for (int i = 0; i < Uniform::maxViewCount; ++i) {
+    context.cameraIndices[i] = i;
+  }
+  std::stable_sort(context.cameraIndices.begin(), context.cameraIndices.end(), [&](int lhs, int rhs) {
+    return camera[lhs].priority > camera[rhs].priority;
+  });
+}
+
 /**
 * 影を描画する.
 */
-void GameEngine::RenderShadow() const
+void GameEngine::RenderShadow(RenderingContext& context) const
 {
   glBindFramebuffer(GL_FRAMEBUFFER, offDepth->GetFramebuffer());
   glEnable(GL_DEPTH_TEST);
@@ -378,7 +400,12 @@ void GameEngine::RenderShadow() const
 
   const Shader::ProgramPtr& progDepth = shaderMap.find("RenderDepth")->second;
   progDepth->UseProgram();
-  entityBuffer->DrawDepth(meshBuffer);
+
+  for (int index : context.cameraIndices) {
+    if (camera[index].isActive) {
+      entityBuffer->DrawDepth(index, meshBuffer);
+    }
+  }
 }
 
 /**
@@ -386,7 +413,10 @@ void GameEngine::RenderShadow() const
 */
 void GameEngine::Render() const
 {
-  RenderShadow();
+  RenderingContext context;
+  InitRenderingContext(context);
+
+  RenderShadow(context);
 
   glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
   glEnable(GL_DEPTH_TEST);
@@ -403,7 +433,11 @@ void GameEngine::Render() const
 
   shaderMap.find("Tutorial")->second->BindShadowTexture(GL_TEXTURE_2D, offDepth->GetTexutre());
   uboLight->BufferSubData(&lightData);
-  entityBuffer->Draw(meshBuffer);
+  for (int index : context.cameraIndices) {
+    if (camera[index].isActive) {
+      entityBuffer->Draw(index, meshBuffer);
+    }
+  }
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -789,10 +823,15 @@ const glm::vec4& GameEngine::AmbientLight() const
 *
 * @param index カメラのインデックス.
 * @param cam   設定するカメラデータ.
+*
+* 指定されたインデックスのカメラをアクティブ化し、状態を設定する.
+*
+* @sa Camera, ActivateCamera, DeactivateCamera, IsCameraActive
 */
 void GameEngine::Camera(size_t index, const CameraData& cam)
 {
   camera[index].camera = cam;
+  camera[index].isActive = true;
   lightData.eyePos[index] = glm::vec4(cam.position, 0);
 }
 
@@ -805,6 +844,19 @@ void GameEngine::Camera(size_t index, const CameraData& cam)
 const GameEngine::CameraData& GameEngine::Camera(size_t index) const
 {
   return camera[index].camera;
+}
+
+/**
+* 全てのカメラの状態を初期状態に戻す.
+*/
+void GameEngine::ResetAllCamera()
+{
+  for (auto& c : camera) {
+    c.camera = {};
+    c.isActive = false;
+    c.priority = 0;
+  }
+  camera[0].isActive = true;
 }
 
 /**

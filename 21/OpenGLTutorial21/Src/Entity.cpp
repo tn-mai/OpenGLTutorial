@@ -293,27 +293,28 @@ void Buffer::Update(double delta, const glm::mat4* matView, const glm::mat4& mat
 /**
 * アクティブなエンティティを描画する.
 *
+* @param viewIndex  表示するビューインデックス.
 * @param meshBuffer 描画に使用するメッシュバッファへのポインタ.
+*
+* viewIndexに対応する可視フラグがtrueのエンティティグループだけが描画される.
 */
-void Buffer::Draw(const Mesh::BufferPtr& meshBuffer) const
+void Buffer::Draw(int viewIndex, const Mesh::BufferPtr& meshBuffer) const
 {
   meshBuffer->BindVAO();
-  for (int viewIndex = 0; viewIndex < Uniform::maxViewCount; ++viewIndex) {
-    for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
-      if (!(visibilityFlags[groupId] & (1 << viewIndex))) {
-        continue;
-      }
-      for (const Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
-        const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
-        if (e.mesh && e.texture && e.program) {
-          e.program->UseProgram();
-          for (size_t i = 0; i < sizeof(e.texture) / sizeof(e.texture[0]); ++i) {
-            e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
-          }
-          e.program->SetViewIndex(viewIndex);
-          ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
-          e.mesh->Draw(meshBuffer);
+  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
+    if (!(visibilityFlags[groupId] & (1 << viewIndex))) {
+      continue;
+    }
+    for (const Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
+      const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
+      if (e.mesh && e.texture && e.program) {
+        e.program->UseProgram();
+        for (size_t i = 0; i < sizeof(e.texture) / sizeof(e.texture[0]); ++i) {
+          e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
         }
+        e.program->SetViewIndex(viewIndex);
+        ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
+        e.mesh->Draw(meshBuffer);
       }
     }
   }
@@ -322,25 +323,24 @@ void Buffer::Draw(const Mesh::BufferPtr& meshBuffer) const
 /**
 * アクティブなエンティティを描画する.
 *
+* @param viewIndex  表示するビューインデックス.
 * @param meshBuffer 描画に使用するメッシュバッファへのポインタ.
 */
-void Buffer::DrawDepth(const Mesh::BufferPtr& meshBuffer) const
+void Buffer::DrawDepth(int viewIndex, const Mesh::BufferPtr& meshBuffer) const
 {
   meshBuffer->BindVAO();
-  for (int viewIndex = 0; viewIndex < Uniform::maxViewCount; ++viewIndex) {
-    for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
-      if (!(visibilityFlags[groupId] & (1 << viewIndex))) {
-        continue;
-      }
-      for (const Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
-        const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
-        if (e.mesh && e.texture && e.program) {
-          for (size_t i = 0; i < sizeof(e.texture) / sizeof(e.texture[0]); ++i) {
-            e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
-          }
-          ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
-          e.mesh->Draw(meshBuffer);
+  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
+    if (!(visibilityFlags[groupId] & (1 << viewIndex))) {
+      continue;
+    }
+    for (const Link* itr = activeList[groupId].next; itr != &activeList[groupId]; itr = itr->next) {
+      const LinkEntity& e = *static_cast<const LinkEntity*>(itr);
+      if (e.mesh && e.texture && e.program) {
+        for (size_t i = 0; i < sizeof(e.texture) / sizeof(e.texture[0]); ++i) {
+          e.program->BindTexture(GL_TEXTURE0 + i, GL_TEXTURE_2D, e.texture[i]->Id());
         }
+        ubo->BindBufferRange(e.uboOffset, ubSizePerEntity);
+        e.mesh->Draw(meshBuffer);
       }
     }
   }

@@ -258,6 +258,7 @@ void MainGame::operator()(double delta)
     ++stageNo;
     stageTimer = stageTime;
 
+    game.ResetAllCamera();
     game.Camera(0, { glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
     game.Camera(1, { glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
     game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
@@ -274,10 +275,10 @@ void MainGame::operator()(double delta)
     shadowParam.range = glm::vec2(300, 300);
     game.Shadow(shadowParam);
 
-    for (int i = EntityGroupId_Player; i <= EntityGroupId_Others; ++i) {
-      game.GroupVisibility(i, 0, false);
-      game.GroupVisibility(i, 1, true);
-    }
+    game.GroupVisibility(EntityGroupId_Background, 0, false);
+    game.GroupVisibility(EntityGroupId_Background, 1, true);
+    game.CameraPriority(1, 1);
+
     game.RemoveAllEntity();
     game.ClearLevel();
 
@@ -409,12 +410,12 @@ void MainGame::operator()(double delta)
   switch (stageNo) {
   case 1:
   case 2: {
-    GameEngine::CameraData camera = game.Camera(0);
+    GameEngine::CameraData camera = game.Camera(1);
     float cameraMoveValue = fmod(static_cast<float>(stageTimer), 45.0f) * (glm::radians(360.0f) / 45.0f);
     camera.position.x = glm::cos(cameraMoveValue) * 5.0f;
 //    camera.position.z += 4.0f * delta;
 //    camera.target.z += 4.0f * delta;
-    game.Camera(0, camera);
+    game.Camera(1, camera);
     break;
   }
   default:

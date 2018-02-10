@@ -29,8 +29,8 @@ public:
   typedef std::function<void(double)> UpdateFuncType;
   struct CameraData {
     glm::vec3 position;
-    glm::vec3 target;
-    glm::vec3 up = {0, 0, 1};
+    glm::vec3 target = { 0, 0, 1 };
+    glm::vec3 up = {0, 1, 0};
   };
 
   /// ‰e¶¬ƒpƒ‰ƒ[ƒ^.
@@ -63,10 +63,18 @@ public:
   const glm::vec4& AmbientLight() const;
   float KeyValue() const { return keyValue; }
   void KeyValue(float k) { keyValue = k; }
+
   void Camera(size_t index, const CameraData& cam);
   const CameraData& Camera(size_t index) const;
+  void CameraPriority(size_t index, int priority) { camera[index].priority = priority; }
+  int CameraPriority(size_t index) const { return camera[index].priority; }
+  void ActivateCamera(size_t index) { camera[index].isActive = true; }
+  void DeactivateCamera(size_t index) { camera[index].isActive = false; }
+  void ResetAllCamera();
+  bool IsCameraActive(size_t index) const { return camera[index].isActive; }
   void GroupVisibility(int groupId, int index, bool isVisible) { entityBuffer->GroupVisibility(groupId, index, isVisible); }
   bool GroupVisibility(int groupId, int index) const { return entityBuffer->GroupVisibility(groupId, index); }
+
   std::mt19937& Rand();
   const GamePad& GetGamePad(int id) const;
 
@@ -113,9 +121,13 @@ private:
   ~GameEngine();
   GameEngine(const GameEngine&) = delete;
   GameEngine& operator=(const GameEngine&) = delete;
+
+  struct RenderingContext;
+  void InitRenderingContext(RenderingContext& indices) const;
+
   void Update(double delta);
   void Render() const;
-  void RenderShadow() const;
+  void RenderShadow(RenderingContext& indices) const;
 
 private:
   bool isInitialized = false;
