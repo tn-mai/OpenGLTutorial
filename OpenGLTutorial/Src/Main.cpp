@@ -38,6 +38,12 @@ int main()
     return 1;
   }
 
+  // OpenGLの情報を出力する.
+  const GLubyte* renderer = glGetString(GL_RENDERER);
+  std::cout << "Renderer: " << renderer << std::endl;
+  const GLubyte* version = glGetString(GL_VERSION);
+  std::cout << "Version: " << version << std::endl;
+
   // メインループ.
   while (!glfwWindowShouldClose(window)) {
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
