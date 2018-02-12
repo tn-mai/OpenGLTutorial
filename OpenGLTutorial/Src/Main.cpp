@@ -2,6 +2,7 @@
 * @file Main.cpp
 */
 #include "GLFWEW.h"
+#include "Texture.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
@@ -40,10 +41,13 @@ static const char* vsCode =
 "#version 410 \n"
 "layout(location=0) in vec3 vPosition;"
 "layout(location=1) in vec4 vColor;"
+"layout(location=2) in vec2 vTexCoord;"
 "layout(location=0) out vec4 outColor;"
+"layout(location=1) out vec2 outTexCoord;"
 "uniform mat4x4 matMVP;"
 "void main() {"
 "  outColor = vColor;"
+"  outTexCoord = vTexCoord;"
 "  gl_Position = matMVP * vec4(vPosition, 1.0);"
 "}";
 
@@ -51,9 +55,11 @@ static const char* vsCode =
 static const char* fsCode =
 "#version 410 \n"
 "layout(location=0) in vec4 inColor;"
+"layout(location=1) in vec2 inTexCoord;"
+"uniform sampler2D colorSampler;"
 "out vec4 fragColor;"
 "void main() {"
-"  fragColor = inColor;"
+"  fragColor = inColor * texture(colorSampler, inTexCoord);"
 "}";
 
 /**
@@ -128,6 +134,7 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
   SetVertexAttribPointer(0, Vertex, position);
   SetVertexAttribPointer(1, Vertex, color);
+  SetVertexAttribPointer(2, Vertex, texCoord);
   glBindVertexArray(0);
   glDeleteBuffers(1, &vbo);
   glDeleteBuffers(1, &ibo);
@@ -222,6 +229,19 @@ int main()
     return 1;
   }
 
+  /// テクスチャデータ.
+  static const uint32_t textureData[] = {
+    0xffffffff, 0xffcccccc, 0xffffffff, 0xffcccccc, 0xffffffff,
+    0xff888888, 0xffffffff, 0xff888888, 0xffffffff, 0xff888888,
+    0xffffffff, 0xff444444, 0xffffffff, 0xff444444, 0xffffffff,
+    0xff000000, 0xffffffff, 0xff000000, 0xffffffff, 0xff000000,
+    0xffffffff, 0xff000000, 0xffffffff, 0xff000000, 0xffffffff,
+  };
+  TexturePtr tex = Texture::Create(5, 5, GL_RGBA8, GL_RGBA, textureData);
+  if (!tex) {
+    return 1;
+  }
+
   glEnable(GL_DEPTH_TEST);
 
   // メインループ.
@@ -244,6 +264,12 @@ int main()
         glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
       const glm::mat4x4 matMVP = matProj * matView;
       glUniformMatrix4fv(matMVPLoc, 1, GL_FALSE, &matMVP[0][0]);
+    }
+    const GLint colorSamplerLoc = glGetUniformLocation(shaderProgram, "colorSampler");
+    if (colorSamplerLoc >= 0) {
+      glUniform1i(colorSamplerLoc, 0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, tex->Id());
     }
     glBindVertexArray(vao);
     glDrawElements(
