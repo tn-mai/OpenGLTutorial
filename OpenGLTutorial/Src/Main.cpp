@@ -238,13 +238,19 @@ int main()
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Ž‹“_‚ð‰ñ“]ˆÚ“®‚³‚¹‚é.
+    static float degree = 0.0f;
+    degree += 0.1f;
+    if (degree >= 360.0f) { degree -= 360.0f; }
+    const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(2, 3, 3, 1);
+
     glUseProgram(shaderProgram);
     const GLint matMVPLoc = glGetUniformLocation(shaderProgram, "matMVP");
     if (matMVPLoc >= 0) {
       const glm::mat4x4 matProj =
         glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
       const glm::mat4x4 matView =
-        glm::lookAt(glm::vec3(2, 3, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+        glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
       const glm::mat4x4 matMVP = matProj * matView;
       glUniformMatrix4fv(matMVPLoc, 1, GL_FALSE, &matMVP[0][0]);
     }
