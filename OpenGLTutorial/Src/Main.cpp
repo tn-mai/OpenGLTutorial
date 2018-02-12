@@ -229,15 +229,8 @@ int main()
     return 1;
   }
 
-  /// テクスチャデータ.
-  static const uint32_t textureData[] = {
-    0xffffffff, 0xffcccccc, 0xffffffff, 0xffcccccc, 0xffffffff,
-    0xff888888, 0xffffffff, 0xff888888, 0xffffffff, 0xff888888,
-    0xffffffff, 0xff444444, 0xffffffff, 0xff444444, 0xffffffff,
-    0xff000000, 0xffffffff, 0xff000000, 0xffffffff, 0xff000000,
-    0xffffffff, 0xff000000, 0xffffffff, 0xff000000, 0xffffffff,
-  };
-  TexturePtr tex = Texture::Create(5, 5, GL_RGBA8, GL_RGBA, textureData);
+  // テクスチャデータ.
+  TexturePtr tex = Texture::LoadFromFile("Res/sample.bmp");
   if (!tex) {
     return 1;
   }
