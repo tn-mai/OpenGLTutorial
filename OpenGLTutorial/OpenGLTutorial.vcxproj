@@ -129,13 +129,17 @@
   <ItemGroup>
     <ClCompile Include="Src\GLFWEW.cpp" />
     <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\Shader.cpp" />
     <ClCompile Include="Src\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Res\Tutorial.frag" />
+    <None Include="Res\Tutorial.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\GLFWEW.h" />
+    <ClInclude Include="Src\Shader.h" />
     <ClInclude Include="Src\Texture.h" />
   </ItemGroup>
   <ItemGroup>
