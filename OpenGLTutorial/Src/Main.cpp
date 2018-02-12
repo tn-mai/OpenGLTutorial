@@ -2,6 +2,7 @@
 * @file Main.cpp
 */
 #include "GLFWEW.h"
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
 
@@ -51,9 +52,10 @@ static const char* vsCode =
 "layout(location=0) in vec3 vPosition;"
 "layout(location=1) in vec4 vColor;"
 "layout(location=0) out vec4 outColor;"
+"uniform mat4x4 matMVP;"
 "void main() {"
 "  outColor = vColor;"
-"  gl_Position = vec4(vPosition, 1.0);"
+"  gl_Position = matMVP * vec4(vPosition, 1.0);"
 "}";
 
 /// フラグメントシェーダ.
@@ -237,6 +239,15 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(shaderProgram);
+    const GLint matMVPLoc = glGetUniformLocation(shaderProgram, "matMVP");
+    if (matMVPLoc >= 0) {
+      const glm::mat4x4 matProj =
+        glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+      const glm::mat4x4 matView =
+        glm::lookAt(glm::vec3(2, 3, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+      const glm::mat4x4 matMVP = matProj * matView;
+      glUniformMatrix4fv(matMVPLoc, 1, GL_FALSE, &matMVP[0][0]);
+    }
     glBindVertexArray(vao);
     glDrawElements(
       GL_TRIANGLES, sizeof(indices)/sizeof(indices[0]),
