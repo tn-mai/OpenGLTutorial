@@ -233,6 +233,8 @@ int main()
     return 1;
   }
 
+  glEnable(GL_DEPTH_TEST);
+
   // ƒƒCƒ“ƒ‹[ƒv.
   while (!window.ShouldClose()) {
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
