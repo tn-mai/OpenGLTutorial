@@ -30,12 +30,47 @@ const Vertex vertices[] = {
   { { 0.5f, -0.5f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f} },
   { { 0.5f,  0.3f, 0.1f}, {1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f} },
   { {-0.3f,  0.3f, 0.1f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f} },
+
+  { {-1.0f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f} },
+  { { 1.0f,-1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f} },
+  { { 1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 1.0f} },
+  { {-1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f} },
 };
 
 /// インデックスデータ.
 const GLuint indices[] = {
   0, 1, 2, 2, 3, 0,
   4, 5, 6, 7, 8, 9,
+  10, 11, 12, 12, 13, 10,
+};
+
+/**
+* 部分描画データ.
+*/
+struct RenderingPart
+{
+  GLvoid* offset; ///< 描画開始インデックスのバイトオフセット.
+  GLsizei size; ///< 描画するインデックス数.
+};
+
+/**
+* RenderingPartを作成する.
+*
+* @param offset 描画開始インデックスのオフセット(インデックス単位).
+* @param size 描画するインデックス数.
+*
+* @return 作成した部分描画オブジェクト.
+*/
+constexpr RenderingPart MakeRenderingPart(GLsizei offset, GLsizei size) {
+  return { reinterpret_cast<GLvoid*>(offset * sizeof(GLuint)), size };
+}
+
+/**
+* 部分描画データリスト.
+*/
+static const RenderingPart renderingParts[] = {
+  MakeRenderingPart(0, 12),
+  MakeRenderingPart(12, 6),
 };
 
 /**
@@ -172,9 +207,7 @@ int main()
       glBindTexture(GL_TEXTURE_2D, tex->Id());
     }
     glBindVertexArray(vao);
-    glDrawElements(
-      GL_TRIANGLES, sizeof(indices)/sizeof(indices[0]),
-      GL_UNSIGNED_INT, reinterpret_cast<const GLvoid*>(0));
+    glDrawElements(GL_TRIANGLES, renderingParts[0].size, GL_UNSIGNED_INT, renderingParts[0].offset);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.5f, 0.3f, 0.1f, 1.0f);
@@ -182,9 +215,10 @@ int main()
     if (colorSamplerLoc >= 0) {
       glBindTexture(GL_TEXTURE_2D, offscreen->GetTexutre());
     }
-    glDrawElements(
-      GL_TRIANGLES, sizeof(indices) / sizeof(indices[0]),
-      GL_UNSIGNED_INT, reinterpret_cast<const GLvoid*>(0));
+    if (matMVPLoc >= 0) {
+      glUniformMatrix4fv(matMVPLoc, 1, GL_FALSE, &glm::mat4()[0][0]);
+    }
+    glDrawElements(GL_TRIANGLES, renderingParts[1].size, GL_UNSIGNED_INT, renderingParts[1].offset);
 
     window.SwapBuffers();
   }
