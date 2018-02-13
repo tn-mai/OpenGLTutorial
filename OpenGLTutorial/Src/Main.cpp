@@ -191,15 +191,11 @@ int main()
   const GLuint ibo = CreateIBO(sizeof(indices), indices);
   const GLuint vao = CreateVAO(vbo, ibo);
   const GLuint ubo = CreateUBO(sizeof(VertexData));
-  const GLuint shaderProgram = Shader::CreateProgramFromFile("Res/Tutorial.vert", "Res/Tutorial.frag");
-  if (!vbo || !ibo || !vao || !ubo || !shaderProgram) {
+  const Shader::ProgramPtr progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
+  if (!vbo || !ibo || !vao || !ubo || !progTutorial) {
     return 1;
   }
-  const GLuint uboIndex = glGetUniformBlockIndex(shaderProgram, "VertexData");
-  if (uboIndex == GL_INVALID_INDEX) {
-    return 1;
-  }
-  glUniformBlockBinding(shaderProgram, uboIndex, 0);
+  progTutorial->UniformBlockBinding("VertexData", 0);
 
   // テクスチャデータ.
   TexturePtr tex = Texture::LoadFromFile("Res/sample.bmp");
@@ -223,7 +219,7 @@ int main()
     if (degree >= 360.0f) { degree -= 360.0f; }
     const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(2, 3, 3, 1);
 
-    glUseProgram(shaderProgram);
+    progTutorial->UseProgram();
     const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
     const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
     VertexData vertexData;
@@ -234,21 +230,15 @@ int main()
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VertexData), &vertexData);
 
-    const GLint colorSamplerLoc = glGetUniformLocation(shaderProgram, "colorSampler");
-    if (colorSamplerLoc >= 0) {
-      glUniform1i(colorSamplerLoc, 0);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, tex->Id());
-    }
+    progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
+
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, renderingParts[0].size, GL_UNSIGNED_INT, renderingParts[0].offset);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.5f, 0.3f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if (colorSamplerLoc >= 0) {
-      glBindTexture(GL_TEXTURE_2D, offscreen->GetTexutre());
-    }
+    progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
     vertexData = {};
     vertexData.ambientColor = glm::vec4(1, 1, 1, 1);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VertexData), &vertexData);
@@ -258,7 +248,6 @@ int main()
   }
 
   glDeleteBuffers(1, &ubo);
-  glDeleteProgram(shaderProgram);
   glDeleteVertexArrays(1, &vao);
 
   return 0;

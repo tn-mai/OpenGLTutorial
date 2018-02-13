@@ -134,4 +134,114 @@ GLuint CreateProgramFromFile(const char* vsFilename, const char* fsFilename)
   return CreateShaderProgram(vsBuf.data(), fsBuf.data());
 }
 
+/**
+* シェーダプログラムを作成する.
+*
+* @param vsCode        頂点シェーダコードへのポインタ.
+* @param fsCode        フラグメントシェーダコードへのポインタ.
+*
+* @return 作成したプログラムオブジェクト.
+*/
+ProgramPtr Program::Create(const char* vsFilename, const char* fsFilename)
+{
+  struct Impl : Program {};
+  ProgramPtr p = std::make_shared<Impl>();
+  if (!p) {
+    std::cerr << "ERROR: プログラム'" << vsFilename << "'の作成に失敗" << std::endl;
+    return {};
+  }
+  p->program = CreateProgramFromFile(vsFilename, fsFilename);
+  if (!p->program) {
+    return {};
+  }
+
+  // サンプラーの数と位置を取得する.
+  GLint activeUniforms;
+  glGetProgramiv(p->program, GL_ACTIVE_UNIFORMS, &activeUniforms);
+  for (int i = 0; i < activeUniforms; ++i) {
+    GLint size;
+    GLenum type;
+    GLchar name[128];
+    glGetActiveUniform(p->program, i, sizeof(name), nullptr, &size, &type, name);
+    if (type == GL_SAMPLER_2D) {
+      p->samplerCount = size;
+      p->samplerLocation = glGetUniformLocation(p->program, name);
+      if (p->samplerLocation < 0) {
+        std::cerr << "ERROR: プログラム'" << vsFilename << "'の作成に失敗" << std::endl;
+        return {};
+      }
+      break;
+    }
+  }
+
+  // 頂点シェーダファイル名の末尾から”.vert”を取り除いたものをプログラム名とする.
+  p->name = vsFilename;
+  p->name.resize(p->name.size() - 4);
+
+  return p;
+}
+
+/**
+* デストラクタ.
+*/
+Program::~Program()
+{
+  if (program) {
+    glDeleteProgram(program);
+  }
+}
+
+/**
+* Uniformブロックをバインディング・ポイントに割り当てる.
+*
+* @param blockName    割り当てるUniformブロックの名前.
+* @param bindingPoint 割り当て先のバインディング・ポイント.
+*
+* @retval true  割り当て成功.
+* @retval false 割り当て失敗.
+*/
+bool Program::UniformBlockBinding(const char* blockName, GLuint bindingPoint)
+{
+  const GLuint blockIndex = glGetUniformBlockIndex(program, blockName);
+  if (blockIndex == GL_INVALID_INDEX) {
+    std::cerr << "ERROR(" << name << "): Uniformブロック'" << blockName <<
+      "'が見つかりません" << std::endl;
+    return false;
+  }
+  glUniformBlockBinding(program, blockIndex, bindingPoint);
+  const GLenum result = glGetError();
+  if (result != GL_NO_ERROR) {
+    std::cerr << "ERROR(" << name << "): Uniformブロック'" << blockName <<
+      "'のバインドに失敗" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+/**
+* 描画用プログラムに設定する.
+*/
+void Program::UseProgram()
+{
+  glUseProgram(program);
+  for (GLint i = 0; i < samplerCount; ++i) {
+    glUniform1i(samplerLocation + i, i);
+  }
+}
+
+/**
+* テクスチャをテクスチャ・イメージ・ユニットに割り当てる.
+*
+* @param unit    割り当て先のテクスチャ・イメージ・ユニット番号(GL_TEXTURE0～).
+* @param type    割り当てるテクスチャの種類(GL_TEXTURE_1D, GL_TEXTURE_2D, etc).
+* @param texture 割り当てるテクスチャオブジェクト.
+*/
+void Program::BindTexture(GLenum unit, GLenum type, GLuint texture)
+{
+  if (unit >= GL_TEXTURE0 && unit < static_cast<GLenum>(GL_TEXTURE0 + samplerCount)) {
+    glActiveTexture(unit);
+    glBindTexture(type, texture);
+  }
+}
+
 } // namespace Shader
