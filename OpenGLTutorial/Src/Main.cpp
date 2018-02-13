@@ -4,6 +4,7 @@
 #include "GLFWEW.h"
 #include "Texture.h"
 #include "Shader.h"
+#include "OffscreenBuffer.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
@@ -138,10 +139,13 @@ int main()
     return 1;
   }
 
+  const OffscreenBufferPtr offscreen = OffscreenBuffer::Create(800, 600);
+
   glEnable(GL_DEPTH_TEST);
 
   // ƒƒCƒ“ƒ‹[ƒv.
   while (!window.ShouldClose()) {
+    glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -170,6 +174,16 @@ int main()
     glBindVertexArray(vao);
     glDrawElements(
       GL_TRIANGLES, sizeof(indices)/sizeof(indices[0]),
+      GL_UNSIGNED_INT, reinterpret_cast<const GLvoid*>(0));
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.5f, 0.3f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (colorSamplerLoc >= 0) {
+      glBindTexture(GL_TEXTURE_2D, offscreen->GetTexutre());
+    }
+    glDrawElements(
+      GL_TRIANGLES, sizeof(indices) / sizeof(indices[0]),
       GL_UNSIGNED_INT, reinterpret_cast<const GLvoid*>(0));
 
     window.SwapBuffers();

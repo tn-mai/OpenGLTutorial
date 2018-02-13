@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="Src\GLFWEW.cpp" />
     <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\OffscreenBuffer.cpp" />
     <ClCompile Include="Src\Shader.cpp" />
     <ClCompile Include="Src\Texture.cpp" />
   </ItemGroup>
@@ -139,6 +140,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\GLFWEW.h" />
+    <ClInclude Include="Src\OffscreenBuffer.h" />
     <ClInclude Include="Src\Shader.h" />
     <ClInclude Include="Src\Texture.h" />
   </ItemGroup>
