@@ -5,6 +5,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "OffscreenBuffer.h"
+#include "UniformBuffer.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
@@ -190,9 +191,9 @@ int main()
   const GLuint vbo = CreateVBO(sizeof(vertices), vertices);
   const GLuint ibo = CreateIBO(sizeof(indices), indices);
   const GLuint vao = CreateVAO(vbo, ibo);
-  const GLuint ubo = CreateUBO(sizeof(VertexData));
+  const UniformBufferPtr uboVertex = UniformBuffer::Create(sizeof(VertexData), 0, "VertexData");
   const Shader::ProgramPtr progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
-  if (!vbo || !ibo || !vao || !ubo || !progTutorial) {
+  if (!vbo || !ibo || !vao || !uboVertex || !progTutorial) {
     return 1;
   }
   progTutorial->UniformBlockBinding("VertexData", 0);
@@ -227,8 +228,7 @@ int main()
     vertexData.lightPosition = glm::vec4(1, 1, 1, 1);
     vertexData.lightColor = glm::vec4(2, 2, 2, 1);
     vertexData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VertexData), &vertexData);
+    uboVertex->BufferSubData(&vertexData);
 
     progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
 
@@ -241,13 +241,12 @@ int main()
     progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
     vertexData = {};
     vertexData.ambientColor = glm::vec4(1, 1, 1, 1);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VertexData), &vertexData);
+    uboVertex->BufferSubData(&vertexData);
     glDrawElements(GL_TRIANGLES, renderingParts[1].size, GL_UNSIGNED_INT, renderingParts[1].offset);
 
     window.SwapBuffers();
   }
 
-  glDeleteBuffers(1, &ubo);
   glDeleteVertexArrays(1, &vao);
 
   return 0;

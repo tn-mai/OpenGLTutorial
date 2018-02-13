@@ -132,6 +132,7 @@
     <ClCompile Include="Src\OffscreenBuffer.cpp" />
     <ClCompile Include="Src\Shader.cpp" />
     <ClCompile Include="Src\Texture.cpp" />
+    <ClCompile Include="Src\UniformBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -143,6 +144,7 @@
     <ClInclude Include="Src\OffscreenBuffer.h" />
     <ClInclude Include="Src\Shader.h" />
     <ClInclude Include="Src\Texture.h" />
+    <ClInclude Include="Src\UniformBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\sample.bmp" />
