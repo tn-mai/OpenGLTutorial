@@ -49,9 +49,33 @@ const GLuint indices[] = {
 struct VertexData
 {
   glm::mat4 matMVP;
-  glm::vec4 lightPosition;
-  glm::vec4 lightColor;
-  glm::vec4 ambientColor;
+};
+
+const int maxLightCount = 4; ///< ライトの数.
+
+/**
+* ライトデータ(点光源).
+*/
+struct PointLight
+{
+  glm::vec4 position; ///< 座標(ワールド座標系).
+  glm::vec4 color; ///< 明るさ.
+};
+
+/**
+* シェーダに送るライティングパラメータ.
+*/
+struct LightData
+{
+  glm::vec4 ambientColor; ///< 環境光.
+  PointLight light[maxLightCount]; ///< ライトのリスト.
+};
+
+/// バインディングポイント.
+enum BindingPoint
+{
+  BINDINGPOINT_VERTEXDATA = 0, ///< 頂点シェーダ用パラメータのバインディングポイント.
+  BINDINGPOINT_LIGHTDATA = 1, ///< ライティングパラメータ用のバインディングポイント.
 };
 
 /**
@@ -191,12 +215,14 @@ int main()
   const GLuint vbo = CreateVBO(sizeof(vertices), vertices);
   const GLuint ibo = CreateIBO(sizeof(indices), indices);
   const GLuint vao = CreateVAO(vbo, ibo);
-  const UniformBufferPtr uboVertex = UniformBuffer::Create(sizeof(VertexData), 0, "VertexData");
+  const UniformBufferPtr uboVertex = UniformBuffer::Create(sizeof(VertexData), BINDINGPOINT_VERTEXDATA, "VertexData");
+  const UniformBufferPtr uboLight = UniformBuffer::Create(sizeof(LightData), BINDINGPOINT_LIGHTDATA, "LightData");
   const Shader::ProgramPtr progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
-  if (!vbo || !ibo || !vao || !uboVertex || !progTutorial) {
+  if (!vbo || !ibo || !vao || !uboVertex || !uboLight || !progTutorial) {
     return 1;
   }
-  progTutorial->UniformBlockBinding("VertexData", 0);
+  progTutorial->UniformBlockBinding(*uboVertex);
+  progTutorial->UniformBlockBinding(*uboLight);
 
   // テクスチャデータ.
   TexturePtr tex = Texture::LoadFromFile("Res/sample.bmp");
@@ -225,10 +251,14 @@ int main()
     const glm::mat4x4 matView = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
     VertexData vertexData;
     vertexData.matMVP = matProj * matView;
-    vertexData.lightPosition = glm::vec4(1, 1, 1, 1);
-    vertexData.lightColor = glm::vec4(2, 2, 2, 1);
-    vertexData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
     uboVertex->BufferSubData(&vertexData);
+    LightData lightData;
+    lightData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
+    lightData.light[0].position = glm::vec4(1, 1, 1, 1);
+    lightData.light[0].color = glm::vec4(2, 2, 2, 1);
+    lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
+    lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
+    uboLight->BufferSubData(&lightData);
 
     progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
 
@@ -240,8 +270,10 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
     vertexData = {};
-    vertexData.ambientColor = glm::vec4(1, 1, 1, 1);
     uboVertex->BufferSubData(&vertexData);
+    lightData = {};
+    lightData.ambientColor = glm::vec4(1);
+    uboLight->BufferSubData(&lightData);
     glDrawElements(GL_TRIANGLES, renderingParts[1].size, GL_UNSIGNED_INT, renderingParts[1].offset);
 
     window.SwapBuffers();
