@@ -63,7 +63,7 @@ struct PointLight
 };
 
 /**
-* シェーダに送るライティングパラメータ.
+* ライティングパラメータをシェーダに転送するための構造体.
 */
 struct LightData
 {
@@ -71,11 +71,20 @@ struct LightData
   PointLight light[maxLightCount]; ///< ライトのリスト.
 };
 
+/**
+* ポストエフェクトデータをシェーダに転送するための構造体.
+*/
+struct PostEffectData
+{
+  glm::mat4x4 matColor; ///< 色変換行列.
+};
+
 /// バインディングポイント.
 enum BindingPoint
 {
-  BINDINGPOINT_VERTEXDATA = 0, ///< 頂点シェーダ用パラメータのバインディングポイント.
-  BINDINGPOINT_LIGHTDATA = 1, ///< ライティングパラメータ用のバインディングポイント.
+  BINDINGPOINT_VERTEXDATA, ///< 頂点シェーダ用パラメータのバインディングポイント.
+  BINDINGPOINT_LIGHTDATA, ///< ライティングパラメータ用のバインディングポイント.
+  BINDINGPOINT_POSTEFFECTDATA, ///< ポストエフェクトパラメータ用のバインディングポイント.
 };
 
 /**
@@ -217,13 +226,15 @@ int main()
   const GLuint vao = CreateVAO(vbo, ibo);
   const UniformBufferPtr uboVertex = UniformBuffer::Create(sizeof(VertexData), BINDINGPOINT_VERTEXDATA, "VertexData");
   const UniformBufferPtr uboLight = UniformBuffer::Create(sizeof(LightData), BINDINGPOINT_LIGHTDATA, "LightData");
+  const UniformBufferPtr uboPostEffect = UniformBuffer::Create(sizeof(PostEffectData), BINDINGPOINT_POSTEFFECTDATA, "PostEffectData");
   const Shader::ProgramPtr progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
   const Shader::ProgramPtr progColorFilter = Shader::Program::Create("Res/ColorFilter.vert", "Res/ColorFilter.frag");
-  if (!vbo || !ibo || !vao || !uboVertex || !uboLight || !progTutorial || !progColorFilter) {
+  if (!vbo || !ibo || !vao || !uboVertex || !uboLight || !uboPostEffect || !progTutorial || !progColorFilter) {
     return 1;
   }
   progTutorial->UniformBlockBinding(*uboVertex);
   progTutorial->UniformBlockBinding(*uboLight);
+  progColorFilter->UniformBlockBinding(*uboPostEffect);
 
   // テクスチャデータ.
   TexturePtr tex = Texture::LoadFromFile("Res/sample.bmp");
@@ -271,6 +282,14 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     progColorFilter->UseProgram();
     progColorFilter->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
+
+    PostEffectData postEffect;
+    postEffect.matColor[0] = glm::vec4(0.393f, 0.349f, 0.272f, 0);
+    postEffect.matColor[1] = glm::vec4(0.769f, 0.686f, 0.534f, 0);
+    postEffect.matColor[2] = glm::vec4(0.189f, 0.168f, 0.131f, 0);
+    postEffect.matColor[3] = glm::vec4(0, 0, 0, 1);
+    uboPostEffect->BufferSubData(&postEffect);
+
     glDrawElements(GL_TRIANGLES, renderingParts[1].size, GL_UNSIGNED_INT, renderingParts[1].offset);
 
     window.SwapBuffers();
