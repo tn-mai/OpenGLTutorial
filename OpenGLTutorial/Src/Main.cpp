@@ -218,7 +218,8 @@ int main()
   const UniformBufferPtr uboVertex = UniformBuffer::Create(sizeof(VertexData), BINDINGPOINT_VERTEXDATA, "VertexData");
   const UniformBufferPtr uboLight = UniformBuffer::Create(sizeof(LightData), BINDINGPOINT_LIGHTDATA, "LightData");
   const Shader::ProgramPtr progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
-  if (!vbo || !ibo || !vao || !uboVertex || !uboLight || !progTutorial) {
+  const Shader::ProgramPtr progColorFilter = Shader::Program::Create("Res/ColorFilter.vert", "Res/ColorFilter.frag");
+  if (!vbo || !ibo || !vao || !uboVertex || !uboLight || !progTutorial || !progColorFilter) {
     return 1;
   }
   progTutorial->UniformBlockBinding(*uboVertex);
@@ -268,12 +269,8 @@ int main()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.5f, 0.3f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
-    vertexData = {};
-    uboVertex->BufferSubData(&vertexData);
-    lightData = {};
-    lightData.ambientColor = glm::vec4(1);
-    uboLight->BufferSubData(&lightData);
+    progColorFilter->UseProgram();
+    progColorFilter->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
     glDrawElements(GL_TRIANGLES, renderingParts[1].size, GL_UNSIGNED_INT, renderingParts[1].offset);
 
     window.SwapBuffers();

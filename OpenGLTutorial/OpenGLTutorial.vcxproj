@@ -136,6 +136,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Res\ColorFilter.frag" />
+    <None Include="Res\ColorFilter.vert" />
     <None Include="Res\Tutorial.frag" />
     <None Include="Res\Tutorial.vert" />
   </ItemGroup>
