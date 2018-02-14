@@ -18,6 +18,8 @@ public:
   static UniformBufferPtr Create(GLsizeiptr size, GLuint bindingPoint, const char* name);
   bool BufferSubData(const GLvoid* data, GLintptr offset = 0, GLsizeiptr size = 0);
   GLsizeiptr Size() const { return size; }
+  GLuint BindingPoint() const { return bindingPoint; }
+  const std::string& Name() const { return name; }
 
 private:
   UniformBuffer() = default;
