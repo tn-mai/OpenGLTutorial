@@ -94,8 +94,6 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
   SetVertexAttribPointer(2, Vertex, texCoord);
   SetVertexAttribPointer(3, Vertex, normal);
   glBindVertexArray(0);
-  glDeleteBuffers(1, &vbo);
-  glDeleteBuffers(1, &ibo);
   return vao;
 }
 
