@@ -6,6 +6,7 @@
 #include "Shader.h"
 #include "OffscreenBuffer.h"
 #include "UniformBuffer.h"
+#include "Mesh.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
@@ -238,9 +239,13 @@ int main()
 
   // テクスチャデータ.
   TexturePtr tex = Texture::LoadFromFile("Res/sample.bmp");
-  if (!tex) {
+  TexturePtr texToroid = Texture::LoadFromFile("Res/Toroid.bmp");
+  if (!tex || !texToroid) {
     return 1;
   }
+
+  Mesh::BufferPtr meshBuffer = Mesh::Buffer::Create(50000, 50000);
+  meshBuffer->LoadMeshFromFile("Res/Toroid.fbx");
 
   const OffscreenBufferPtr offscreen = OffscreenBuffer::Create(800, 600);
 
@@ -276,6 +281,10 @@ int main()
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, renderingParts[0].size, GL_UNSIGNED_INT, renderingParts[0].offset);
+    progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texToroid->Id());
+    meshBuffer->BindVAO();
+    meshBuffer->GetMesh("Toroid")->Draw(meshBuffer);
+    glBindVertexArray(vao);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.5f, 0.3f, 0.1f, 1.0f);

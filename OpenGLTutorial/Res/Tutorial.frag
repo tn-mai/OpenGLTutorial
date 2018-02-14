@@ -4,6 +4,7 @@
 layout(location=0) in vec4 inColor;
 layout(location=1) in vec2 inTexCoord;
 layout(location=2) in vec3 inWorldPosition;
+layout(location=3) in vec3 inWorldNormal;
 
 // outïœêî.
 out vec4 fragColor;
@@ -34,7 +35,7 @@ void main()
   for (int i = 0; i < maxLightCount; ++i) {
     vec3 lightVec = lightData.light[i].position.xyz - inWorldPosition;
     float lightPower = 1 / dot(lightVec, lightVec);
-    float cosTheta = clamp(dot(vec3(0, 0, 1), normalize(lightVec)), 0, 1);
+    float cosTheta = clamp(dot(inWorldNormal, normalize(lightVec)), 0, 1);
     lightColor += lightData.light[i].color.rgb * cosTheta * lightPower;
   }
   fragColor.rgb *= lightColor;
