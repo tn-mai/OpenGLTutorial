@@ -75,3 +75,34 @@ bool UniformBuffer::BufferSubData(const GLvoid* data, GLintptr offset, GLsizeipt
   glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
   return true;
 }
+
+/**
+* 指定された範囲をバインディング・ポイントに割り当てる.
+*
+* @param offset 割り当てる範囲のバイトオフセット.
+* @param size   割り当てる範囲のバイト数.
+*/
+void UniformBuffer::BindBufferRange(GLintptr offset, GLsizeiptr size) const
+{
+  glBindBufferRange(GL_UNIFORM_BUFFER, bindingPoint, ubo, offset, size);
+}
+
+/**
+* UBOをシステムメモリにマップする.
+*
+* @return マップしたメモリへのポインタ.
+*/
+void* UniformBuffer::MapBuffer() const
+{
+  glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+  return glMapBufferRange(
+    GL_UNIFORM_BUFFER, 0, size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+}
+
+/**
+* バッファの割り当てを解除する.
+*/
+void UniformBuffer::UnmapBuffer() const
+{
+  glUnmapBuffer(GL_UNIFORM_BUFFER);
+}

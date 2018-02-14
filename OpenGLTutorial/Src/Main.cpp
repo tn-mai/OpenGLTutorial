@@ -7,6 +7,8 @@
 #include "OffscreenBuffer.h"
 #include "UniformBuffer.h"
 #include "Mesh.h"
+#include "Entity.h"
+#include <random>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <vector>
@@ -50,6 +52,9 @@ const GLuint indices[] = {
 struct VertexData
 {
   glm::mat4 matMVP;
+  glm::mat4 matModel;
+  glm::mat3x4 matNormal;
+  glm::vec4 color;
 };
 
 const int maxLightCount = 4; ///< ライトの数.
@@ -197,6 +202,70 @@ GLuint CreateVAO(GLuint vbo, GLuint ibo)
 }
 
 /**
+* 敵の円盤の状態を更新する.
+*/
+struct UpdateToroid
+{
+  explicit UpdateToroid(const Entity::BufferPtr& buffer) : entityBuffer(buffer) {}
+
+  void operator()(Entity::Entity& entity, void* ubo, double delta,
+    const glm::mat4& matView, const glm::mat4& matProj)
+  {
+    // 範囲外に出たら削除する.
+    const glm::vec3 pos = entity.Position();
+    if (std::abs(pos.x) > 40.0f || std::abs(pos.z) > 40.0f) {
+      entityBuffer->RemoveEntity(&entity);
+      return;
+    }
+
+    // 円盤を回転させる.
+    float rot = glm::angle(entity.Rotation());
+    rot += glm::radians(15.0f) * static_cast<float>(delta);
+    if (rot > glm::pi<float>() * 2.0f) {
+      rot -= glm::pi<float>() * 2.0f;
+    }
+    entity.Rotation(glm::angleAxis(rot, glm::vec3(0, 1, 0)));
+
+    // 頂点シェーダーのパラメータをUBOにコピーする.
+    VertexData data;
+    data.matModel = entity.CalcModelMatrix();
+    data.matNormal = glm::mat4_cast(entity.Rotation());
+    data.matMVP = matProj * matView * data.matModel;
+    data.color = entity.Color();
+    memcpy(ubo, &data, sizeof(VertexData));
+  }
+
+  Entity::BufferPtr entityBuffer;
+};
+
+/**
+* ゲームの状態を更新する.
+*
+* @param entityBuffer 敵エンティティ追加先のエンティティバッファ.
+* @param meshBuffer   敵エンティティのメッシュを管理しているメッシュバッファ.
+* @param tex          敵エンティティ用のテクスチャ.
+* @param prog         敵エンティティ用のシェーダープログラム.
+*/
+void Update(Entity::BufferPtr entityBuffer, Mesh::BufferPtr meshBuffer, TexturePtr tex, Shader::ProgramPtr prog)
+{
+  static std::mt19937 rand(std::random_device{}());
+  static double interval = 0;
+
+  interval -= 1.0 / 60.0;
+  if (interval <= 0) {
+    const std::uniform_real_distribution<float> posXRange(-15, 15);
+    const glm::vec3 pos(posXRange(rand), 0, 40);
+    const Mesh::MeshPtr& mesh = meshBuffer->GetMesh("Toroid");
+    if (Entity::Entity* p = entityBuffer->AddEntity(pos, mesh, tex, prog,
+      UpdateToroid(entityBuffer))) {
+      p->Velocity(glm::vec3(pos.x < 0 ? 0.1f : -0.1f, 0, -1.0f));
+    }
+    const std::uniform_real_distribution<double> intervalRange(3.0, 6.0);
+    interval = intervalRange(rand);
+  }
+}
+
+/**
 * Uniform Block Objectを作成する.
 *
 * @param size Uniform Blockのサイズ.
@@ -247,21 +316,23 @@ int main()
   Mesh::BufferPtr meshBuffer = Mesh::Buffer::Create(50000, 50000);
   meshBuffer->LoadMeshFromFile("Res/Toroid.fbx");
 
+  Entity::BufferPtr entityBuffer = Entity::Buffer::Create(1024, sizeof(VertexData), 0, "VertexData");
+  if (!entityBuffer) {
+    return 1;
+  }
+
   const OffscreenBufferPtr offscreen = OffscreenBuffer::Create(800, 600);
 
   glEnable(GL_DEPTH_TEST);
 
   // メインループ.
   while (!window.ShouldClose()) {
+    Update(entityBuffer, meshBuffer, texToroid, progTutorial);
     glBindFramebuffer(GL_FRAMEBUFFER, offscreen->GetFramebuffer());
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // 視点を回転移動させる.
-    static float degree = 0.0f;
-    degree += 0.1f;
-    if (degree >= 360.0f) { degree -= 360.0f; }
-    const glm::vec3 viewPos = glm::rotate(glm::mat4(), glm::radians(degree), glm::vec3(0, 1, 0)) * glm::vec4(2, 3, 3, 1);
+    const glm::vec3 viewPos = glm::vec4(0, 20, -20, 1);
 
     progTutorial->UseProgram();
     const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
@@ -271,10 +342,8 @@ int main()
     uboVertex->BufferSubData(&vertexData);
     LightData lightData;
     lightData.ambientColor = glm::vec4(0.05f, 0.1f, 0.2f, 1);
-    lightData.light[0].position = glm::vec4(1, 1, 1, 1);
-    lightData.light[0].color = glm::vec4(2, 2, 2, 1);
-    lightData.light[1].position = glm::vec4(-0.2f, 0, 0.6f, 1);
-    lightData.light[1].color = glm::vec4(0.125f, 0.125f, 0.05f, 1);
+    lightData.light[0].color = glm::vec4(12000, 12000, 12000, 1);
+    lightData.light[0].position = glm::vec4(40, 100, 20, 1);
     uboLight->BufferSubData(&lightData);
 
     progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, tex->Id());
@@ -284,6 +353,8 @@ int main()
     progTutorial->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, texToroid->Id());
     meshBuffer->BindVAO();
     meshBuffer->GetMesh("Toroid")->Draw(meshBuffer);
+    entityBuffer->Update(1.0 / 60.0, matView, matProj);
+    entityBuffer->Draw(meshBuffer);
     glBindVertexArray(vao);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
