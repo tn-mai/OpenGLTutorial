@@ -7,6 +7,8 @@
 #include <string>
 #include <memory>
 
+class UniformBuffer;
+
 namespace Shader {
 
 class Program;
@@ -21,6 +23,7 @@ public:
   static ProgramPtr Create(const char* vsFilename, const char* fsFilename);
 
   bool UniformBlockBinding(const char* blockName, GLuint bindingPoint);
+  bool UniformBlockBinding(const UniformBuffer&);
   void UseProgram();
   void BindTexture(GLenum unit, GLenum type, GLuint texture);
 

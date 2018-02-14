@@ -2,6 +2,7 @@
 * @file Shader.cpp
 */
 #include "Shader.h"
+#include "UniformBuffer.h"
 #include <vector>
 #include <iostream>
 #include <cstdint>
@@ -216,6 +217,19 @@ bool Program::UniformBlockBinding(const char* blockName, GLuint bindingPoint)
     return false;
   }
   return true;
+}
+
+/**
+* Uniformブロックをバインディング・ポイントに割り当てる.
+*
+* @param object  割り当てるUniformBufferオブジェクト.
+*
+* @retval true  割り当て成功.
+* @retval false 割り当て失敗.
+*/
+bool Program::UniformBlockBinding(const UniformBuffer& object)
+{
+  return UniformBlockBinding(object.Name().c_str(), object.BindingPoint());
 }
 
 /**
