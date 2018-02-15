@@ -35,7 +35,17 @@ public:
   void UpdateFunc(const UpdateFuncType& func);
   const UpdateFuncType& UpdateFunc() const;
 
-  //<--- ‚±‚±‚Éƒƒ“ƒoŠÖ”‚ð’Ç‰Á‚·‚é --->
+  bool LoadTextureFromFile(const char* filename);
+  bool LoadMeshFromFile(const char* filename);
+  Entity::Entity* AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func);
+  void RemoveEntity(Entity::Entity*);
+  void Light(int index, const InterfaceBlock::PointLight& light);
+  const InterfaceBlock::PointLight& Light(int index) const;
+  void AmbientLight(const glm::vec4& color);
+  const glm::vec4& AmbientLight() const;
+  void Camera(const CameraData& cam);
+  const CameraData& Camera() const;
+  std::mt19937& Rand();
 
 private:
   GameEngine() = default;
@@ -49,5 +59,24 @@ private:
   bool isInitialized = false;
   UpdateFuncType updateFunc;
 
-  //<--- ‚±‚±‚Éƒƒ“ƒo•Ï”‚ð’Ç‰Á‚·‚é --->
+  int width = 0;
+  int height = 0;
+  GLuint vbo = 0;
+  GLuint ibo = 0;
+  GLuint vao = 0;
+  UniformBufferPtr uboLight;
+  UniformBufferPtr uboPostEffect;
+  Shader::ProgramPtr progTutorial;
+  Shader::ProgramPtr progColorFilter;
+  OffscreenBufferPtr offscreen;
+
+  std::unordered_map<std::string, TexturePtr> textureBuffer;
+  Mesh::BufferPtr meshBuffer;
+  Entity::BufferPtr entityBuffer;
+
+  InterfaceBlock::LightData lightData;
+  CameraData camera;
+  std::mt19937 rand;
 };
+
+#endif

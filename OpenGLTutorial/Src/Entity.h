@@ -78,6 +78,7 @@ public:
   void RemoveEntity(Entity* entity);
   void Update(double delta, const glm::mat4& matView, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
+  const UniformBufferPtr& UniformBuffer() const { return ubo; }
 
 private:
   Buffer() = default;
