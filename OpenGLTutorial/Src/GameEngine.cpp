@@ -224,9 +224,18 @@ bool GameEngine::Init(int w, int h, const char* title)
 */
 void GameEngine::Run()
 {
-  const double delta = 1.0 / 60.0;
   GLFWEW::Window& window = GLFWEW::Window::Instance();
+  double prevTime = glfwGetTime();
   while (!window.ShouldClose()) {
+    // デバッグ中など特殊な状況でなければありえないと考えられるしきい値.
+    static const double thresholdToInvalidate = 0.25f;
+
+    const double curTime = glfwGetTime();
+    double delta = curTime - prevTime;
+    if (delta > thresholdToInvalidate) {
+      delta = 1.0 / 60.0;
+    }
+    prevTime = curTime;
     Update(delta);
     Render();
     window.SwapBuffers();
