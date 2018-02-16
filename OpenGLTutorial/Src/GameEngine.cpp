@@ -410,6 +410,14 @@ std::mt19937& GameEngine::Rand()
 }
 
 /**
+* ゲームパッドの状態を取得する.
+*/
+const GamePad& GameEngine::GetGamePad() const
+{
+  return GLFWEW::Window::Instance().GetGamePad();
+}
+
+/**
 * デストラクタ.
 */
 GameEngine::~GameEngine()
@@ -432,6 +440,7 @@ GameEngine::~GameEngine()
 */
 void GameEngine::Update(double delta)
 {
+  GLFWEW::Window::Instance().UpdateGamePad();
   if (updateFunc) {
     updateFunc(delta);
   }

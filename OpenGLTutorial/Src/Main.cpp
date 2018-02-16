@@ -39,6 +39,48 @@ struct UpdateToroid
 };
 
 /**
+* 自機の更新.
+*/
+struct UpdatePlayer
+{
+  void operator()(Entity::Entity& entity, void* ubo, double delta,
+    const glm::mat4& matView, const glm::mat4& matProj)
+  {
+    GameEngine& game = GameEngine::Instance();
+    const GamePad gamepad = game.GetGamePad();
+    glm::vec3 vec;
+    float rotZ = 0;
+    if (gamepad.buttons & GamePad::DPAD_LEFT) {
+      vec.x = 1;
+      rotZ = -glm::radians(30.0f);
+    } else if (gamepad.buttons & GamePad::DPAD_RIGHT) {
+      vec.x = -1;
+      rotZ = glm::radians(30.0f);
+    }
+    if (gamepad.buttons & GamePad::DPAD_UP) {
+      vec.z = 1;
+    } else if (gamepad.buttons & GamePad::DPAD_DOWN) {
+      vec.z = -1;
+    }
+    if (vec.x || vec.z) {
+      vec = glm::normalize(vec) * 15.0f;
+    }
+    entity.Velocity(vec);
+    entity.Rotation(glm::quat(glm::vec3(0, 0, rotZ)));
+    glm::vec3 pos = entity.Position();
+    pos = glm::min(glm::vec3(11, 100, 20), glm::max(pos, glm::vec3(-11, -100, 1)));
+    entity.Position(pos);
+
+    InterfaceBlock::VertexData data;
+    data.matModel = entity.CalcModelMatrix();
+    data.matNormal = glm::mat4_cast(entity.Rotation());
+    data.matMVP = matProj * matView * data.matModel;
+    data.color = entity.Color();
+    memcpy(ubo, &data, sizeof(InterfaceBlock::VertexData));
+  }
+};
+
+/**
 * ゲーム状態の更新.
 */
 class Update
@@ -53,6 +95,7 @@ public:
       game.Camera({ glm::vec4(0, 20, -8, 1), {0, 0, 12}, {0, 0, 1} });
       game.AmbientLight({ 0.05f, 0.1f, 0.2f, 1 });
       game.Light(0, { {40, 100, 10, 1}, {12000, 12000, 12000, 1} });
+      pPlayer = game.AddEntity(glm::vec3(0, 0, 2), "Aircraft", "Res/Player.bmp", UpdatePlayer());
     }
 
     std::uniform_int_distribution<> posXRange(-15, 15);
@@ -75,6 +118,7 @@ public:
 private:
   bool isInitialized = false;
   double interval = 0;
+  Entity::Entity* pPlayer = nullptr;
 };
 
 /**
@@ -103,7 +147,9 @@ int main()
     return 1;
   }
   game.LoadTextureFromFile("Res/Toroid.bmp");
+  game.LoadTextureFromFile("Res/Player.bmp");
   game.LoadMeshFromFile("Res/Toroid.fbx");
+  game.LoadMeshFromFile("Res/Player.fbx");
   game.UpdateFunc(Update());
   game.Run();
   return 0;

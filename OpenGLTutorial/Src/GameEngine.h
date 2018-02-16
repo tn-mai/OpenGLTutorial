@@ -11,6 +11,7 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "InterfaceBlock.h"
+#include "GamePad.h"
 #include <glm/glm.hpp>
 #include <functional>
 #include <random>
@@ -46,6 +47,7 @@ public:
   void Camera(const CameraData& cam);
   const CameraData& Camera() const;
   std::mt19937& Rand();
+  const GamePad& GetGamePad() const;
 
 private:
   GameEngine() = default;
