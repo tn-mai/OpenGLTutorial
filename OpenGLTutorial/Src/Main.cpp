@@ -41,31 +41,39 @@ struct UpdateToroid
 /**
 * ÉQÅ[ÉÄèÛë‘ÇÃçXêV.
 */
-struct Update
+class Update
 {
+public:
   void operator()(double delta)
   {
     GameEngine& game = GameEngine::Instance();
-    game.Camera({ glm::vec4(0, 20, -8, 1), glm::vec3(0, 0, 12), glm::vec3(0, 0, 1) });
-    game.AmbientLight(glm::vec4(0.05f, 0.1f, 0.2f, 1));
-    game.Light(0, { glm::vec4(40, 100, 10, 1), glm::vec4(12000, 12000, 12000, 1) });
-    std::uniform_int_distribution<> distributerX(-12, 12);
-    std::uniform_int_distribution<> distributerZ(40, 44);
+
+    if (!isInitialized) {
+      isInitialized = true;
+      game.Camera({ glm::vec4(0, 20, -8, 1), {0, 0, 12}, {0, 0, 1} });
+      game.AmbientLight({ 0.05f, 0.1f, 0.2f, 1 });
+      game.Light(0, { {40, 100, 10, 1}, {12000, 12000, 12000, 1} });
+    }
+
+    std::uniform_int_distribution<> posXRange(-15, 15);
+    std::uniform_int_distribution<> posZRange(38, 40);
     interval -= delta;
     if (interval <= 0) {
-      const std::uniform_real_distribution<> rndInterval(1.0, 5.0);
       const std::uniform_int_distribution<> rndAddingCount(1, 5);
       for (int i = rndAddingCount(game.Rand()); i > 0; --i) {
-        const glm::vec3 pos(distributerX(game.Rand()), 0, distributerZ(game.Rand()));
+        const glm::vec3 pos(posXRange(game.Rand()), 0, posZRange(game.Rand()));
         if (Entity::Entity* p = game.AddEntity(
           pos, "Toroid", "Res/Toroid.bmp", UpdateToroid())) {
-          p->Velocity(glm::vec3(pos.x < 0 ? 1.0f : -1.0f, 0, -4.0f));
+          p->Velocity({pos.x < 0 ? 3.0f : -3.0f, 0, -12.0f});
         }
       }
-      interval = rndInterval(game.Rand());
+      std::normal_distribution<> intervalRange(2.0, 0.5);
+      interval += glm::clamp(intervalRange(game.Rand()), 0.5, 3.0);
     }
   }
 
+private:
+  bool isInitialized = false;
   double interval = 0;
 };
 
