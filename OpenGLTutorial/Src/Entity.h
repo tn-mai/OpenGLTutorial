@@ -12,11 +12,27 @@
 #include <glm/gtx/quaternion.hpp>
 #include <memory>
 #include <functional>
+#include <vector>
 
 namespace Entity {
 
+class Entity;
 class Buffer;
 using BufferPtr = std::shared_ptr<Buffer>; ///< エンティティバッファポインタ型.
+
+/// 衝突解決ハンドラ型.
+typedef std::function<void(Entity&, Entity&)> CollisionHandlerType;
+
+static const int maxGroupId = 31; ///< グループIDの最大値.
+
+/**
+* 衝突判定形状.
+*/
+struct CollisionData
+{
+  glm::vec3 min;
+  glm::vec3 max;
+};
 
 /**
 * エンティティ.
@@ -42,6 +58,11 @@ public:
   void UpdateFunc(const UpdateFuncType& func) { updateFunc = func; }
   const UpdateFuncType& UpdateFunc() const { return updateFunc; }
 
+  void Collision(const CollisionData& c) { colLocal = c; }
+  const CollisionData& Collision() const { return colLocal; }
+  int GroupId() const { return groupId; }
+  void Destroy();
+
   glm::mat4 CalcModelMatrix() const;
 
 private:
@@ -61,6 +82,12 @@ private:
   TexturePtr texture; ///< エンティティを描画するときに使われるテクスチャ.
   Shader::ProgramPtr program; ///< エンティティを描画するときに使われるシェーダ.
   GLintptr uboOffset; ///< UBOのエンティティ用領域へのバイトオフセット.
+
+  int groupId = -1; ///< グループID.
+  Buffer * pBuffer = nullptr; ///< 生成元のBufferクラスへのポインタ.
+  CollisionData colLocal; ///< ローカル座標系の衝突形状.
+  CollisionData colWorld; ///< ワールド座標系の衝突形状.
+
   bool isActive = false; ///< アクティブなエンティティならtrue, 非アクティブならfalse.
 };
 
@@ -73,11 +100,16 @@ public:
   static BufferPtr Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity,
     int bindingPoint, const char* name);
 
-  Entity* AddEntity(const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t,
+  Entity* AddEntity(int groupId, const glm::vec3& pos, const Mesh::MeshPtr& m, const TexturePtr& t,
     const Shader::ProgramPtr& p, Entity::UpdateFuncType func);
   void RemoveEntity(Entity* entity);
   void Update(double delta, const glm::mat4& matView, const glm::mat4& matProj);
   void Draw(const Mesh::BufferPtr& meshBuffer) const;
+
+  void CollisionHandler(int gid0, int gid1, CollisionHandlerType handler);
+  const CollisionHandlerType& CollisionHandler(int gid0, int gid1) const;
+  void ClearCollisionHandlerList();
+
   const UniformBufferPtr& UniformBuffer() const { return ubo; }
 
 private:
@@ -102,10 +134,18 @@ private:
   std::unique_ptr<LinkEntity[], EntityArrayDeleter> buffer; ///< エンティティの配列.
   size_t bufferSize; ///< エンティティの総数.
   Link freeList; ///< 未使用のエンティティのリンクリスト.
-  Link activeList; ///< 使用中のエンティティのリンクリスト.
+  Link activeList[maxGroupId + 1]; ///< 使用中のエンティティのリンクリスト.
   GLsizeiptr ubSizePerEntity; ///< 各エンティティが使えるUniform Bufferのバイト数.
   UniformBufferPtr ubo; ///< エンティティ用UBO.
   Link* itrUpdate = nullptr; ///< UpdateとRemoveEntityの相互作用に対応するためのイテレータ.
+  Link* itrUpdateRhs = nullptr; ///< UpdateとRemoveEntityの相互作用に対応するためのイテレータ.
+
+  struct CollisionHandlerInfo
+  {
+    int groupId[2];
+    CollisionHandlerType handler;
+  };
+  std::vector<CollisionHandlerInfo> collisionHandlerList;
 };
 
 } // namespace Entity
