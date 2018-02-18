@@ -2,6 +2,7 @@
 * @file Entity.cpp
 */
 #include "Entity.h"
+#include "InterfaceBlock.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <algorithm>
@@ -10,6 +11,23 @@
 * エンティティに関するコードを格納する名前空間.
 */
 namespace Entity {
+
+/**
+* VertexDataをUBOに転送する.
+*
+* @param entity  転送データを保持するエンティティ.
+* @param ubo     転送先バッファへのポインタ.
+* @param matVP   転送する座標変換行列(ビューとプロジェクション).
+*/
+void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4& matVP)
+{
+  InterfaceBlock::VertexData data;
+  data.matModel = entity.CalcModelMatrix();
+  data.matNormal = glm::mat4_cast(entity.Rotation());
+  data.matMVP = matVP * data.matModel;
+  data.color = entity.Color();
+  memcpy(ubo, &data, sizeof(data));
+}
 
 /**
 * 移動・回転・拡縮行列を取得する.
@@ -201,19 +219,17 @@ bool HasCollision(const CollisionData& lhs, const CollisionData& rhs)
 */
 void Buffer::Update(double delta, const glm::mat4& matView, const glm::mat4& matProj)
 {
-  uint8_t* p = static_cast<uint8_t*>(ubo->MapBuffer());
   for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
     for (itrUpdate = activeList[groupId].next; itrUpdate != &activeList[groupId]; itrUpdate = itrUpdate->next) {
       LinkEntity& e = *static_cast<LinkEntity*>(itrUpdate);
       e.position += e.velocity * static_cast<float>(delta);
       if (e.updateFunc) {
-        e.updateFunc(e, p + e.uboOffset, delta, matView, matProj);
+        e.updateFunc(e, delta);
       }
       e.colWorld.min = e.colLocal.min + e.position;
       e.colWorld.max = e.colLocal.max + e.position;
     }
   }
-  ubo->UnmapBuffer();
 
   // 衝突判定を実行する.
   for (const auto& e : collisionHandlerList) {
@@ -239,6 +255,18 @@ void Buffer::Update(double delta, const glm::mat4& matView, const glm::mat4& mat
   }
   itrUpdate = nullptr;
   itrUpdateRhs = nullptr;
+
+  // UBOを更新する.
+  uint8_t* p = static_cast<uint8_t*>(ubo->MapBuffer());
+  const glm::mat4 matVP = matProj * matView;
+  for (int groupId = 0; groupId <= maxGroupId; ++groupId) {
+    for (itrUpdate = activeList[groupId].next; itrUpdate != &activeList[groupId];
+      itrUpdate = itrUpdate->next) {
+      LinkEntity& e = *static_cast<LinkEntity*>(itrUpdate);
+      UpdateUniformVertexData(e, p + e.uboOffset, matVP); 
+    }
+  }
+  ubo->UnmapBuffer();
 }
 
 /**

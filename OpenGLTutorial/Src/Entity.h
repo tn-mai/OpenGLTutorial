@@ -43,7 +43,7 @@ class Entity
 
 public:
   /// ó‘ÔXVŠÖ”Œ^.
-  using UpdateFuncType = std::function<void(Entity&, void*, double, const glm::mat4&, const glm::mat4&)>;
+  using UpdateFuncType = std::function<void(Entity&, double)>;
 
   void Position(const glm::vec3& v) { position = v; }
   const glm::vec3& Position() const { return position; }
