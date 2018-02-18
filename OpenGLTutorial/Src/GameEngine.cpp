@@ -300,6 +300,7 @@ bool GameEngine::LoadMeshFromFile(const char* filename)
 /**
 * エンティティを追加する.
 *
+* @param groupId  エンティティのグループID.
 * @param pos      エンティティの座標.
 * @param meshName エンティティの表示に使用するメッシュ名.
 * @param texName  エンティティの表示に使うテクスチャファイル名.
@@ -310,11 +311,11 @@ bool GameEngine::LoadMeshFromFile(const char* filename)
 *         回転や拡大率はこのポインタ経由で設定する.
 *         なお、このポインタをアプリケーション側で保持する必要はない.
 */
-Entity::Entity* GameEngine::AddEntity(const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func)
+Entity::Entity* GameEngine::AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func)
 {
   const Mesh::MeshPtr& mesh = meshBuffer->GetMesh(meshName);
   const TexturePtr& tex = textureBuffer.find(texName)->second;
-  return entityBuffer->AddEntity(pos, mesh, tex, progTutorial, func);
+  return entityBuffer->AddEntity(groupId, pos, mesh, tex, progTutorial, func);
 }
 
 /**
@@ -415,6 +416,47 @@ std::mt19937& GameEngine::Rand()
 const GamePad& GameEngine::GetGamePad() const
 {
   return GLFWEW::Window::Instance().GetGamePad();
+}
+
+/**
+* 衝突解決ハンドラを設定する.
+*
+* @param gid0    衝突対象のグループID.
+* @param gid1    衝突対象のグループID.
+* @param handler 衝突解決ハンドラ.
+*
+* 衝突が発生し衝突解決ハンドラが呼びされるとき、より小さいグループIDを持つエンティティから先に渡される.
+* ここで指定したグループIDの順序とは無関係であることに注意すること.
+* ex)
+*   CollisionHandler(10, 1, Func)
+*   というコードでハンドラを登録したとする. 衝突が発生すると、
+*   Func(グループID=1のエンティティ、グループID=10のエンティティ)
+*   のように呼び出される.
+*/
+void GameEngine::CollisionHandler(int gid0, int gid1, Entity::CollisionHandlerType handler)
+{
+  entityBuffer->CollisionHandler(gid0, gid1, handler);
+}
+
+/**
+* 衝突解決ハンドラを取得する.
+*
+* @param gid0 衝突対象のグループID.
+* @param gid1 衝突対象のグループID.
+*
+* @return 衝突解決ハンドラ.
+*/
+const Entity::CollisionHandlerType& GameEngine::CollisionHandler(int gid0, int gid1) const
+{
+  return entityBuffer->CollisionHandler(gid0, gid1);
+}
+
+/**
+* 衝突解決ハンドラのリストをクリアする.
+*/
+void GameEngine::ClearCollisionHandlerList()
+{
+  entityBuffer->ClearCollisionHandlerList();
 }
 
 /**
