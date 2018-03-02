@@ -285,6 +285,24 @@ bool GameEngine::LoadTextureFromFile(const char* filename)
 }
 
 /**
+* テクスチャを取得する.
+*
+* @param filename テクスチャファイル名.
+*
+* @return filenameに対応するテクスチャへのポインタ.
+*         対応するテクスチャが見つからない場合はnullptrを返す.
+*/
+const TexturePtr& GameEngine::GetTexture(const char* filename) const
+{
+  const auto itr = textureBuffer.find(filename);
+  if (itr != textureBuffer.end()) {
+    return itr->second;
+  }
+  static const TexturePtr dummy;
+  return dummy;
+}
+
+/**
 * メッシュを読み込む.
 *
 * @param filename メッシュファイル名.

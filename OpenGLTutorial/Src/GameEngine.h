@@ -37,6 +37,7 @@ public:
   const UpdateFuncType& UpdateFunc() const;
 
   bool LoadTextureFromFile(const char* filename);
+  const TexturePtr& GetTexture(const char* filename) const;
   bool LoadMeshFromFile(const char* filename);
   Entity::Entity* AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func);
   void RemoveEntity(Entity::Entity* entity);
