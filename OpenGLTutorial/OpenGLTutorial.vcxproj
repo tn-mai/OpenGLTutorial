@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="Src\BufferObject.cpp" />
     <ClCompile Include="Src\Entity.cpp" />
+    <ClCompile Include="Src\Font.cpp" />
     <ClCompile Include="Src\GameEngine.cpp" />
     <ClCompile Include="Src\GLFWEW.cpp" />
     <ClCompile Include="Src\Main.cpp" />
@@ -158,6 +159,7 @@
   <ItemGroup>
     <ClInclude Include="Src\BufferObject.h" />
     <ClInclude Include="Src\Entity.h" />
+    <ClInclude Include="Src\Font.h" />
     <ClInclude Include="Src\GameEngine.h" />
     <ClInclude Include="Src\GamePad.h" />
     <ClInclude Include="Src\GLFWEW.h" />
