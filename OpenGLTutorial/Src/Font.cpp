@@ -108,7 +108,8 @@ bool Renderer::LoadFromFile(const char* filename)
       ")" << std::endl;
     return false;
   }
-  texFilename.assign(tex + 1, tex + strlen(tex) - 1);
+  texFilename = "Res/";
+  texFilename += std::string(tex + 1, tex + strlen(tex) - 1);
   ++line;
 
   int charCount;

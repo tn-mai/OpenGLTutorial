@@ -214,7 +214,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   progColorFilter->UniformBlockBinding(*uboPostEffect);
 
   rand.seed(std::random_device()());
-
+  fontRenderer.Init(1024, glm::vec2(static_cast<float>(w), static_cast<float>(h)));
   isInitialized = true;
   return true;
 }
@@ -501,12 +501,14 @@ GameEngine::~GameEngine()
 void GameEngine::Update(double delta)
 {
   GLFWEW::Window::Instance().UpdateGamePad();
+  fontRenderer.MapBuffer();
   if (updateFunc) {
     updateFunc(delta);
   }
   const glm::mat4x4 matProj = glm::perspective(glm::radians(45.0f), static_cast<float>(width) / static_cast<float>(height), 1.0f, 200.0f);
   const glm::mat4x4 matView = glm::lookAt(camera.position, camera.target, camera.up);
   entityBuffer->Update(delta, matView, matProj);
+  fontRenderer.UnmapBuffer();
 }
 
 /**
@@ -537,4 +539,5 @@ void GameEngine::Render() const
   uboPostEffect->BufferSubData(&postEffect);
   progColorFilter->BindTexture(GL_TEXTURE0, GL_TEXTURE_2D, offscreen->GetTexutre());
   glDrawElements(GL_TRIANGLES, renderingParts[1].size, GL_UNSIGNED_INT, renderingParts[1].offset);
+  fontRenderer.Draw();
 }

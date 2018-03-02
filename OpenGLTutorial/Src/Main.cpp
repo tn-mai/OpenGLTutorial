@@ -157,6 +157,11 @@ private:
 class Update
 {
 public:
+  Update()
+  {
+    GameEngine::Instance().Variable("score") = 0;
+  }
+
   void operator()(double delta)
   {
     GameEngine& game = GameEngine::Instance();
@@ -186,6 +191,9 @@ public:
       std::normal_distribution<> intervalRange(2.0, 0.5);
       interval += glm::clamp(intervalRange(game.Rand()), 0.5, 3.0);
     }
+    char str[16];
+    snprintf(str, 16, "%08.0f", game.Variable("score"));
+    game.AddString(glm::vec2(-0.2f, 1.0f), str);
   }
 
 private:
@@ -204,6 +212,7 @@ void PlayerShotAndEnemyCollisionHandler(Entity::Entity& lhs, Entity::Entity& rhs
     "Blast", "Res/Toroid.bmp", UpdateBlast())) {
     const std::uniform_real_distribution<float> rotRange(0.0f, glm::pi<float>() * 2);
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
+    game.Variable("score") += 100;
   }
   lhs.Destroy();
   rhs.Destroy();
@@ -239,6 +248,7 @@ int main()
   game.LoadMeshFromFile("Res/Toroid.fbx");
   game.LoadMeshFromFile("Res/Player.fbx");
   game.LoadMeshFromFile("Res/Blast.fbx");
+  game.LoadFontFromFile("Res/UniNeue.fnt");
 
   game.CollisionHandler(EntityGroupId_PlayerShot, EntityGroupId_Enemy, &PlayerShotAndEnemyCollisionHandler);
 
