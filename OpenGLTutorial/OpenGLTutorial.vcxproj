@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Audio.cpp" />
     <ClCompile Include="Src\BufferObject.cpp" />
     <ClCompile Include="Src\Entity.cpp" />
     <ClCompile Include="Src\Font.cpp" />
@@ -159,6 +160,7 @@
     <None Include="Res\Tutorial.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Audio.h" />
     <ClInclude Include="Src\BufferObject.h" />
     <ClInclude Include="Src\Entity.h" />
     <ClInclude Include="Src\Font.h" />
