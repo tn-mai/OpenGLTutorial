@@ -152,6 +152,26 @@ bool Renderer::LoadFromFile(const char* filename)
 }
 
 /**
+* 文字色を設定する.
+*
+* @param c文字色.
+*/
+void Renderer::Color(const glm::vec4& c)
+{
+  color = glm::clamp(c, 0.0f, 1.0f) * 255.0f;
+}
+
+/**
+*文字色を取得する.
+*
+* @return文字色.
+*/
+glm::vec4 Renderer::Color() const
+{
+  return glm::vec4(color) * (1.0f / 255.0f);
+}
+
+/**
 * 文字列を追加する.
 *
 * @param position 表示開始座標.
