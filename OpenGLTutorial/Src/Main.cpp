@@ -2,6 +2,8 @@
 * @file Main.cpp
 */
 #include "GameEngine.h"
+#include "../Res/Audio/SampleSound_acf.h"
+#include "../Res/Audio/SampleCueSheet.h"
 #include <random>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -141,6 +143,7 @@ struct UpdatePlayer
           pos.x += 0.6f; // 中心からに右に0.3ずらした位置が2つめの発射点.
         }
         shotInterval += 0.25;// 秒間4連射.
+        game.PlayAudio(0, CRI_SAMPLECUESHEET_PLAYERSHOT);
       }
     } else {
       shotInterval = 0;
@@ -214,6 +217,7 @@ void PlayerShotAndEnemyCollisionHandler(Entity::Entity& lhs, Entity::Entity& rhs
     p->Rotation(glm::quat(glm::vec3(0, rotRange(game.Rand()), 0)));
     game.Variable("score") += 100;
   }
+  game.PlayAudio(1, CRI_SAMPLECUESHEET_BOMB);
   lhs.Destroy();
   rhs.Destroy();
 }
@@ -243,6 +247,10 @@ int main()
   if (!game.Init(800, 600, "OpenGL Tutorial")) {
     return 1;
   }
+  if (!game.InitAudio("Res/Audio/SampleSound.acf", "Res/Audio/SampleCueSheet.acb", nullptr, CRI_SAMPLESOUND_ACF_DSPSETTING_DSPBUSSETTING_0)) {
+    return 1;
+  }
+
   game.LoadTextureFromFile("Res/Toroid.bmp");
   game.LoadTextureFromFile("Res/Player.bmp");
   game.LoadMeshFromFile("Res/Toroid.fbx");

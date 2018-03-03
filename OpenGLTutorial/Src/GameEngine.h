@@ -59,7 +59,11 @@ public:
   void FontScale(const glm::vec2& scale) { fontRenderer.Scale(scale); }
   void FontColor(const glm::vec4& color) { fontRenderer.Color(color); }
 
-  double& Variable(const char* name) { return variables[name]; }
+  bool InitAudio(const char* acfPath, const char* acbPath, const char* awbPath, const char* dspBusName);
+  void PlayAudio(int playerId, int cueId);
+  void StopAudio(int playerId);
+
+double& Variable(const char* name) { return variables[name]; }
 
 private:
   GameEngine() = default;

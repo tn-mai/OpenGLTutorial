@@ -3,6 +3,7 @@
 */
 #include "GameEngine.h"
 #include "GLFWEW.h"
+#include "Audio.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
@@ -478,10 +479,36 @@ void GameEngine::ClearCollisionHandlerList()
 }
 
 /**
+* @copydoc Audio::Initialize
+*/
+bool GameEngine::InitAudio(const char* acfPath, const char* acbPath,
+  const char* awbPath, const char* dspBusName)
+{
+  return Audio::Initialize(acfPath, acbPath, awbPath, dspBusName);
+}
+
+/**
+* @copydoc Audio::Play
+*/
+void GameEngine::PlayAudio(int playerId, int cueId)
+{
+  Audio::Play(playerId, cueId);
+}
+
+/**
+* @copydoc Audio::Stop
+*/
+void GameEngine::StopAudio(int playerId)
+{
+  Audio::Stop(playerId);
+}
+
+/**
 * デストラクタ.
 */
 GameEngine::~GameEngine()
 {
+  Audio::Destroy();
   if (vao) {
     glDeleteVertexArrays(1, &vao);
   }
