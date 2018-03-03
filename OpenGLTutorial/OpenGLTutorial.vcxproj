@@ -142,10 +142,12 @@
     <ClCompile Include="Src\GameEngine.cpp" />
     <ClCompile Include="Src\GLFWEW.cpp" />
     <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\MainGameState.cpp" />
     <ClCompile Include="Src\Mesh.cpp" />
     <ClCompile Include="Src\OffscreenBuffer.cpp" />
     <ClCompile Include="Src\Shader.cpp" />
     <ClCompile Include="Src\Texture.cpp" />
+    <ClCompile Include="Src\TitleState.cpp" />
     <ClCompile Include="Src\UniformBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -154,6 +156,8 @@
     <None Include="Res\ColorFilter.vert" />
     <None Include="Res\Font.frag" />
     <None Include="Res\Font.vert" />
+    <None Include="Res\NonLighting.frag" />
+    <None Include="Res\NonLighting.vert" />
     <None Include="Res\Posterization.frag" />
     <None Include="Res\Posterization.vert" />
     <None Include="Res\Tutorial.frag" />
@@ -166,6 +170,7 @@
     <ClInclude Include="Src\Font.h" />
     <ClInclude Include="Src\GameEngine.h" />
     <ClInclude Include="Src\GamePad.h" />
+    <ClInclude Include="Src\GameState.h" />
     <ClInclude Include="Src\GLFWEW.h" />
     <ClInclude Include="Src\InterfaceBlock.h" />
     <ClInclude Include="Src\Mesh.h" />

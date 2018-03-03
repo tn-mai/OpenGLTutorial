@@ -190,13 +190,24 @@ bool GameEngine::Init(int w, int h, const char* title)
   vao = CreateVAO(vbo, ibo);
   uboLight = UniformBuffer::Create(sizeof(InterfaceBlock::LightData), InterfaceBlock::BINDINGPOINT_LIGHTDATA, "LightData");
   uboPostEffect = UniformBuffer::Create(sizeof(InterfaceBlock::PostEffectData), InterfaceBlock::BINDINGPOINT_POSTEFFECTDATA, "PostEffectData");
-  progTutorial = Shader::Program::Create("Res/Tutorial.vert", "Res/Tutorial.frag");
-  progColorFilter = Shader::Program::Create("Res/ColorFilter.vert", "Res/ColorFilter.frag");
   offscreen = OffscreenBuffer::Create(width, height);
-  if (!vbo || !ibo || !vao || !uboLight || !uboPostEffect ||
-    !progTutorial || !progColorFilter || !offscreen) {
+  if (!vbo || !ibo || !vao || !uboLight || !uboPostEffect || !offscreen) {
     std::cerr << "ERROR: GameEngineの初期化に失敗" << std::endl;
     return false;
+  }
+
+  static const char* const shaderNameList[][3] = {
+    { "Tutorial", "Res/Tutorial.vert", "Res/Tutorial.frag" },
+    { "ColorFilter", "Res/ColorFilter.vert", "Res/ColorFilter.frag" },
+    { "NonLighting", "Res/NonLighting.vert", "Res/NonLighting.frag" },
+  };
+  shaderMap.reserve(sizeof(shaderNameList) / sizeof(shaderNameList[0]));
+  for (auto& e : shaderNameList) {
+    Shader::ProgramPtr program = Shader::Program::Create(e[1], e[2]);
+    if (!program) {
+      return false;
+    }
+    shaderMap.insert(std::make_pair(std::string(e[0]), program));
   }
 
   meshBuffer = Mesh::Buffer::Create(50000, 50000);
@@ -210,9 +221,9 @@ bool GameEngine::Init(int w, int h, const char* title)
     return false;
   }
 
-  progTutorial->UniformBlockBinding(*entityBuffer->UniformBuffer());
-  progTutorial->UniformBlockBinding(*uboLight);
-  progColorFilter->UniformBlockBinding(*uboPostEffect);
+  shaderMap["Tutorial"]->UniformBlockBinding(*entityBuffer->UniformBuffer());
+  shaderMap["Tutorial"]->UniformBlockBinding(*uboLight);
+  shaderMap["ColorFilter"]->UniformBlockBinding(*uboPostEffect);
 
   rand.seed(std::random_device()());
   fontRenderer.Init(1024, glm::vec2(static_cast<float>(w), static_cast<float>(h)));
@@ -324,17 +335,29 @@ bool GameEngine::LoadMeshFromFile(const char* filename)
 * @param meshName エンティティの表示に使用するメッシュ名.
 * @param texName  エンティティの表示に使うテクスチャファイル名.
 * @param func     エンティティの状態を更新する関数(または関数オブジェクト).
+* @param shader   エンティティの表示に使うシェーダ名.
 *
 * @return 追加したエンティティへのポインタ.
 *         これ以上エンティティを追加できない場合はnullptrが返される.
 *         回転や拡大率はこのポインタ経由で設定する.
 *         なお、このポインタをアプリケーション側で保持する必要はない.
 */
-Entity::Entity* GameEngine::AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func)
+Entity::Entity* GameEngine::AddEntity(int groupId, const glm::vec3& pos, const char* meshName, const char* texName, Entity::Entity::UpdateFuncType func, const char* shader)
 {
+  decltype(shaderMap)::const_iterator itr = shaderMap.end();
+  if (shader) {
+    itr = shaderMap.find(shader);
+  }
+  if (itr == shaderMap.end()) {
+    itr = shaderMap.find("Tutorial");
+    if (itr == shaderMap.end()) {
+      return nullptr;
+    }
+  }
+
   const Mesh::MeshPtr& mesh = meshBuffer->GetMesh(meshName);
   const TexturePtr& tex = textureBuffer.find(texName)->second;
-  return entityBuffer->AddEntity(groupId, pos, mesh, tex, progTutorial, func);
+  return entityBuffer->AddEntity(groupId, pos, mesh, tex, itr->second, func);
 }
 
 /**
@@ -482,9 +505,9 @@ void GameEngine::ClearCollisionHandlerList()
 * @copydoc Audio::Initialize
 */
 bool GameEngine::InitAudio(const char* acfPath, const char* acbPath,
-  const char* awbPath, const char* dspBusName)
+  const char* awbPath, const char* dspBusName, size_t playerCount)
 {
-  return Audio::Initialize(acfPath, acbPath, awbPath, dspBusName);
+  return Audio::Initialize(acfPath, acbPath, awbPath, dspBusName, playerCount);
 }
 
 /**
@@ -561,6 +584,7 @@ void GameEngine::Render() const
   glDisable(GL_CULL_FACE);
   glDisable(GL_BLEND);
   glBindVertexArray(vao);
+  const Shader::ProgramPtr& progColorFilter = shaderMap.find("ColorFilter")->second;
   progColorFilter->UseProgram();
   InterfaceBlock::PostEffectData postEffect;
   uboPostEffect->BufferSubData(&postEffect);

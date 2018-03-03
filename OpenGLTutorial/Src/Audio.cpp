@@ -3,6 +3,7 @@
 */
 #include "Audio.h"
 #include <cri_adx2le.h>
+#include <vector>
 #include <iostream>
 #include <cstdint>
 
@@ -11,7 +12,7 @@ namespace Audio {
 CriAtomExVoicePoolHn voicePool;
 CriAtomDbasId dbas = CRIATOMDBAS_ILLEGAL_ID;
 CriAtomExAcbHn acb;
-CriAtomExPlayerHn player[playerMax];
+std::vector<CriAtomExPlayerHn> playerList;
 
 /**
 * オーディオシステム用エラーコールバック.
@@ -46,11 +47,12 @@ void Deallocate(void* obj, void* ptr)
 * @param acbPath    ACBファイルのパス.
 * @param awbPath    AWBファイルのパス.
 * @param dspBusName D-BUS名.
+* @param playerCount 再生制御用プレイヤー数. 
 *
 * @retval true  初期化成功.
 * @retval false 初期化失敗.
 */
-bool Initialize(const char* acfPath, const char* acbPath, const char* awbPath, const char* dspBusName)
+bool Initialize(const char* acfPath, const char* acbPath, const char* awbPath, const char* dspBusName, size_t playerCount)
 {
   // エラーコールバックとメモリ管理関数を登録する.
   criErr_SetCallback(ErrorCallback);
@@ -82,7 +84,10 @@ bool Initialize(const char* acfPath, const char* acbPath, const char* awbPath, c
   config.player_config.max_sampling_rate = 48000 * 2;
   voicePool = criAtomExVoicePool_AllocateStandardVoicePool(&config, nullptr, 0);
   acb = criAtomExAcb_LoadAcbFile(nullptr, acbPath, nullptr, awbPath, nullptr, 0);
-  for (auto& e : player) {
+
+  // 再生制御用プレイヤーを作成する.
+  playerList.resize(playerCount);
+  for (auto& e : playerList) {
     e = criAtomExPlayer_Create(nullptr, nullptr, 0);
   }
   return true;
@@ -93,7 +98,7 @@ bool Initialize(const char* acfPath, const char* acbPath, const char* awbPath, c
 */
 void Destroy()
 {
-  for (auto& e : player) {
+  for (auto& e : playerList) {
     if (e) {
       criAtomExPlayer_Destroy(e);
       e = nullptr;
@@ -131,8 +136,11 @@ void Update()
 */
 void Play(int playerId, int cueId)
 {
-  criAtomExPlayer_SetCueId(player[playerId], acb, cueId);
-  criAtomExPlayer_Start(player[playerId]);
+  if (playerId < 0 || playerId > static_cast<int>(playerList.size())) {
+    return;
+  }
+  criAtomExPlayer_SetCueId(playerList[playerId], acb, cueId);
+  criAtomExPlayer_Start(playerList[playerId]);
 }
 
 /**
@@ -142,7 +150,10 @@ void Play(int playerId, int cueId)
 */
 void Stop(int playerId)
 {
-  criAtomExPlayer_Stop(player[playerId]);
+  if (playerId < 0 || playerId > static_cast<int>(playerList.size())) {
+    return;
+  }
+  criAtomExPlayer_Stop(playerList[playerId]);
 }
 
 } // namespace Audio

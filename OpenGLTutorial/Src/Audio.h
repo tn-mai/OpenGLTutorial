@@ -6,9 +6,7 @@
 
 namespace Audio {
 
-static const size_t playerMax = 8; ///< “¯Žž”­‰¹‰Â”\‚È”.
-
-bool Initialize(const char* acfPath, const char* acbPath, const char* acwPath, const char* dspBusName);
+bool Initialize(const char* acfPath, const char* acbPath, const char* acwPath, const char* dspBusName, size_t playerCount);
 void Update();
 void Destroy();
 void Play(int playerId, int cueId);
