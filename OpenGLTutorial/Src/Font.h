@@ -34,7 +34,7 @@ public:
   Renderer(const Renderer&) = delete;
   Renderer& operator=(const Renderer&) = delete;
 
-  bool Init(size_t maxChar, const glm::vec2& ss);
+  bool Init(size_t maxChar, const glm::vec2& ss, glm::f32 fontSize);
   bool LoadFromFile(const char* filename);
 
   void Scale(const glm::vec2& s) { scale = s; }
@@ -55,7 +55,9 @@ private:
   std::vector<FontInfo> fontList; ///< フォント位置情報のリスト.
   std::string texFilename;        ///< フォントテクスチャファイル名.
   Shader::ProgramPtr progFont;    ///< フォント描画用シェーダプログラム.
-  glm::vec2 reciprocalScreenSize; ///< 画面サイズの逆数.
+  glm::vec2 pixelSizeInClipCoord; ///< クリップ座標系に於ける1ピクセルの大きさ.
+  glm::f32 normalFontSize;        ///< 拡大率1.0のときに画面に表示されるサイズ(ピクセル単位).
+  glm::vec2 baseScale;            ///< normalFontSizeで表示するための倍率.
 
   glm::vec2 scale = glm::vec2(1, 1); ///< フォントを描画するときの拡大率.
   glm::u8vec4 color = glm::u8vec4(255, 255, 255, 255); ///< フォントを描画するときの色.

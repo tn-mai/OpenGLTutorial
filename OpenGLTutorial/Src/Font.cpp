@@ -25,13 +25,14 @@ struct Vertex
 /**
 * フォント描画オブジェクトを初期化する.
 *
-* @param maxChar 最大描画文字数.
-* @param screen  描画先スクリーンの大きさ.
+* @param maxChar   最大描画文字数.
+* @param screen    描画先スクリーンの大きさ.
+* @param fontSize  表示フォントサイズ.
 *
 * @retval true  初期化成功.
 * @retval false 初期化失敗.
 */
-bool Renderer::Init(size_t maxChar, const glm::vec2& screen)
+bool Renderer::Init(size_t maxChar, const glm::vec2& screen, glm::f32 fontSize)
 {
   if (maxChar > (USHRT_MAX + 1) / 4) {
     std::cerr << "WARNING: " << maxChar << "は設定可能な最大文字数を越えています" << std::endl;
@@ -63,7 +64,8 @@ bool Renderer::Init(size_t maxChar, const glm::vec2& screen)
     return false;
   }
 
-  reciprocalScreenSize = 2.0f / screen;
+  normalFontSize = fontSize;
+  pixelSizeInClipCoord = 2.0f / screen;
   return true;
 }
 
@@ -84,9 +86,16 @@ bool Renderer::LoadFromFile(const char* filename)
   }
 
   int line = 1; ///< フォントファイルの処理中の行.
+  float size;
   int ret = fscanf(fp.get(),
-    "info face=%*s size=%*d bold=%*d italic=%*d charset=%*s unicode=%*d"
-    " stretchH=%*d smooth=%*d aa=%*d padding=%*d,%*d,%*d,%*d spacing=%*d,%*d");
+    "info face=%*s size=%f bold=%*d italic=%*d charset=%*s unicode=%*d"
+    " stretchH=%*d smooth=%*d aa=%*d padding=%*d,%*d,%*d,%*d spacing=%*d,%*d", &size);
+  if (ret < 1) {
+    std::cerr << "ERROR: '" << filename << "'の読み込みに失敗(line=" << line <<
+      ")" << std::endl;
+    return false;
+  }
+  baseScale = (normalFontSize / size) * pixelSizeInClipCoord;
   ++line;
 
   glm::vec2 scale;
@@ -183,15 +192,15 @@ glm::vec4 Renderer::Color() const
 bool Renderer::AddString(const glm::vec2& position, const char* str)
 {
   Vertex* p = pVBO + vboSize;
-  glm::vec2 pos = position;
+  glm::vec2 pos = (position * pixelSizeInClipCoord - 1.0f) * glm::vec2(1.0f, -1.0f);
   for (const char* itr = str; *itr; ++itr) {
     if (vboSize + 4 > vboCapacity) {
       break;
     }
     const FontInfo& font = fontList[*itr];
     if (font.id >= 0 && font.size.x && font.size.y) {
-      const glm::vec2 size = font.size * reciprocalScreenSize * scale;
-      const glm::vec2 offsetedPos = pos + font.offset * reciprocalScreenSize * scale;
+      const glm::vec2 size = font.size * baseScale * scale;
+      const glm::vec2 offsetedPos = pos + font.offset * baseScale * scale;
       p[0].position = offsetedPos + glm::vec2(0, -size.y);
       p[0].uv = font.uv[0];
       p[0].color = color;
@@ -207,7 +216,7 @@ bool Renderer::AddString(const glm::vec2& position, const char* str)
       p += 4;
       vboSize += 4;
     }
-    pos.x += font.xadvance * reciprocalScreenSize.x * scale.x;
+    pos.x += font.xadvance * baseScale.x * scale.x;
   }
   return true;
 }

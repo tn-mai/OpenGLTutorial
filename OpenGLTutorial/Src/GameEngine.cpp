@@ -226,7 +226,7 @@ bool GameEngine::Init(int w, int h, const char* title)
   shaderMap["ColorFilter"]->UniformBlockBinding(*uboPostEffect);
 
   rand.seed(std::random_device()());
-  fontRenderer.Init(1024, glm::vec2(static_cast<float>(w), static_cast<float>(h)));
+  fontRenderer.Init(1024, glm::vec2(static_cast<float>(w), static_cast<float>(h)), 32);
   isInitialized = true;
   return true;
 }

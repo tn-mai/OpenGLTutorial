@@ -26,13 +26,13 @@ void Title::operator()(double delta)
       "SpaceSphere", "Res/SpaceSphere.bmp", &UpdateSpaceSphere, "NonLighting");
   }
 
-  const float offset = timer == 0 ? 0 : (2.0f - timer) * (2.0f - timer) * 2.0f;
-  game.FontScale(glm::vec2(2));
+  const float offset = timer == 0 ? 0 : (2.0f - timer) * (2.0f - timer) * 2.0f * 400.0f;
+  game.FontScale(glm::vec2(2.0f));
   game.FontColor(glm::vec4(0.9f, 0.9f, 1.0f, 1.0f));
-  game.AddString(glm::vec2(-0.25f + offset, 0.125f), "STAR FIGHTER");
+  game.AddString(glm::vec2(300.0f + offset, 260.0f), "STAR FIGHTER");
   game.FontScale(glm::vec2(0.5f));
   game.FontColor(glm::vec4(0.75f, 0.75f, 0.75f, 1.0f));
-  game.AddString(glm::vec2(0.2f + offset, -0.1f), "The ultimate in Manned-Fighter");
+  game.AddString(glm::vec2(480.0f + offset, 328.0f), "The ultimate in Manned-Fighter");
   if (timer > 0) {
     timer -= static_cast<float>(delta);
     if (timer <= 0) {

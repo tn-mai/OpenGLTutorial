@@ -210,7 +210,7 @@ void MainGame::operator()(double delta)
   snprintf(str, 16, "%08.0f", game.Variable("score"));
   game.FontScale(glm::vec2(1));
   game.FontColor(glm::vec4(1));
-  game.AddString(glm::vec2(-0.2f, 1.0f), str);
+  game.AddString(glm::vec2(320, 8), str);
 }
 
 } // namespace GameState
