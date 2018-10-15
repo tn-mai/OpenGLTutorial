@@ -16,7 +16,7 @@ namespace Entity {
 * @param ubo
 * @param matViewProjection
 */
-void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4 matViewProjection[4], glm::u32 viewFlags)
+void UpdateUniformVertexData(Entity& entity, void* ubo, const glm::mat4* matViewProjection, glm::u32 viewFlags)
 {
   Uniform::VertexData data;
   data.matModel = entity.TRSMatrix();
