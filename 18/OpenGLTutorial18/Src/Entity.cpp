@@ -106,6 +106,9 @@ BufferPtr Buffer::Create(size_t maxEntityCount, GLsizeiptr ubSizePerEntity, int 
     std::cerr << "WARNING in Entity::Buffer::Create: バッファの作成に失敗." << std::endl;
     return {};
   }
+  GLint alignment;
+  glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment);
+  ubSizePerEntity = ((ubSizePerEntity + alignment - 1) / alignment) * alignment;
   p->ubo = UniformBuffer::Create(maxEntityCount * ubSizePerEntity, bindingPoint, ubName);
   p->buffer.reset(new LinkEntity[maxEntityCount]);
   if (!p->ubo || !p->buffer) {
