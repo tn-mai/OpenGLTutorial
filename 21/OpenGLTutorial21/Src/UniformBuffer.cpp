@@ -22,6 +22,11 @@ UniformBufferPtr UniformBuffer::Create(GLsizeiptr size, GLuint bindingPoint ,con
     return {};
   }
 
+  // サイズをデバイスのアラインメントに合わせる.
+  GLint ubAlignment;
+  glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &ubAlignment);
+  size = ((size + ubAlignment - 1) / ubAlignment) * ubAlignment;
+
   glGenBuffers(1, &p->ubo);
   glBindBuffer(GL_UNIFORM_BUFFER, p->ubo);
   glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
