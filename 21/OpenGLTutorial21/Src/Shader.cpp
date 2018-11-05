@@ -103,7 +103,7 @@ void Program::UseProgram()
     glUniform1i(samplerLocation + i, i);
   }
   if (depthSamplerLocation >= 0) {
-    glUniform1i(depthSamplerLocation, 2);
+    glUniform1i(depthSamplerLocation, samplerCount);
   }
 }
 
@@ -131,7 +131,7 @@ void Program::BindTexture(GLenum unit, GLenum type, GLuint texture)
 void Program::BindShadowTexture(GLenum type, GLuint texture)
 {
   if (depthSamplerLocation >= 0) {
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE0 + samplerCount);
     glBindTexture(type, texture);
   }
 }
