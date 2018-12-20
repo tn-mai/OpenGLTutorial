@@ -144,12 +144,13 @@ struct UpdateBlast {
     }
     const double tmp = timer * 4;
     entity.Scale(glm::vec3(static_cast<float>(1 + tmp)));
+    static const float lumScale = 2;
     static const glm::vec4 color[] = {
-      glm::vec4(1.0f, 1.0f, 0.75f, 1) * 2.0f,
-      glm::vec4(1.0f, 0.5f, 0.1f, 1) * 2.0f,
-      glm::vec4(0.25f, 0.1f, 0.1f, 0) * 2.0f,
-      glm::vec4(0.25f, 0.1f, 0.1f, 0) * 2.0f,
-      glm::vec4(0.25f, 0.1f, 0.1f, 0) * 2.0f,
+      glm::vec4(glm::vec3(1.0f, 1.0f, 0.75f) * lumScale, 1),
+      glm::vec4(glm::vec3(1.0f,  0.5f, 0.1f) * lumScale, 1),
+      glm::vec4(glm::vec3(0.25f, 0.1f, 0.1f) * lumScale, 0),
+      glm::vec4(glm::vec3(0.25f, 0.1f, 0.1f) * lumScale, 0),
+      glm::vec4(glm::vec3(0.25f, 0.1f, 0.1f) * lumScale, 0),
     };
     const float fract = static_cast<float>(std::fmod(tmp, 1));
     const glm::vec4 col0 = color[static_cast<int>(tmp)];
